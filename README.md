@@ -4,7 +4,9 @@
 Ultimate Glove Ball was built by the VR Developer Tools team to demonstrate how you can quickly build an ESport game that gets people together in VR using the Oculus Social Platform API.
 Based off our [SharedSpaces](https://github.com/oculus-samples/Unity-SharedSpaces) project we expand functionalities in an ESport game context. We also demonstrate how VR games can have asymmetric experiences. In this project we have players and spectators.
 
-This codebase is available both as a reference and as a template for multiplayer VR games. The [Oculus License](LICENSE) applies to the SDK and supporting material. The MIT License applies to only certain, clearly marked documents. If an individual file does not indicate which license it is subject to, then the Oculus License applies.
+This codebase is available both as a reference and as a template for multiplayer VR games.
+
+The majority of Ultimate GloveBall is licensed under [MIT LICENSE](./LICENSE), however files from [Text Mesh Pro](http://www.unity3d.com/legal/licenses/Unity_Companion_License), [Photon Voice](./Packages/Photon/Photon/license.txt), and [Photon SDK](./Packages/com.community.netcode.transport.photon-realtime@b28923aa5d/Runtime/Photon/LICENSE.md), are licensed under their respective licensing terms.
 
 See the [CONTRIBUTING](./CONTRIBUTING.md) file for how to help out.
 
@@ -19,7 +21,7 @@ The project also includes the [Meta Utilities](./Packages/com.meta.utilities/REA
 
 ## How to run the project in Unity
 1. [Configure the project](./Documentation/Configuration.md) with Meta Quest and Photon
-2. Make sure you're using  *Unity 2021.3.26f1* or newer. 
+2. Make sure you're using  *Unity 2021.3.43f1* or newer. 
 3. Load the [Assets/UltimateGloveBall/Scenes/Startup](./Assets/UltimateGloveBall/Scenes/Startup.unity) scene. 
 4. There are two ways of testing in the editor:
     <details>
@@ -43,7 +45,7 @@ The project also includes the [Meta Utilities](./Packages/com.meta.utilities/REA
 ## Dependencies
 
 This project makes use of the following plugins and software:
-- [Unity](https://unity.com/download) 2021.3.26f1 or newer
+- [Unity](https://unity.com/download) 2021.3.43f1 or newer
 - [Dependencies Hunter](https://github.com/AlexeyPerov/Unity-Dependencies-Hunter.git#upm)
 - [Meta Avatars SDK](https://developer.oculus.com/downloads/package/meta-avatars-sdk/)
 - [Meta XR Utilities](https://npm.developer.oculus.com/-/web/detail/com.meta.xr.sdk.utilities)
@@ -87,7 +89,7 @@ Custom Packages:
 
 # Where are the Meta Avatar SDK and Photon packages?
 
-In order to keep the project organized, the [Meta Avatars SDK](https://developer.oculus.com/downloads/package/meta-avatars-sdk/) and [Photon Voice 2](https://assetstore.unity.com/packages/tools/audio/photon-voice-2-130518) packages are stored in the [Packages](./Packages) folder. To update them, import their updated Asset Store packages, then copy them into their respective `Packages` folders.
+In order to keep the project organized, the [Photon Voice 2](https://assetstore.unity.com/packages/tools/audio/photon-voice-2-130518) package is stored in the [Packages](./Packages) folder. To update them, import their updated Asset Store packages, then copy them into their respective `Packages` folders.
 
 The *Photon Voice 2* package is released under the *[License Agreement for Exit Games Photon](./Packages/Photon/Photon/license.txt)*.
 
