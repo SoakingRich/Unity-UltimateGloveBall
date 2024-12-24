@@ -13,7 +13,7 @@ namespace UltimateGloveBall.Arena.Crowd
     /// </summary>
     public class CrowdNPC : MonoBehaviour
     {
-        private static readonly int s_bodyColorID = Shader.PropertyToID("_Body_Color");
+        private static readonly int s_bodyColorID = Shader.PropertyToID("_Body_Color");                      // int identifiers for string Material Paramaters
         private static readonly int s_attachmentColorID = Shader.PropertyToID("_Attachment_Color");
         private static readonly int s_faceSwapID = Shader.PropertyToID("_Face_swap");
         [SerializeField] private Animator[] m_animators;
@@ -32,13 +32,13 @@ namespace UltimateGloveBall.Arena.Crowd
             {
                 if (m_items[i].activeSelf)
                 {
-                    m_currentItemIndex = i;
+                    m_currentItemIndex = i;              // each NPC in editor will be given a different item (gameObject) to be Active. Each NPC should record which one has been set active
                     break;
                 }
             }
         }
 
-        public void Init(float timeOffset, float speed, Vector2 face)
+        public void Init(float timeOffset, float speed, Vector2 face)        // init with randomized properties per npc
         {
             foreach (var animator in m_animators)
             {
@@ -48,15 +48,15 @@ namespace UltimateGloveBall.Arena.Crowd
                     if (animator.isActiveAndEnabled)
                     {
                         var info = animator.GetCurrentAnimatorStateInfo(0);
-                        animator.Play(info.shortNameHash, 0, timeOffset);
+                        animator.Play(info.shortNameHash, 0, timeOffset);             // play random anim, with random time offset
                     }
                 }
             }
 
-            m_materialBlock ??= new MaterialPropertyBlock();
-            m_faceRenderer.GetPropertyBlock(m_materialBlock);
-            m_materialBlock.SetVector(s_faceSwapID, face);
-            m_faceRenderer.SetPropertyBlock(m_materialBlock);
+            m_materialBlock ??= new MaterialPropertyBlock();     //MaterialPropertyBlock is a handle for a MaterialInstance we can call SetVector or SetColor on
+            m_faceRenderer.GetPropertyBlock(m_materialBlock);    // GetPropertyBlock lets us set a MaterialPropertyBlock handle for a renderer's material
+            m_materialBlock.SetVector(s_faceSwapID, face);            // make changes on the MaterialPropertyBlock handle
+            m_faceRenderer.SetPropertyBlock(m_materialBlock);    // set the new property block on the Renderer
         }
 
         public void SetColor(Color color)
@@ -67,7 +67,7 @@ namespace UltimateGloveBall.Arena.Crowd
                 if (rend != null)
                 {
                     rend.GetPropertyBlock(m_materialBlock);
-                    m_materialBlock.SetColor(s_attachmentColorID, color);
+                    m_materialBlock.SetColor(s_attachmentColorID, color);          // set color param on every renderers material in NPC's m_attachmentsRenderers
                     rend.SetPropertyBlock(m_materialBlock);
                 }
             }
@@ -77,11 +77,11 @@ namespace UltimateGloveBall.Arena.Crowd
         {
             m_materialBlock ??= new MaterialPropertyBlock();
             m_bodyRenderer.GetPropertyBlock(m_materialBlock);
-            m_materialBlock.SetColor(s_bodyColorID, color);
+            m_materialBlock.SetColor(s_bodyColorID, color);          // set color specifically on the body
             m_bodyRenderer.SetPropertyBlock(m_materialBlock);
         }
 
-        public void ChangeItem(int itemIndex)
+        public void ChangeItem(int itemIndex)                   // specify an item to set active for a NPC
         {
             if (itemIndex >= 0 && itemIndex < m_items.Length)
             {

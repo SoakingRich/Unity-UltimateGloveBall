@@ -26,7 +26,7 @@ namespace UltimateGloveBall.Arena.Player.Menu
 
         public override void OnUpdate()
         {
-            if (NetworkManager.Singleton.IsListening)
+            if (NetworkManager.Singleton.IsListening)     // check if local client is a Listener (client??)   maybe both Server and Clients are listeners tho with photon???
             {
                 m_serverTimeText.text = NetworkManager.Singleton.ServerTime.Time.ToString("0.###");
 

@@ -13,7 +13,7 @@ namespace UltimateGloveBall.Arena.Gameplay
     /// Handles the countdown view at the beginning of the game, including visual and audio when the number changes.
     /// It also has a callback when the countdown is complete.
     /// </summary>
-    public class CountdownView : MonoBehaviour
+    public class CountdownView : MonoBehaviour           // countdown before the game starts
     {
         [SerializeField] private TMP_Text m_text;
         [SerializeField] private AudioSource m_audioSource;
@@ -28,11 +28,11 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             if (m_showing)
             {
-                var time = m_endTime - NetworkManager.Singleton.ServerTime.Time;
-                var seconds = Math.Max(0, (int)Math.Floor(time));
-                m_text.text = seconds == 0 ? "GO" : seconds.ToString();
+                var time = m_endTime - NetworkManager.Singleton.ServerTime.Time;        // server time gets reset to zero at beginning of match ?? 
+                var seconds = Math.Max(0, (int)Math.Floor(time));              // clamp seconds at zero,    floor to a whole number of seconds
+                m_text.text = seconds == 0 ? "GO" : seconds.ToString();        // countdown numbers and then say Go!
 
-                if (m_previous != seconds)
+                if (m_previous != seconds)     // if seconds int is a new value, trigger a beep
                 {
                     TriggerBeep(seconds);
                 }
@@ -42,12 +42,12 @@ namespace UltimateGloveBall.Arena.Gameplay
                 if (time < 0)
                 {
                     Hide();
-                    m_onComplete?.Invoke();
+                    m_onComplete?.Invoke();         // countdown is complete,   Invoke
                 }
             }
         }
 
-        public void Show(double endTime, Action onComplete = null)
+        public void Show(double endTime, Action onComplete = null)       // start the countdown
         {
             m_text.gameObject.SetActive(true);
             m_showing = true;
@@ -58,7 +58,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        public void Hide()
+        public void Hide()          // hide it and stop counting down
         {
             m_text.gameObject.SetActive(false);
             m_showing = false;

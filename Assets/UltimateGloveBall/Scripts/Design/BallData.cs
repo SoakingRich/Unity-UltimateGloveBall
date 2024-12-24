@@ -13,11 +13,11 @@ namespace UltimateGloveBall.Design
     public class BallData : ScriptableObject
     {
         public float MinThrowSpeed = 5f;
-        public float MaxThrowSpeed = 20f;
+        public float MaxThrowSpeed = 20f;            // what should be limits of shoot speed, depending on Charge of shot
 
-        public Vector3 SpawnedRotationSpeedPerSec = new(45, 90, 0);
+        public Vector3 SpawnedRotationSpeedPerSec = new(45, 90, 0);       // what speed should visual spinning balls go
 
-        public Vector3 ThrownRotationPerSecMin = new(360, 0, 0);
+        public Vector3 ThrownRotationPerSecMin = new(360, 0, 0);        // how much should they spin when fired
         public Vector3 ThrownRotationPerSecMax = new(720, 0, 0);
     }
 }

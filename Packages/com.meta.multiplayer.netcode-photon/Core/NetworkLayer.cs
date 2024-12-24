@@ -17,7 +17,7 @@ namespace Meta.Multiplayer.Core
     /// Register to the callbacks to handle different events through the connection flow. 
     /// </summary>
     [RequireComponent(typeof(PhotonRealtimeTransport))]
-    public class NetworkLayer : MonoBehaviour, IConnectionCallbacks, IInRoomCallbacks
+    public class NetworkLayer : MonoBehaviour, IConnectionCallbacks, IInRoomCallbacks     // a network layer script by meta for use with Photon
     {
         public enum ClientState
         {
@@ -150,7 +150,7 @@ namespace Meta.Multiplayer.Core
 
             StartHostCallback.Invoke();
 
-            Debug.LogWarning("You are the host.");
+            Debug.LogWarning("StartHost:: You are the host.");
             yield break;
         }
 

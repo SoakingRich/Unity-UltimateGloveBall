@@ -27,7 +27,7 @@ namespace UltimateGloveBall.Arena.Services
             public bool IsPlayer;
         }
 
-        public enum ConnectionStatus
+        public enum ConnectionStatus                     // could the player join the game they intended to join??
         {
             Undefined = 0,
             Success,
@@ -53,7 +53,7 @@ namespace UltimateGloveBall.Arena.Services
         private void Start()
         {
             DontDestroyOnLoad(gameObject);
-            m_networkManager.ConnectionApprovalCallback += ApprovalCheck;
+            m_networkManager.ConnectionApprovalCallback += ApprovalCheck;            // this class primarily exists to bind to this callback
         }
 
         private void OnDestroy()

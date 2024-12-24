@@ -35,7 +35,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             if (!IsServer)
             {
-                m_teamAScore.OnValueChanged += OnScoreChanged;
+                m_teamAScore.OnValueChanged += OnScoreChanged;      // rep notify for m_teamAScore networked variable
                 m_teamBScore.OnValueChanged += OnScoreChanged;
             }
         }

@@ -17,7 +17,7 @@ namespace UltimateGloveBall.Arena.Player
     {
         #region Properties
 
-        public RespawnHud RespawnHud => m_respawnHud;
+        public RespawnHud RespawnHud => m_respawnHud;        // make public accessor
 
         #endregion
 

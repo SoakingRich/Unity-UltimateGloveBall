@@ -34,7 +34,7 @@ namespace UltimateGloveBall.Arena.Balls
 
         public override void OnNetworkSpawn()
         {
-            m_targetting.OnValueChanged += OnTargettingChanged;
+            m_targetting.OnValueChanged += OnTargettingChanged;            // rep notifies for networked variables
             m_targetClientId.OnValueChanged += OnTargetChanged;
         }
 

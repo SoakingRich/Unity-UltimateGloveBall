@@ -175,7 +175,7 @@ namespace UltimateGloveBall.MainMenu
             OnPurchaseComplete();
         }
 
-        private void OnPurchaseFlowCompleted(string sku, bool success, string errorMsg)
+        private void OnPurchaseFlowCompleted(string sku, bool success, string errorMsg)               // called by invoke from IAPManager
         {
             if (success)
             {

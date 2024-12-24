@@ -28,7 +28,7 @@ namespace UltimateGloveBall.Arena.Balls
         /// <summary>
         /// A state update for a typical Unity Rigidbody with control for syncing velocities or not.
         /// </summary>
-        private struct BallStateUpdate : INetworkSerializable
+        private struct BallStateUpdate : INetworkSerializable            // an INetworkSerializable is an interface for things that should become serializable over a network,   it allows use to override NetworkSerialize() to send specific info
         {
             public bool IsGrabbed;                                   // Ball is grabbed on the server
             public ulong GrabbersNetworkObjectId;                     // Ball is grabbed by an object with this network Id
@@ -62,7 +62,7 @@ namespace UltimateGloveBall.Arena.Balls
         /// <summary>
         ///     The ball packet includes a sequence number which correlates to when the server sent the packet and the status update of the networked ball.
         /// </summary>
-        private struct BallPacket : INetworkSerializable
+        private struct BallPacket : INetworkSerializable         // INetworkSerializable that contains the BallStateUpdate INetworkSerializable within it,  we also assing a sequence number, to make sure we dont apply updates out of order
         {
             // The sequence number of the packet (usually frame count when package is sent)
             public uint Sequence;
@@ -82,7 +82,7 @@ namespace UltimateGloveBall.Arena.Balls
         public event Action DetectedBallShotFromServer;
 
 
-        #region Fields
+    #region Fields
 
         [Header("Synchronization")]
         [Tooltip("This value determines how often the server sends updates. The update rate is per FixedUpdate.")]
@@ -106,10 +106,10 @@ namespace UltimateGloveBall.Arena.Balls
 
         private uint m_frameCount;      // Current frame count. This is not synced with other clients and is only used for local logic.
 
-        private readonly List<BallPacket> m_jitterBuffer = new();        // We use a jitter buffer to ensure that any packages received are applied in order. 
+        private readonly List<BallPacket> m_jitterBuffer = new();        // We use a jitter buffer to ensure that any packages received are applied in order.    // - i guess this is really the only way to handle packets coming in out of order, without having to disregard/throw them away
 
 
-        private NetworkObject m_currentGrabber;          // The ball is currently networked to this object. When this is null the ball is free.
+        private NetworkObject m_currentGrabber;          // The ball is currently networked to this object. When this is null the ball is free.     // free??
 
         private bool m_ballWasThrownLocally;            // This should become true if this client is the one that threw the ball
         private bool m_sendPackets = true;              // Change this to control when server should send packets and not.
@@ -156,7 +156,7 @@ namespace UltimateGloveBall.Arena.Balls
         {
             if (IsServer && m_sendPackets)   // Only server sends packets as long as they should
             {
-                if (m_frameCount % m_updateRate == 0 || m_updateImmediately)          // We send packets with a given frequency, but sometimes we override this to send packets right away.
+                if (m_frameCount % m_updateRate == 0 || m_updateImmediately)          // We send packets with a given frequency, but sometimes we override this to send packets right away.   // using Modulo, m_updateRate becomes a countdown
                 {
                     SendPacket();
 
@@ -168,9 +168,9 @@ namespace UltimateGloveBall.Arena.Balls
             }
             else if (!IsServer) // All clients will apply packets
             {
-                if (m_frameCount % m_bufferFlushRate == 0 || m_processImmediate)     // We flush the jitter buffer with a given flush frequency
+                if (m_frameCount % m_bufferFlushRate == 0 || m_processImmediate)     // We flush the jitter buffer with a given flush frequency   // using Modulo, m_bufferFlushRate becomes a countdown
                 {
-                    for (var i = 0; i < m_jitterBuffer.Count; i++)
+                    for (var i = 0; i < m_jitterBuffer.Count; i++)          // we seem to apply every packet in the buffer all in one frame, at some rate
                     {
                         var packet = GetFirstPacket();       // We make sure to apply the packages in the buffer in the correct order
                         ApplyPacket(GetFirstPacket());

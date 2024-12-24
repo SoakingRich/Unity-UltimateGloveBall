@@ -13,23 +13,23 @@ namespace UltimateGloveBall.Arena.Gameplay
     /// </summary>
     public class NetworkedTeam : NetworkBehaviour
     {
-        public enum Team
+        public enum Team    // define a team
         {
             NoTeam,
             TeamA,
             TeamB,
         }
+        public Team MyTeam { get => m_team.Value; set => m_team.Value = value; }    // give this script a public accessible team variable that references a private one next
 
-        private NetworkVariable<Team> m_team = new();
+        private NetworkVariable<Team> m_team = new();        // private team variable, this is also networked. It only gets set to anything via the public var 
 
-        public Team MyTeam { get => m_team.Value; set => m_team.Value = value; }
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkSpawn()         /// make this binding happen once this gO has been network spawned
         {
             if (IsOwner)
             {
-                m_team.OnValueChanged += OnTeamChanged;
-                OnTeamChanged(m_team.Value, m_team.Value);
+                m_team.OnValueChanged += OnTeamChanged;      //  add   this.OnTeamChanged() function when private replicated variable changes
+                OnTeamChanged(m_team.Value, m_team.Value);      // Run OnTeamChanged for the very first time, now that the binding has been made
             }
         }
 
@@ -37,7 +37,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             if (IsOwner)
             {
-                m_team.OnValueChanged -= OnTeamChanged;
+                m_team.OnValueChanged -= OnTeamChanged;         //  remove   this.OnTeamChanged() function when private replicated variable changes
             }
         }
 
@@ -46,7 +46,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             // Update movement limits when we switch teams on local player
             if (newvalue == Team.TeamA)
             {
-                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1);
+                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1);             // get the player movement instance and limit its movement to hardcoded position limits
             }
             else if (newvalue == Team.TeamB)
             {

@@ -43,20 +43,20 @@ namespace UltimateGloveBall.Arena.Player.Menu
                 PlayerInfoItem playerInfoItem;
                 if (m_playerInfoItems.Count > itemIndex)
                 {
-                    playerInfoItem = m_playerInfoItems[itemIndex];
+                    playerInfoItem = m_playerInfoItems[itemIndex];       // we might have a bunch of playerInfoItem already spawned, if so use them.
                 }
                 else
                 {
-                    playerInfoItem = Instantiate(m_playerInfoItemRef, m_playerInfoItemRef.transform.parent);
+                    playerInfoItem = Instantiate(m_playerInfoItemRef, m_playerInfoItemRef.transform.parent);     // otherwise spawn more
                     m_playerInfoItems.Add(playerInfoItem);
                 }
                 itemIndex++;
                 playerInfoItem.gameObject.SetActive(true);
-                playerInfoItem.SetupUser(playerState);
+                playerInfoItem.SetupUser(playerState);       // take info from PlayerStateNetwork to fill out a PlayerInfoItem 
             }
 
             // hide all other player info
-            for (var i = itemIndex; i < m_playerInfoItems.Count; ++i)
+            for (var i = itemIndex; i < m_playerInfoItems.Count; ++i)          // fancy way of continuing taking up where itemIndex left off,  and setting active false to extra unnneeded PlayerInfoItems
             {
                 m_playerInfoItems[i].gameObject.SetActive(false);
             }
@@ -67,7 +67,7 @@ namespace UltimateGloveBall.Arena.Player.Menu
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN
             Debug.Log("Roster Button Clicked");
 #else
-            GroupPresence.LaunchRosterPanel(new RosterOptions());
+            GroupPresence.LaunchRosterPanel(new RosterOptions());        // open the OS Roster screen
 #endif
         }
     }

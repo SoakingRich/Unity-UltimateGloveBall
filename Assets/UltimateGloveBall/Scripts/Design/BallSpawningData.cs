@@ -39,18 +39,18 @@ namespace UltimateGloveBall.Design
             Rebuild();
         }
 
-        public NetworkObject GetRandomBall()
+        public NetworkObject GetRandomBall()    // when choosing a random networked prefab to spawn in BallSpawner, this function retrives one considering the weighting setup in this ScriptableObject
         {
-            if (m_ballCount != m_ballsToSpawn.Count)
+            if (m_ballCount != m_ballsToSpawn.Count)   // if ballcount is not equal to length of the array for some reason, rebuild
             {
                 Rebuild();
             }
-            var rng = Random.Range(0, m_totalWeight);
+            var rng = Random.Range(0, m_totalWeight);        // seems like a very cumbersome way to get a random element from the array
             var cumWeight = 0;
-            for (var i = 0; i < m_ballCount; i++)
+            for (var i = 0; i < m_ballCount; i++)            // get a RandNum between 0 and 20,  loop through each array element and if accumulated weight has gone over RandNum, stop accumulating and return prefab
             {
                 var ballInfo = m_ballsToSpawn[i];
-                cumWeight += ballInfo.Weight;
+                cumWeight += ballInfo.Weight;            // 
                 if (rng <= cumWeight)
                 {
                     return ballInfo.BallPrefab;
@@ -67,10 +67,10 @@ namespace UltimateGloveBall.Design
             m_totalWeight = 0;
             foreach (var ballInfo in m_ballsToSpawn)
             {
-                m_totalWeight += ballInfo.Weight;
+                m_totalWeight += ballInfo.Weight;    // set m_totalWeight to sum of all spawnable balls weight.  so likely balls to get spawned might have weight = 8 or 9
             }
 
-            m_ballCount = m_ballsToSpawn.Count;
+            m_ballCount = m_ballsToSpawn.Count;        // set m_ballCount to array Length
         }
     }
 }

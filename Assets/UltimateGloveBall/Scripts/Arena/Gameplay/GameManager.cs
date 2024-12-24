@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Oculus.Platform;
 using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Balls;
 using UltimateGloveBall.Arena.Environment;
@@ -35,7 +36,8 @@ namespace UltimateGloveBall.Arena.Gameplay
             PostGame,
         }
 
-        private struct GameStateSave
+        private struct GameStateSave           // timeRemaining is encapsulated in a struct, because maybe the game gets paused and resumed etc.?? thus we may often want to load and save a state of ' x time is remaining ' 
+                                               // would make sense if there were more stats getting saved though
         {
             public double TimeRemaining;
         }
@@ -79,7 +81,7 @@ namespace UltimateGloveBall.Arena.Gameplay
 
         private void OnEnable()
         {
-            m_currentGamePhase.OnValueChanged += OnPhaseChanged;
+            m_currentGamePhase.OnValueChanged += OnPhaseChanged;      // rep notify for replicated variables
             m_gameStartTime.OnValueChanged += OnStartTimeChanged;
             UGBApplication.Instance.NetworkLayer.OnHostLeftAndStartingMigration += OnHostMigrationStarted;
         }
@@ -89,7 +91,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             if (m_currentGamePhase.Value == GamePhase.CountDown)
             {
                 Debug.LogWarning($"OnStartTimeChanged: {newvalue}");
-                m_countdownView.Show(newvalue);
+                m_countdownView.Show(newvalue);                     // start the pre-game countdown
             }
         }
 
@@ -112,7 +114,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             m_phaseListeners.Add(listener);
             listener.OnPhaseChanged(m_currentGamePhase.Value);
-            listener.OnTeamColorUpdated(TeamAColor, TeamBColor);
+            listener.OnTeamColorUpdated(TeamAColor, TeamBColor);             // on first Registering Phase Listenership, run initial funcs
         }
 
         public void UnregisterPhaseListener(IGamePhaseListener listener)
@@ -122,14 +124,14 @@ namespace UltimateGloveBall.Arena.Gameplay
 
         public void UpdatePlayerTeam(ulong clientId, NetworkedTeam.Team team)
         {
-            m_playersTeamSelection[clientId] = team;
+            m_playersTeamSelection[clientId] = team;             // dictionary of PlayerIDs to Team values
         }
 
-        public NetworkedTeam.Team GetTeamWithLeastPlayers()
+        public NetworkedTeam.Team GetTeamWithLeastPlayers()         // return a Team, which is an enum declared in NetworkedTeam
         {
             var countA = 0;
             var countB = 0;
-            foreach (var team in m_playersTeamSelection.Values)
+            foreach (var team in m_playersTeamSelection.Values)       // dictionary of PlayerIDs to Team values
             {
                 if (team == NetworkedTeam.Team.TeamA)
                 {
@@ -144,19 +146,20 @@ namespace UltimateGloveBall.Arena.Gameplay
             return countA <= countB ? NetworkedTeam.Team.TeamA : NetworkedTeam.Team.TeamB;
         }
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkSpawn()             // i dont know why this wouldnt be spawned from the start anyway, maybe GameManager gets 'respawned' ??
+            // I guess logic is put here so late joiners still get logic?? but why shouldnt that just happen OnStart()
         {
             var currentPhase = m_currentGamePhase.Value;
             if (IsServer)
             {
                 if (!m_teamColorIsSet)
                 {
-                    TeamColorProfiles.Instance.GetRandomProfile(out var colorA, out var colorB);
+                    TeamColorProfiles.Instance.GetRandomProfile(out var colorA, out var colorB);      // colorA and colorB vars now exist in scope of function
                     m_teamAColor.Value = colorA;
                     m_teamBColor.Value = colorB;
                     m_teamColorIsSet = true;
                 }
-                OnColorUpdatedClientRPC(m_teamAColor.Value, m_teamBColor.Value);
+                OnColorUpdatedClientRPC(m_teamAColor.Value, m_teamBColor.Value);         // with random colors now set, Let all relevant scripts know via client rpcs
 
                 if (m_currentGamePhase.Value is GamePhase.PreGame)
                 {
@@ -174,18 +177,18 @@ namespace UltimateGloveBall.Arena.Gameplay
                 {
                     StartCountdown();
                 }
-                else if (currentPhase == GamePhase.InGame)
+                else if (currentPhase == GamePhase.InGame)          // GameManager might get re-NetworkedSpawned when a host migration happens??!!    If host gets changed, all In-Scene objects get OnNetworkSpawn called again??
                 {
                     HandleInGameHostMigration(m_gameStateSave.TimeRemaining);
                 }
             }
 
-            if (m_currentGamePhase.Value == GamePhase.PreGame)
+            if (m_currentGamePhase.Value == GamePhase.PreGame)      // let all clients use InvitePanel
             {
                 m_inviteFriendButtonContainer.SetActive(true);
             }
 
-            OnPhaseChanged(currentPhase, currentPhase);
+            OnPhaseChanged(currentPhase, currentPhase);          // call initial IGamePhase interface functions on all listeners
             NotifyPhaseListener(m_currentGamePhase.Value);
             m_teamColorIsSet = true;
         }
@@ -206,20 +209,22 @@ namespace UltimateGloveBall.Arena.Gameplay
                 m_postGameView.SetActive(false);
             }
 
-            var playerCanMove = newvalue is GamePhase.InGame or GamePhase.PreGame;
-            PlayerInputController.Instance.MovementEnabled = playerCanMove;
+            var playerCanMove = newvalue is GamePhase.InGame or GamePhase.PreGame;   // what the fuck is this, why not:
+           // playerCanMove = newvalue == GamePhase.InGame || newvalue == GamePhase.PreGame;
+
+            PlayerInputController.Instance.MovementEnabled = playerCanMove;        // disallow local client sliding movement?? when InGame or PreGame
             // only applies for in game players
             if (LocalPlayerEntities.Instance.Avatar != null)
             {
                 m_inviteFriendButtonContainer.SetActive(newvalue == GamePhase.PreGame);
             }
             m_previousSecondsLeft = int.MaxValue;
-            NotifyPhaseListener(newvalue);
+            NotifyPhaseListener(newvalue);              // notify all listeners
         }
 
-        public void StartGame()
+        public void StartGame()     // called on unityEvent bound on this object in editor from UI Button press,   only Host/Server can start game 
         {
-            if (m_currentGamePhase.Value is GamePhase.PreGame or GamePhase.PostGame)
+            if (m_currentGamePhase.Value is GamePhase.PreGame or GamePhase.PostGame)          // check we're in a compatible GamePhase
             {
                 m_gameState.Score.Reset();
                 _ = StartCoroutine(DeactivateStartButton());
@@ -238,7 +243,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         }
 
         [ClientRpc]
-        private void OnColorUpdatedClientRPC(TeamColor teamColorA, TeamColor teamColorB)
+        private void OnColorUpdatedClientRPC(TeamColor teamColorA, TeamColor teamColorB)      // called onNetworkSpawn
         {
             NotifyTeamColorListener(teamColorA, teamColorB);
             m_teamColorIsSet = true;
@@ -256,6 +261,7 @@ namespace UltimateGloveBall.Arena.Gameplay
 #else
             GroupPresence.LaunchInvitePanel(new InviteOptions());
 #endif
+           // GroupPresence.LaunchInvitePanel(new InviteOptions());
         }
 
         private IEnumerator DeactivateStartButton()
@@ -270,13 +276,13 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             m_gameStartTime.Value = NetworkManager.Singleton.ServerTime.Time + GAME_START_COUNTDOWN_TIME_SEC;
             m_currentGamePhase.Value = GamePhase.CountDown;
-            m_countdownView.Show(m_gameStartTime.Value, SwitchToInGame);
+            m_countdownView.Show(m_gameStartTime.Value, SwitchToInGame);    // SwitchToInGame action is called on complete 
         }
 
-        public void SwitchToInGame()
+        public void SwitchToInGame()          // go to InGame after countdown is over
         {
             m_currentGamePhase.Value = GamePhase.InGame;
-            m_gameEndTime.Value = NetworkManager.Singleton.ServerTime.Time + GAME_DURATION_SEC;
+            m_gameEndTime.Value = NetworkManager.Singleton.ServerTime.Time + GAME_DURATION_SEC;       // set an explicit Server time to be m_gameEndTime, and replicate it
             m_ballSpawner.SpawnInitialBalls();
         }
 
@@ -293,7 +299,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         {
             if (m_currentGamePhase.Value == GamePhase.InGame)
             {
-                var timeLeft = m_gameEndTime.Value - NetworkManager.Singleton.ServerTime.Time;
+                var timeLeft = m_gameEndTime.Value - NetworkManager.Singleton.ServerTime.Time;     // all clients can access the server time and replicated var m_gameEndTime
                 UpdateTimeInPhaseListener(Math.Max(0, timeLeft));
 
                 if (timeLeft < 11)
@@ -301,7 +307,7 @@ namespace UltimateGloveBall.Arena.Gameplay
                     var seconds = Math.Max(0, (int)Math.Floor(timeLeft));
                     if (m_previousSecondsLeft != seconds)
                     {
-                        TriggerEndGameCountdownBeep(seconds);
+                        TriggerEndGameCountdownBeep(seconds);      // handle countdown beep
                     }
 
                     m_previousSecondsLeft = seconds;
@@ -365,7 +371,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void NotifyTeamColorListener(TeamColor teamColorA, TeamColor teamColorB)
+        private void NotifyTeamColorListener(TeamColor teamColorA, TeamColor teamColorB)          // actually sending TeamColor changes to GamePhase listeners but go off.
         {
             foreach (var listener in m_phaseListeners)
             {
@@ -373,7 +379,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void LockPlayersTeams()
+        private void LockPlayersTeams()     // not really any locking going on
         {
             foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
             {
@@ -384,7 +390,7 @@ namespace UltimateGloveBall.Arena.Gameplay
                     {
                         avatar.GetComponent<NetworkedTeam>().MyTeam = team;
 
-                        var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;
+                        var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;     // update value of  playerData.SelectedTeam member in ArenaSessionManager singleton,  Server only ??
                         playerData.SelectedTeam = team;
                         ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
                     }
@@ -407,13 +413,13 @@ namespace UltimateGloveBall.Arena.Gameplay
                 var avatar = playerObjects.Avatar;
                 if (avatar != null)
                 {
-                    var side = avatar.transform.position.z < 0
+                    var side = avatar.transform.position.z < 0                // assign sides based on Position,   are Player Teams flexible depending on what side Players have moved to??
                         ? NetworkedTeam.Team.TeamA
                         : NetworkedTeam.Team.TeamB;
 
                     var color = side == NetworkedTeam.Team.TeamA ? TeamAColor : TeamBColor;
 
-                    foreach (var colorComp in playerObjects.ColoringComponents)
+                    foreach (var colorComp in playerObjects.ColoringComponents)   // class PlayerGameObjects keeps a list of ColoringComponent scripts to store team color
                     {
                         colorComp.TeamColor = color;
                     }
@@ -423,19 +429,19 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void RespawnAllPlayers()
+        private void RespawnAllPlayers()   // only server surely
         {
             foreach (var clientId in LocalPlayerEntities.Instance.PlayerIds)
             {
-                var allPlayerObjects = LocalPlayerEntities.Instance.GetPlayerObjects(clientId);
+                var allPlayerObjects = LocalPlayerEntities.Instance.GetPlayerObjects(clientId);   // allPlayerObjects is a script of class PlayerGameObjects
                 if (allPlayerObjects.Avatar)
                 {
-                    SpawningManagerBase.Instance.GetRespawnPoint(
+                    SpawningManagerBase.Instance.GetRespawnPoint(             // Get a respawn point for a particular PlayerAvatarEntity, considering its Team 
                         clientId,
                         allPlayerObjects.Avatar.GetComponent<NetworkedTeam>().MyTeam, out var position,
                         out var rotation);
                     // only send to specific client
-                    var clientRpcParams = new ClientRpcParams
+                    var clientRpcParams = new ClientRpcParams          // create ClientRPC Params so we can specify Targets for rpc as we only want to send Respawn RPC to one client only
                     {
                         Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { clientId } }
                     };
@@ -444,15 +450,15 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void HandleInGameHostMigration(double timeRemaining)
+        private void HandleInGameHostMigration(double timeRemaining)   // game remains playing when hostmigration happens when gamePhase is still going
         {
             m_currentGamePhase.Value = GamePhase.InGame;
             m_gameEndTime.Value = NetworkManager.Singleton.ServerTime.Time + timeRemaining;
-            m_ballSpawner.SpawnInitialBalls();
+            m_ballSpawner.SpawnInitialBalls();          // for some reason we have to reset all balls though,  makes sense, since the owning client of many of them has just left??
         }
 
         [ClientRpc]
-        private void OnRespawnClientRpc(Vector3 position, Quaternion rotation, GamePhase phase, ClientRpcParams rpcParams)
+        private void OnRespawnClientRpc(Vector3 position, Quaternion rotation, GamePhase phase, ClientRpcParams rpcParams)        // respawn a single client  ( teleport them somewhere )
         {
             if (phase is GamePhase.PostGame or GamePhase.CountDown)
             {

@@ -33,8 +33,8 @@ namespace UltimateGloveBall.App
 
         private void Start()
         {
-            SetMusicVolume(GameSettings.Instance.MusicVolume);
-            SetSfxVolume(GameSettings.Instance.SfxVolume);
+            SetMusicVolume(GameSettings.Instance.MusicVolume);            // set music volume to what is in the GameSettings singleton, 
+            SetSfxVolume(GameSettings.Instance.SfxVolume);               //  GameSettings is a UGP class that is just Gets and Sets for Unity PlayerPrefs key/values
             SetCrowdVolume(GameSettings.Instance.CrowdVolume);
         }
 

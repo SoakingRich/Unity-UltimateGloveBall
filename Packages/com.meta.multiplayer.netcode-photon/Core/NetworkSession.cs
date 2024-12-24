@@ -9,7 +9,7 @@ namespace Meta.Multiplayer.Core
     /// Keeps the state of the current network session, sharing the state from the server to the clients 
     /// Handles resolving the fallback host and voice room name.
     /// </summary>
-    public class NetworkSession : NetworkBehaviour
+    public class NetworkSession : NetworkBehaviour                       // server spawns this object and replicates things to clients
     {
         public static ulong FallbackHostId { get; private set; } = ulong.MaxValue;
         public static string PhotonVoiceRoom { get; private set; } = "";

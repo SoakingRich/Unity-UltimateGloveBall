@@ -160,7 +160,7 @@ namespace UltimateGloveBall.Arena.Spectator
 
         public void RequestSwitchSide()
         {
-            RequestSwitchSideServerRPC();
+            RequestSwitchSideServerRPC();    // ask the server to switch sides for us
         }
 
         [ServerRpc]

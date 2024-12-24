@@ -64,14 +64,14 @@ namespace UltimateGloveBall.Arena.Player
         {
             var thisTransform = transform;
             var curPosition = thisTransform.position;
-            var headOffset = m_head.position - curPosition;
+            var headOffset = m_head.position - curPosition;       // move player, accounting for headset offset
             headOffset.y = 0;
             destination -= headOffset;
             thisTransform.position = destination;
             thisTransform.rotation = rotation;
         }
 
-        public void TeleportTo(Vector3 destination, Quaternion rotation)
+        public void TeleportTo(Vector3 destination, Quaternion rotation)           // teleport player,  accounting for networking
         {
             var netTransformComp = LocalPlayerEntities.Instance.Avatar.GetComponent<ClientNetworkTransform>();
             var thisTransform = transform;
@@ -106,7 +106,7 @@ namespace UltimateGloveBall.Arena.Player
         {
             var headDir = m_head.forward;
             headDir.y = 0; // remove height dir
-            var dir = Quaternion.FromToRotation(Vector3.forward, headDir) * direction;
+            var dir = Quaternion.FromToRotation(Vector3.forward, headDir) * direction;      // we need to move the player (who is not rotated same dir as head) in dir of the heads forward
             var moveDist = Time.deltaTime * m_walkSpeed;
             var playerTransform = transform;
             var position = playerTransform.position;
@@ -171,7 +171,7 @@ namespace UltimateGloveBall.Arena.Player
                     m_isMoving = false;
                     FadeOutScreen();
                 }
-            }
+            }       // seems to be some sort of AutoMoving,  rather than player input moving??
         }
 
         public void DoSnapTurn(bool toRight)
@@ -179,7 +179,7 @@ namespace UltimateGloveBall.Arena.Player
             if (IsRotationEnabled)
 
             {
-                transform.RotateAround(m_cameraRig.centerEyeAnchor.position, Vector3.up, toRight ? RotationAngle : -RotationAngle);
+                transform.RotateAround(m_cameraRig.centerEyeAnchor.position, Vector3.up, toRight ? RotationAngle : -RotationAngle);    // whole Gameobject can be rotated around Camera Position, so camera doesnt move
             }
         }
     }

@@ -16,7 +16,7 @@ namespace UltimateGloveBall.Arena.Environment
         [SerializeField] private List<Obstacle> m_teamAObstacles;
         [SerializeField] private List<Obstacle> m_teamBObstacles;
 
-        public void SetTeamColor(TeamColor teamA, TeamColor teamB)
+        public void SetTeamColor(TeamColor teamA, TeamColor teamB)      // when GameManager gets NetworkedSpawned   this gets called
         {
             foreach (var obstacle in m_teamAObstacles)
             {

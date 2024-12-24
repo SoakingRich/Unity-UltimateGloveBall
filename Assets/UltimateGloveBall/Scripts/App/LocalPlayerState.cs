@@ -16,7 +16,7 @@ namespace UltimateGloveBall.App
     /// Keeps track of the local player state that can be access from anywhere.
     /// These are game specific player states.
     /// </summary>
-    public class LocalPlayerState : Singleton<LocalPlayerState>
+    public class LocalPlayerState : Singleton<LocalPlayerState>                   // this class collects locally relevant, non-gamplay related info
     {
         [SerializeField] private string m_applicationID;
 
@@ -30,7 +30,7 @@ namespace UltimateGloveBall.App
         public bool HasCustomAppId { get; private set; }
         public bool IsSpectator { get; set; }
 
-        public string UserIconSku => GameSettings.Instance.SelectedUserIconSku;
+        public string UserIconSku => GameSettings.Instance.SelectedUserIconSku;                     // getter makes this readonly property
 
         private bool m_spawnCatInGame;
         public bool SpawnCatInNextGame
@@ -39,7 +39,7 @@ namespace UltimateGloveBall.App
             set
             {
                 m_spawnCatInGame = value;
-                OnSpawnCatChange?.Invoke();
+                OnSpawnCatChange?.Invoke();                                        // call set notify,  if any logic has bound itself to this setter func
             }
         }
 
@@ -59,10 +59,10 @@ namespace UltimateGloveBall.App
             {
                 HasCustomAppId = false;
                 // for the time being, force unique session ID
-                m_applicationID = GenerateApplicationID();
+                m_applicationID = GenerateApplicationID();             // gets a totally random integer
             }
 
-            PlayerUid = PlayerPrefs.GetString("PlayerUid", GeneratePlayerID());
+            PlayerUid = PlayerPrefs.GetString("PlayerUid", GeneratePlayerID());    // gets a unique GUID
             PlayerPrefs.SetString("PlayerUid", PlayerUid);
 #if UNITY_EDITOR
             // When using multiple editors for the same project we need to append a unique id based on
@@ -70,11 +70,11 @@ namespace UltimateGloveBall.App
             var hashedBytes = new MD5CryptoServiceProvider()
                 .ComputeHash(Encoding.UTF8.GetBytes(Application.dataPath));
             Array.Resize(ref hashedBytes, 16);
-            PlayerUid += new Guid(hashedBytes).ToString("N");
+            PlayerUid += new Guid(hashedBytes).ToString("N");       // we must append to PlayerUID to use multiple editors of the same project
 #endif
         }
 
-        public void SetApplicationID(string applicationId)
+        public void SetApplicationID(string applicationId)    // set an application to a specific string instead of Generating one     // set HasCustomAppID  because it was not generated randomly
         {
             m_applicationID = applicationId;
             HasCustomAppId = !string.IsNullOrWhiteSpace(applicationId);

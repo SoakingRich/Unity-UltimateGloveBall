@@ -15,7 +15,7 @@ namespace UltimateGloveBall.App
     /// This makes it easy to fetch all products and purchases as well as make a purchase.
     /// Referenced from: https://developer.oculus.com/documentation/unity/ps-iap/
     /// </summary>
-    public class IAPManager
+    public class IAPManager                     // many scripts access this whenever they want it, it is not tied to a gameobject, doesnt exist in editor.  Mainly accessed by StoreMenuController
     {
         #region Singleton
         private static IAPManager s_instance;
@@ -57,14 +57,14 @@ namespace UltimateGloveBall.App
 
         private Dictionary<string, List<string>> m_productsByCategory = new();
         private List<string> m_availableSkus = new();
-        public IList<string> AvailableSkus => m_availableSkus;
+        public IList<string> AvailableSkus => m_availableSkus;        // never used ???
 
         /// <summary>
         /// Asynchronously fetch all products based on the sku
         /// </summary>
         public void FetchProducts(string[] skus, string category = null)
         {
-            _ = IAP.GetProductsBySKU(skus).OnComplete(message =>
+            _ = IAP.GetProductsBySKU(skus).OnComplete(message =>              // GetProductsBySKU returns a 'ovrRequest'; its OnComplete function should contain a function as an argument, which can be a lambda.
             {
                 GetProductsBySKUCallback(message, category);
             });
@@ -104,13 +104,13 @@ namespace UltimateGloveBall.App
             return m_purchases.TryGetValue(sku, out var purchase) ? purchase : null;
         }
 
-        public void Purchase(string sku, Action<string, bool, string> onPurchaseFlowCompleted)
+        public void Purchase(string sku, Action<string, bool, string> onPurchaseFlowCompleted)        // purchase function has a delegate as argument, which this function may do something with (eg. call it)
         {
 #if UNITY_EDITOR
             m_purchases[sku] = null; // we can't create a purchase in Editor, but we need to keep track of the purchase
-            onPurchaseFlowCompleted?.Invoke(sku, true, null);
-#else
-            IAP.LaunchCheckoutFlow(sku).OnComplete((Message<Purchase> msg) =>
+            onPurchaseFlowCompleted?.Invoke(sku, true, null);                                                                 // this looks like its trying to invoke onPurchaseFlowCompleted on StoreMenuController, but cant see when that function ever gets bound
+#else                                                                                           // i guess it gets bound purely by getting passed in here as a delegate.
+            IAP.LaunchCheckoutFlow(sku).OnComplete((Message<Purchase> msg) =>   
             {
                 if (msg.IsError)
                 {
@@ -129,7 +129,7 @@ namespace UltimateGloveBall.App
 #endif
         }
 
-        public void ConsumePurchase(string sku, Action<string, bool> onConsumptionCompleted)
+        public void ConsumePurchase(string sku, Action<string, bool> onConsumptionCompleted)            // same as above
         {
 #if UNITY_EDITOR
             m_purchases.Remove(sku);

@@ -20,7 +20,7 @@ namespace UltimateGloveBall.Arena.Services
     /// This is necessary since the different entities are different networked object that can be loaded in any order
     /// and we need to setup the player only once all their entities are spawned and loaded.
     /// </summary>
-    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>
+    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>     // Clients in Arena are spawned by RPC, so things like Gloves can spawn in different order from avatars etc.
     {
         public PlayerControllerNetwork LocalPlayerController;
         public GloveArmatureNetworking LeftGloveArmature;
@@ -33,13 +33,13 @@ namespace UltimateGloveBall.Arena.Services
 
         private readonly Dictionary<ulong, PlayerGameObjects> m_playerObjects = new();
         public List<ulong> PlayerIds { get; } = new();
-        private void Start()
+        private void Start()                  // on start we're not even getting avatars and gloves probably, but this object should exist already even in startup
         {
             DontDestroyOnLoad(this);
             var networkLayer = UGBApplication.Instance.NetworkLayer;
-            networkLayer.OnClientDisconnectedCallback += OnClientDisconnected;
+            networkLayer.OnClientDisconnectedCallback += OnClientDisconnected;               // event if any client disconnects
             networkLayer.StartHostCallback += OnHostStarted;
-            networkLayer.RestoreHostCallback += OnHostStarted;
+            networkLayer.RestoreHostCallback += OnHostStarted;                               /// event if we go on to host a game
         }
 
         private void OnDestroy()
@@ -70,8 +70,8 @@ namespace UltimateGloveBall.Arena.Services
             return playerData;
         }
 
-        public void TryAttachGloves()
-        {
+        public void TryAttachGloves()            // once weve had gloves and stuff spawned ( owned by us ), get references to those objects
+        {                                       // THIS SEEMS LIKE THE MAIN FUNCTION for initializing Local entities ala Local PlayerGameObjects
             if (LeftGloveHand == null || RightGloveHand == null ||
                 LeftGloveArmature == null || RightGloveArmature == null ||
                 Avatar == null || !Avatar.IsSkeletonReady)
@@ -102,7 +102,7 @@ namespace UltimateGloveBall.Arena.Services
             {
                 if (interactor.GetComponent<ControllerRef>().Handedness == Handedness.Left)
                 {
-                    LeftGloveHand.SetRayInteractor(interactor);
+                    LeftGloveHand.SetRayInteractor(interactor);     // get the spawned Interactors and use them as OUR interactors
                 }
                 else
                 {
@@ -119,7 +119,7 @@ namespace UltimateGloveBall.Arena.Services
             var team = Avatar.GetComponent<NetworkedTeam>().MyTeam;
             if (team == NetworkedTeam.Team.TeamA)
             {
-                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1f);
+                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1f);    // get the movement limits imposed by our 'team'
             }
             else if (team == NetworkedTeam.Team.TeamB)
             {

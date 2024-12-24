@@ -16,7 +16,7 @@ namespace UltimateGloveBall.Arena.Environment
     /// <summary>
     /// Networked obstacles in the game. They keep the inflation state in sync. Handles sounds on collision and color.
     /// </summary>
-    public class Obstacle : NetworkBehaviour
+    public class Obstacle : NetworkBehaviour            // should probably be called ObstacleNetworking
     {
         private const float INFLATION_RATE = 70f;
         private const float DEFLATION_RATE = 60f;
@@ -37,7 +37,7 @@ namespace UltimateGloveBall.Arena.Environment
         [SerializeField] private AudioClip m_deflateSound;
         [SerializeField] private AudioClip m_punctureSound;
 
-        private NetworkVariable<bool> m_inflated = new(true);
+        private NetworkVariable<bool> m_inflated = new(true);        //replicated variable
 
         private CapsuleCollider m_capsuleCollider = null;
         private SphereCollider m_sphereCollider = null;
@@ -48,7 +48,7 @@ namespace UltimateGloveBall.Arena.Environment
 
         private void Awake()
         {
-            if (m_collisionCollider is CapsuleCollider)
+            if (m_collisionCollider is CapsuleCollider)       // m_collisionCollider field might be a CapsuleCollider or a SphereCollider,  set either m_capsuleCollider or m_sphereCollider on either case to be used internally
             {
                 m_capsuleCollider = m_collisionCollider as CapsuleCollider;
             }
@@ -60,7 +60,7 @@ namespace UltimateGloveBall.Arena.Environment
 
         public override void OnNetworkSpawn()
         {
-            m_inflated.OnValueChanged += OnInflatedStateChanged;
+            m_inflated.OnValueChanged += OnInflatedStateChanged;       // rep notify func for m_inflated
         }
 
         private void OnInflatedStateChanged(bool previousvalue, bool newvalue)
@@ -72,12 +72,12 @@ namespace UltimateGloveBall.Arena.Environment
                 if (newvalue)
                 {
                     m_audioSource.clip = m_inflateSound;
-                    playSound = m_deflatedPct > 0;
+                    playSound = m_deflatedPct > 0;             // newvalue = inflate or deflate, if new level is greater than 0 now, play inflate sound
                 }
                 else
                 {
                     m_audioSource.clip = m_deflateSound;
-                    playSound = m_deflatedPct < 100;
+                    playSound = m_deflatedPct < 100;          // play deflate sound only if new value is less than 100
                 }
 
                 if (playSound)
@@ -87,12 +87,12 @@ namespace UltimateGloveBall.Arena.Environment
             }
         }
 
-        public void UpdateColor(TeamColor color)
+        public void UpdateColor(TeamColor color)    // m_teamColoring component is a component that tracks a networked color on a gO. ObstacleManager calls this UpdateColor func to set an obstacles color
         {
             m_teamColoring.TeamColor = color;
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private void OnCollisionEnter(Collision collision)      // on server, deflate obstacle if player walks into it
         {
             if (IsServer)
             {
@@ -105,14 +105,14 @@ namespace UltimateGloveBall.Arena.Environment
 
         private void OnTriggerEnter(Collider other)
         {
-            var glove = other.gameObject.GetComponentInParent<Glove>();
+            var glove = other.gameObject.GetComponentInParent<Glove>();       //tell gloves that obstacle hit a glove
             if (glove)
             {
                 glove.OnHitObstacle();
                 return;
             }
 
-            if (m_inflated.Value)
+            if (m_inflated.Value)     // if obstacle is hit by electric or fireball,  do TriggerPunctureClientRPC if Server
             {
                 var fireBall = other.gameObject.GetComponent<ElectricBall>();
                 if (fireBall != null && fireBall.Ball.IsAlive)
@@ -133,20 +133,20 @@ namespace UltimateGloveBall.Arena.Environment
 
         private void Update()
         {
-            if (m_inflated.Value && m_deflatedPct > 0)
+            if (m_inflated.Value && m_deflatedPct > 0)      //m_inflated is replicated variable, so this happens for all clients
             {
-                m_deflatedPct -= INFLATION_RATE * Time.deltaTime;
+                m_deflatedPct -= INFLATION_RATE * Time.deltaTime;    // subtract from deflation at speed from    const variable at top of page
                 if (m_deflatedPct <= 0)
                 {
                     m_deflatedPct = 0;
                     m_audioSource.Stop();
                 }
 
-                UpdateDeflation();
+                UpdateDeflation();        // update effect of Deflation
             }
             else if (!m_inflated.Value && m_deflatedPct < 100)
             {
-                m_deflatedPct += DEFLATION_RATE * Time.deltaTime;
+                m_deflatedPct += DEFLATION_RATE * Time.deltaTime;      // add deflation
                 if (m_deflatedPct >= 100)
                 {
                     m_deflatedPct = 100;
@@ -157,7 +157,7 @@ namespace UltimateGloveBall.Arena.Environment
                 UpdateDeflation();
             }
 
-            if (IsServer && !m_inflated.Value && m_deflatedPct >= 100)
+            if (IsServer && !m_inflated.Value && m_deflatedPct >= 100)        // on server,  after a while fully deflated, do re-inflate
             {
                 m_reflationTimer += Time.deltaTime;
                 if (m_reflationTimer >= TIME_BEFORE_REFLATION)

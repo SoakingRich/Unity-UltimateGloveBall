@@ -35,7 +35,7 @@ namespace UltimateGloveBall.Arena.Player
         public void SetSpectatorMode(SpectatorNetwork spectator)
         {
             m_spectatorNet = spectator;
-            m_input.SwitchCurrentActionMap(m_spectatorNet != null ? "Spectator" : "Player");
+            m_input.SwitchCurrentActionMap(m_spectatorNet != null ? "Spectator" : "Player");               // can switch between Action mappings defined in PlayerInput unity component, from Player to Spectator
         }
 
         public void OnSettingsUpdated()
@@ -150,7 +150,7 @@ namespace UltimateGloveBall.Arena.Player
             {
                 if (m_wasMoving)
                 {
-                    ScreenFXManager.Instance.ShowLocomotionFX(false);
+                    ScreenFXManager.Instance.ShowLocomotionFX(false);             // why should this handle VFX here instead of movement script? no idea, i guess we want VFX even if we're spinning wheels
                     m_wasMoving = false;
                 }
                 return;
@@ -162,7 +162,7 @@ namespace UltimateGloveBall.Arena.Player
                 if (direction != Vector2.zero)
                 {
                     var dir = new Vector3(direction.x, 0, direction.y);
-                    PlayerMovement.Instance.WalkInDirectionRelToForward(dir);
+                    PlayerMovement.Instance.WalkInDirectionRelToForward(dir);    // tell playermovement to move
                     if (!m_wasMoving)
                     {
                         ScreenFXManager.Instance.ShowLocomotionFX(true);

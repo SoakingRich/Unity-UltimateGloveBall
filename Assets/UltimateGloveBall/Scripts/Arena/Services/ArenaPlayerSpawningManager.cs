@@ -86,17 +86,17 @@ namespace UltimateGloveBall.Arena.Services
                 return spectator;
             }
 
-            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId, new ArenaPlayerData(clientId, playerId));
+            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId, new ArenaPlayerData(clientId, playerId));    // check if the player is reconnecting and other...     make a new ArenaPlayerData struct to populate
             var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;
             // setup data based on gamePhase
-            GetSpawnData(ref playerData, playerPos, out var position, out var rotation, out var team,
+            GetSpawnData(ref playerData, playerPos, out var position, out var rotation, out var team,      // setup which team for the spawning player
                 out var color, out var spawnTeam);
 
             var player = Instantiate(m_playerPrefab, position, rotation);
-            player.SpawnAsPlayerObject(clientId);
+            player.SpawnAsPlayerObject(clientId);                                // after spawning, Netcode designate it as a PlayerObject    ( this is basically Possess event )
             player.GetComponent<NetworkedTeam>().MyTeam = team;
 
-            var leftArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);
+            var leftArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);        // spawn gloves/hands for player
             var leftArmature = leftArmatureNet.GetComponent<GloveArmatureNetworking>();
             leftArmature.Side = Glove.GloveSide.Left;
             leftArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
@@ -116,7 +116,7 @@ namespace UltimateGloveBall.Arena.Services
             rightArmatureNet.SpawnWithOwnership(clientId);
             rightHandNet.SpawnWithOwnership(clientId);
             leftArmatureNet.SpawnWithOwnership(clientId);
-            leftHandNet.SpawnWithOwnership(clientId);
+            leftHandNet.SpawnWithOwnership(clientId);               // give the client player ownership of gloves/hands
 
             player.GetComponent<PlayerControllerNetwork>().ArmatureLeft = leftArmature;
             player.GetComponent<PlayerControllerNetwork>().ArmatureRight = rightArmature;
@@ -125,7 +125,7 @@ namespace UltimateGloveBall.Arena.Services
 
             playerData.SelectedTeam = team;
             m_gameManager.UpdatePlayerTeam(clientId, spawnTeam);
-            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
+            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);       // update the playerdata now we know the team
 
             return player;
         }
@@ -179,7 +179,7 @@ namespace UltimateGloveBall.Arena.Services
             return newLocation;
         }
 
-        protected override void OnClientDisconnected(ulong clientId)
+        protected override void OnClientDisconnected(ulong clientId)       // this is a NetworkBehavior so it gets OnClientDisconnected callbacks
         {
             var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId);
             if (playerData.HasValue)
@@ -201,11 +201,11 @@ namespace UltimateGloveBall.Arena.Services
                     }
                 }
 
-                ArenaSessionManager.Instance.SetPlayerData(clientId, data);
+                ArenaSessionManager.Instance.SetPlayerData(clientId, data);      // set data as player IsConnected false
             }
         }
 
-        private NetworkObject SpawnSpectator(ulong clientId, string playerId, Vector3 playerPos)
+        private NetworkObject SpawnSpectator(ulong clientId, string playerId, Vector3 playerPos)           // spawn a player without Gloves
         {
             ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId,
                 new ArenaPlayerData(clientId, playerId, true));
@@ -275,7 +275,7 @@ namespace UltimateGloveBall.Arena.Services
             var currentPhase = m_gameManager.CurrentPhase;
             team = currentPhase switch
             {
-                GameManager.GamePhase.InGame or GameManager.GamePhase.CountDown => GetTeam(playerData, currentPos),
+                GameManager.GamePhase.InGame or GameManager.GamePhase.CountDown => GetTeam(playerData, currentPos),    // setup the team for the spawning player
                 GameManager.GamePhase.PostGame => GetTeam(playerData, currentPos),
                 GameManager.GamePhase.PreGame => NetworkedTeam.Team.NoTeam,
                 _ => NetworkedTeam.Team.NoTeam,
@@ -286,7 +286,7 @@ namespace UltimateGloveBall.Arena.Services
                 spawnTeam = GetTeam(playerData, currentPos);
             }
 
-            GetSpawnPositionForTeam(currentPhase, spawnTeam, ref playerData, out position, out rotation);
+            GetSpawnPositionForTeam(currentPhase, spawnTeam, ref playerData, out position, out rotation);     // get spawn position
 
             teamColor = GetTeamColor(spawnTeam);
         }

@@ -12,7 +12,7 @@ namespace UltimateGloveBall.Arena.Environment
     /// </summary>
     public class Floor : MonoBehaviour
     {
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter(Collider other)     // let gloves know when they are hitting the floor
         {
             var glove = other.gameObject.GetComponentInParent<Glove>();
             if (glove)

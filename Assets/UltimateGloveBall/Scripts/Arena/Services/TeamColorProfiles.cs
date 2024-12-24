@@ -17,34 +17,34 @@ namespace UltimateGloveBall.Arena.Services
     public class TeamColorProfiles : Singleton<TeamColorProfiles>
     {
         [Serializable]
-        private struct ColorProfile
+        private struct ColorProfile         // ColorProfile is a Tmap for an enum and a color
         {
             public TeamColor ColorKey;
             public Color Color;
         }
 
-        [SerializeField] private List<ColorProfile> m_colorProfiles;
+        [SerializeField] private List<ColorProfile> m_colorProfiles;          // a list of ColorProfile tmaps
 
-        private readonly Dictionary<TeamColor, Color> m_colors = new();
+        private readonly Dictionary<TeamColor, Color> m_colors = new();          // dunno why this is needed,  m_colorProfiles should already contain all this data 
         protected override void InternalAwake()
         {
             foreach (var colorProfile in m_colorProfiles)
             {
-                m_colors[colorProfile.ColorKey] = colorProfile.Color;
+                m_colors[colorProfile.ColorKey] = colorProfile.Color;        // add to the Dictionary for each ColorProfile in list of ColorProfiles
             }
         }
 
-        public Color GetColorForKey(TeamColor teamColor)
+        public Color GetColorForKey(TeamColor teamColor)     // color getter function for a TeamColor
         {
             return m_colors[teamColor];
         }
 
-        public void GetRandomProfile(out TeamColor teamColorA, out TeamColor teamColorB)
+        public void GetRandomProfile(out TeamColor teamColorA, out TeamColor teamColorB)    // set var by ref,   get random team colors x2
         {
-            var profileCount = (int)TeamColor.Count / 2;
+            var profileCount = (int)TeamColor.Count / 2;            // theres 8 possible colors,   therefore theres 4 profiles???
             var selectedProfile = Random.Range(0, profileCount);
-            teamColorA = (TeamColor)(selectedProfile * 2);
-            teamColorB = teamColorA + 1;
+            teamColorA = (TeamColor)(selectedProfile * 2);           // teamColorA gets random index in the second half of all colors
+            teamColorB = teamColorA + 1;                               // TeamColorB becomes one color after??
         }
     }
 }

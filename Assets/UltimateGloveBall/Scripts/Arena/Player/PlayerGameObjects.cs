@@ -12,7 +12,7 @@ namespace UltimateGloveBall.Arena.Player
     /// This keeps a reference to the game objects that forms a player entity. It also initializes once all components
     /// are assigned.
     /// </summary>
-    public class PlayerGameObjects
+    public class PlayerGameObjects                        // htf is this different from LocalPlayerEntities
     {
         public PlayerControllerNetwork PlayerController;
         public PlayerAvatarEntity Avatar;
@@ -33,9 +33,9 @@ namespace UltimateGloveBall.Arena.Player
             }
             ColoringComponents.Clear();
 
-            var leftWrist = Avatar.GetJointTransform(CAPI.ovrAvatar2JointType.LeftHandWrist);
+            var leftWrist = Avatar.GetJointTransform(CAPI.ovrAvatar2JointType.LeftHandWrist);       // once we have avatar, attach gloves to it 
             LeftGloveHand.HandAnchor = leftWrist;
-            var leftTracker = leftWrist.gameObject.AddComponent<GloveTracker>();
+            var leftTracker = leftWrist.gameObject.AddComponent<GloveTracker>();             // glove tracker moves gloves and avatar wrists to same loc as controllers
             leftTracker.Glove = LeftGloveHand;
             leftTracker.Armature = LeftGloveArmature;
             leftTracker.UpdateTracking();

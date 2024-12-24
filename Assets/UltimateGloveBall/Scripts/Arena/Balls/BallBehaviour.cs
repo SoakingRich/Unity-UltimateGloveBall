@@ -9,10 +9,13 @@ namespace UltimateGloveBall.Arena.Balls
     /// <summary>
     /// Base network ball behaviour to be implemented by the different types of balls.
     /// </summary>
-    public abstract class BallBehaviour : NetworkBehaviour
+    public abstract class BallBehaviour : NetworkBehaviour            //  not related to BallNetworking,  this is a base NetworkBehavior for all ball types, gameplay characteristics
     {
         public virtual void ResetBall()
         {
+
         }
+
     }
+
 }

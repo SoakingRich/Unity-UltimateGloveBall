@@ -14,29 +14,30 @@ namespace UltimateGloveBall.App
     /// Implements functions used on Photon connection. Setting the right room options based on the application state.
     /// Exposes room properties for player slots open and spectator slots open.
     /// </summary>
-    public class PhotonConnectionHandler : MonoBehaviour
+    public class PhotonConnectionHandler : MonoBehaviour                            // add accessor functions for Photon info like GetHostRoomOptions
     {
         public const string SPECTATOR_SLOT_OPEN = "spec";
         public const string PLAYER_SLOT_OPEN = "ps";
         private const string OPEN_ROOM = "vis";
 
-        private static bool IsSpectator => LocalPlayerState.Instance.IsSpectator;
+        private static bool IsSpectator => LocalPlayerState.Instance.IsSpectator;        // getter readonly
 
         [SerializeField, AutoSet] private PhotonRealtimeTransport m_photonRealtimeTransport;
 
         private void Start()
         {
-            m_photonRealtimeTransport.GetHostRoomOptionsFunc = GetHostRoomOptions;
-            m_photonRealtimeTransport.GetRandomRoomParamsFunc = GetRandomRoomParams;
+            m_photonRealtimeTransport.GetHostRoomOptionsFunc = GetHostRoomOptions;    // GetHostRoomOptionsFunc is expected to return RoomOptions with 2 params
+            m_photonRealtimeTransport.GetRandomRoomParamsFunc = GetRandomRoomParams;   // GetRandomRoomParamsFunc is expected to return OpJoinRandomRoomParams with 1 param
         }
 
         private void OnDestroy()
         {
-            m_photonRealtimeTransport.GetHostRoomOptionsFunc = null;
+            m_photonRealtimeTransport.GetHostRoomOptionsFunc = null;           // remove funcs
             m_photonRealtimeTransport.GetRandomRoomParamsFunc = null;
         }
 
-        private RoomOptions GetHostRoomOptions(bool usePrivateRoom, byte maxPlayers)
+        // usePrivateRoom, maxPlayers are likely to be called with internally by NetworkManager ?? 
+        private RoomOptions GetHostRoomOptions(bool usePrivateRoom, byte maxPlayers)          // this looks more like a Setter than a getter... photon seems to use keywords set as Const at top "spec","ps","vis"
         {
             var roomOptions = new RoomOptions
             {

@@ -33,7 +33,7 @@ namespace UltimateGloveBall.App
         {
         }
 
-        public void RegisterCallback(Action<ulong, bool> mutedStateCallback)
+        public void RegisterCallback(Action<ulong, bool> mutedStateCallback)     // let other classes bind their own functions to m_onUserMutedStateCallback.Invoke()   using RegisterCallback()
         {
             m_onUserMutedStateCallback += mutedStateCallback;
         }

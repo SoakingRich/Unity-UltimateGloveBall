@@ -13,7 +13,7 @@ namespace UltimateGloveBall.Arena.Balls
     /// This will turn off the vfx when the ball dies and reenable it on reset.
     /// </summary>
     [RequireComponent(typeof(BallNetworking))]
-    public class ElectricBall : BallBehaviour
+    public class ElectricBall : BallBehaviour     // has a unique VFX which must be turned on and off
     {
         [SerializeField, AutoSet] private BallNetworking m_ballNet;
         [SerializeField] private GameObject m_vfx;

@@ -19,7 +19,7 @@ namespace UltimateGloveBall.App
         {
             get
             {
-                s_instance ??= new GameSettings();
+                s_instance ??= new GameSettings();     // ??= means:  Do the righthand thing ONLY if left hand thing is null -   " null-coalescing assignment operator "
 
                 return s_instance;
             }
@@ -32,7 +32,7 @@ namespace UltimateGloveBall.App
         }
         #endregion
 
-        private const string KEY_MUSIC_VOLUME = "MusicVolume";
+        private const string KEY_MUSIC_VOLUME = "MusicVolume";            // define the keys for the PlayerPref key value pairs
         private const string KEY_SFX_VOLUME = "SfxVolume";
         private const string KEY_CROWD_VOLUME = "CrowdVolume";
         private const string KEY_SNAP_BLACKOUT = "BalckoutOnSnap";
@@ -41,7 +41,7 @@ namespace UltimateGloveBall.App
         private const string KEY_SELECTED_USER_ICON_SKU = "SelectedUserIcon";
         private const string KEY_OWNED_CAT_COUNT = "OwnedCatCount";
 
-        private const float DEFAULT_MUSIC_VOLUME = 0.5f;
+        private const float DEFAULT_MUSIC_VOLUME = 0.5f;               // define the values
         private const float DEFAULT_SFX_VOLUME = 1.0f;
         private const float DEFAULT_CROWD_VOLUME = 1.0f;
         private const bool DEFAULT_BLACKOUT_ON_SNAP_MOVE = false;

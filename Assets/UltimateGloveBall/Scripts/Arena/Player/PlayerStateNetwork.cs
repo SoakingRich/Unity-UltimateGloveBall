@@ -22,7 +22,7 @@ namespace UltimateGloveBall.Arena.Player
         [SerializeField] private VoipHandler m_voipHandler;
         [SerializeField, AutoSet] private CatOwner m_catOwner;
 
-        private NetworkVariable<FixedString128Bytes> m_username = new(
+        private NetworkVariable<FixedString128Bytes> m_username = new(           // define some networked variables on this NetworkBehavior, and specify WritePermission params
             writePerm: NetworkVariableWritePermission.Owner);
         private NetworkVariable<ulong> m_userId = new(
             writePerm: NetworkVariableWritePermission.Owner);
@@ -34,12 +34,12 @@ namespace UltimateGloveBall.Arena.Player
         private NetworkVariable<bool> m_hasACat = new(
             writePerm: NetworkVariableWritePermission.Owner);
 
-        public string Username => m_username.Value.ToString();
+        public string Username => m_username.Value.ToString();             // make public accesser to Username, thats not the networked one
         public ulong UserId => m_userId.Value;
 
         public VoipHandler VoipHandler => m_voipHandler;
 
-        private LocalPlayerState LocalPlayerState => IsOwner ? LocalPlayerState.Instance : null;
+        private LocalPlayerState LocalPlayerState => IsOwner ? LocalPlayerState.Instance : null;             // Clients will see this var null except on the playerstatenetwork of their own
 
         private void Start()
         {
@@ -49,13 +49,13 @@ namespace UltimateGloveBall.Arena.Player
             OnUserIconChanged(m_userIconSku.Value, m_userIconSku.Value);
             OnUserCatOwnershipChanged(m_hasACat.Value, m_hasACat.Value);
 
-            UserMutingManager.Instance.RegisterCallback(OnUserMuteStateChanged);
+            UserMutingManager.Instance.RegisterCallback(OnUserMuteStateChanged);     // UserMutingManager calls an event whenever UserMuting has changed on the local player
 
             if (!LocalPlayerState) return;
 
             // We snap local player rig to the spawned position of this player.
-            PlayerMovement.Instance.SnapPositionToTransform(transform);
-            LocalPlayerState.OnChange += UpdateData;
+            PlayerMovement.Instance.SnapPositionToTransform(transform);         // snap local player to this location on Begin
+            LocalPlayerState.OnChange += UpdateData;                // hard to tell what OnChange really is
             LocalPlayerState.OnSpawnCatChange += OnSpawnCatChanged;
 
             UpdateData();
@@ -124,7 +124,7 @@ namespace UltimateGloveBall.Arena.Player
 
         private void UpdateData()
         {
-            SetState(LocalPlayerState.Username, LocalPlayerState.UserId, LocalPlayerState.UserIconSku,
+            SetState(LocalPlayerState.Username, LocalPlayerState.UserId, LocalPlayerState.UserIconSku,       // now that we have a LocalPlayerState (different class altogether), set member variables of this to details of that
                 LocalPlayerState.SpawnCatInNextGame);
         }
 

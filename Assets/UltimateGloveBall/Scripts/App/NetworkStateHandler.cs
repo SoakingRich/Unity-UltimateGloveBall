@@ -47,7 +47,7 @@ namespace UltimateGloveBall.App
             m_playerPresenceHandler = playerPresenceHandler;
             m_createSessionFunc = createSessionFunc;
 
-            m_networkLayer.OnClientConnectedCallback += OnClientConnected;
+            m_networkLayer.OnClientConnectedCallback += OnClientConnected;      // netcode class NetworkLayer has callbacks/events to bind to
             m_networkLayer.OnClientDisconnectedCallback += OnClientDisconnected;
             m_networkLayer.OnMasterClientSwitchedCallback += OnMasterClientSwitched;
             m_networkLayer.StartLobbyCallback += OnLobbyStarted;
@@ -58,7 +58,7 @@ namespace UltimateGloveBall.App
             m_networkLayer.OnRestoreFailedCallback += OnRestoreFailed;
 
             // Functions
-            m_networkLayer.GetOnClientConnectingPayloadFunc = GetClientConnectingPayload;
+            m_networkLayer.GetOnClientConnectingPayloadFunc = GetClientConnectingPayload;    // netcode class NetworkLayer has a 'interface' function we need to implement
             m_networkLayer.CanMigrateAsHostFunc = CanMigrateAsHost;
         }
 
@@ -77,7 +77,7 @@ namespace UltimateGloveBall.App
 
         private Coroutine StartCoroutine(IEnumerator routine)
         {
-            return m_coroutineRunner.StartCoroutine(routine);
+            return m_coroutineRunner.StartCoroutine(routine);         // we use this function to startcoroutines because m_coroutineRunner is a MonoBehavior
         }
 
         private void StartVoip(Transform transform)
@@ -87,7 +87,7 @@ namespace UltimateGloveBall.App
 
         private void SpawnSession()
         {
-            m_session = m_createSessionFunc.Invoke();
+            m_session = m_createSessionFunc.Invoke();        // this class had a func passed into it when constructed. It will return a NetworkSession. 
             // Append Region to lobbyId to ensure unique voice room, since we use only 1 region for voice
             var lobbyId = m_playerPresenceHandler.GroupPresenceState.LobbySessionID;
             m_session.SetPhotonVoiceRoom($"{m_networkLayer.GetRegion()}-{lobbyId}");
@@ -95,27 +95,27 @@ namespace UltimateGloveBall.App
         }
 
         #region Network Layer Callbacks
-        private void OnClientConnected(ulong clientId)
+        private void OnClientConnected(ulong clientId)                 // this will happen for all clients (including server/master) ?? really?  seems Server-y
         {
             _ = StartCoroutine(Impl());
-            var destinationAPI = m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion());
+            var destinationAPI = m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion());   // get the correct Destination string using the network layer Region
             _ = StartCoroutine(
-                m_playerPresenceHandler.GenerateNewGroupPresence(destinationAPI, m_networkLayer.CurrentRoom));
+                m_playerPresenceHandler.GenerateNewGroupPresence(destinationAPI, m_networkLayer.CurrentRoom));     // this func is really just Set params on current group presence, or create one
 
             IEnumerator Impl()
             {
                 if (NetworkManager.Singleton.IsHost)
                 {
-                    yield return new WaitUntil(() => m_session != null);
-                    m_session.DetermineFallbackHost(clientId);
+                    yield return new WaitUntil(() => m_session != null);         // m_session is only valid for IsHost ??
+                    m_session.DetermineFallbackHost(clientId);          // meta class NetworkSession has a paradigm for a FallbackHost ??          
                     m_session.UpdatePhotonVoiceRoomToClient(clientId);
                 }
                 else if (NetworkManager.Singleton.IsClient)
                 {
-                    m_session = Object.FindObjectOfType<NetworkSession>();
+                    m_session = Object.FindObjectOfType<NetworkSession>();         // clients retrieve the NetworkSession in the world
 
-                    var playerPos = m_networkLayer.CurrentClientState == NetworkLayer.ClientState.RestoringClient
-                        ? m_localPlayerState.transform.position
+                    var playerPos = m_networkLayer.CurrentClientState == NetworkLayer.ClientState.RestoringClient       // PlayerPos is either LocalPlayerState position ( if client is repairing connecting)
+                        ? m_localPlayerState.transform.position                // or else we want to request a spawn from a SpawnManager
                         : Vector3.zero;
                     SpawningManagerBase.Instance.RequestSpawnServerRpc(
                         clientId, m_localPlayerState.PlayerUid, IsSpectator, playerPos);
@@ -127,7 +127,7 @@ namespace UltimateGloveBall.App
         {
             if (m_session)
             {
-                m_session.RedetermineFallbackHost(clientId);
+                m_session.RedetermineFallbackHost(clientId);           // check if our current FallbackHost left, we may need a new one
             }
         }
 
@@ -140,12 +140,12 @@ namespace UltimateGloveBall.App
         {
             Debug.Log("OnLobbyStarted");
 
-            m_navigationController.LoadMainMenu();
+            m_navigationController.LoadMainMenu();          // when player has made intiial connection to photon,  Load the main menu
         }
 
         private void OnHostStarted()
         {
-            Debug.Log("OnHostStarted");
+            Debug.Log("OnHostStarted");      // host player is ready to enter Arena
 
             m_navigationController.LoadArena();
 

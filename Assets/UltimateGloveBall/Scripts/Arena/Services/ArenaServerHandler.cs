@@ -15,7 +15,7 @@ namespace UltimateGloveBall.Arena.Services
         {
             if (IsServer)
             {
-                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;         // the server should run this function when any client disconnects
             }
         }
 
@@ -31,11 +31,11 @@ namespace UltimateGloveBall.Arena.Services
         {
             if (clientId == OwnerClientId)
             {
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;           // If the server themselves is the disconnecting client, just unsubscribe
             }
             else
             {
-                ArenaSessionManager.Instance.DisconnectClient(clientId);
+                ArenaSessionManager.Instance.DisconnectClient(clientId);               // else inform the ArenaSessionManager of a disconnect
             }
         }
     }

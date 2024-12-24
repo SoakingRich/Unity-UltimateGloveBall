@@ -25,7 +25,7 @@ namespace UltimateGloveBall.Arena.Environment
         [SerializeField] private TMP_Text m_teamBTitle;
         [SerializeField] private TMP_Text m_teamBScore;
 
-        [SerializeField] private TMP_Text m_stateText;
+        [SerializeField] private TMP_Text m_stateText;           // public field for a text field on a TextMeshPro component ,   the timer count down
 
         private long m_lastTimeLeftShown = 0;
 
@@ -34,7 +34,8 @@ namespace UltimateGloveBall.Arena.Environment
             GameState.Instance.Score.OnScoreUpdated += OnScoreUpdated;
             m_gameManager.RegisterPhaseListener(this);
 
-            m_scoreCamera.enabled = m_phaseCamera.enabled = false;
+            m_scoreCamera.enabled = m_phaseCamera.enabled = false;          // PhaseCamera is countdown timer.  It is a UI Canvas in the game world with an Orthographic camera pointing at it, rendering to a render texture
+            // it also has a UniversalAdditionalCameraData script on it.   Using UI via a render texture works well given the ScoreBoard is on a big curved screen
         }
 
         private void OnDestroy()
@@ -52,10 +53,10 @@ namespace UltimateGloveBall.Arena.Environment
             m_teamBScore.color = colorB;
             m_teamBTitle.color = colorB;
 
-            m_scoreCamera.Render();
+            m_scoreCamera.Render();         // update the scoreboard ui   if the TeamColors have changed, as the colors of the scores should be changed
         }
 
-        public void OnPhaseChanged(GameManager.GamePhase phase)
+        public void OnPhaseChanged(GameManager.GamePhase phase)    // timer shows a message at times when the time isnt counting down
         {
             string msg = null;
             switch (phase)
@@ -81,7 +82,7 @@ namespace UltimateGloveBall.Arena.Environment
             m_phaseCamera.Render();
         }
 
-        public void OnPhaseTimeUpdate(double timeLeft)
+        public void OnPhaseTimeUpdate(double timeLeft)    // render the time update once per second
         {
             var timeFloored = (long)Math.Floor(timeLeft);
             if (m_lastTimeLeftShown == timeFloored)
@@ -100,7 +101,7 @@ namespace UltimateGloveBall.Arena.Environment
             m_phaseCamera.Render();
         }
 
-        private void OnScoreUpdated(int teamA, int teamB)
+        private void OnScoreUpdated(int teamA, int teamB)     // update the score ui evertime a score is changed
         {
             m_teamAScore.text = teamA.ToString();
             m_teamBScore.text = teamB.ToString();

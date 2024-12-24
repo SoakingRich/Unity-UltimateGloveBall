@@ -76,7 +76,7 @@ namespace UltimateGloveBall.MainMenu
 
         public void OnHostMatchClicked()
         {
-            Debug.Log("HOST MATCH");
+            Debug.Log("HOST MATCH button clicked");
             DisableButtons();
             UGBApplication.Instance.NavigationController.NavigateToMatch(true);
         }

@@ -48,13 +48,13 @@ namespace UltimateGloveBall.Arena.Environment
             switch (m_phase)
             {
                 case Phases.Paused:
-                    HandlePause();
+                    HandlePause();               // banner is paused on an image
                     break;
                 case Phases.Scroll:
-                    HandleScroll();
+                    HandleScroll();            // Banner is scrolling around the arena
                     break;
                 case Phases.Swap:
-                    HandleSwap();
+                    HandleSwap();            // Banner is flipping vertically to a new image
                     break;
                 default:
                     break;

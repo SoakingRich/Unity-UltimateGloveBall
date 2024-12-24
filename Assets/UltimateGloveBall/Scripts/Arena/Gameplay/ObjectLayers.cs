@@ -19,6 +19,6 @@ namespace UltimateGloveBall.Arena.Gameplay
         public const int HITABLE = 12;
 
         public const int DEFAULT_MASK = 1 << DEFAULT;
-        public const int DEFAULT_AND_BALL_SPAWN_MASK = (1 << DEFAULT) | (1 << SPAWN_BALL);
+        public const int DEFAULT_AND_BALL_SPAWN_MASK = (1 << DEFAULT) | (1 << SPAWN_BALL);      // object layers 512 or less    1 << 9 == 512
     }
 }

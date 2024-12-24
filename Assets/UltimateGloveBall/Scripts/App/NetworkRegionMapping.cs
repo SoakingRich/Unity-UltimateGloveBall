@@ -11,7 +11,7 @@ namespace UltimateGloveBall.App
     /// </summary>
     public static class NetworkRegionMapping
     {
-        private static readonly Dictionary<string, string> s_regionMap = new()
+        private static readonly Dictionary<string, string> s_regionMap = new()     // helper class purely to convert regioncodes "usw" into "North America"  ??
         {
             {"usw", "North America"},
             {"eu", "Europe"},

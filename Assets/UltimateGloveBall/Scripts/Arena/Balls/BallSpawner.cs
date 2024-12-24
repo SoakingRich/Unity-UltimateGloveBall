@@ -42,7 +42,7 @@ namespace UltimateGloveBall.Arena.Balls
         private void Awake()
         {
             Instance = this;
-            m_ballSpawnData.Initialize();
+            m_ballSpawnData.Initialize();         // not clear why m_ballSpawnData should need to be told to initialize, it already does it on awake itself
         }
 
         #endregion
@@ -60,9 +60,9 @@ namespace UltimateGloveBall.Arena.Balls
                 SpawnRandomBall(spawn);
         }
 
-        private void SpawnRandomBall(SpawnPoint point)
+        private void SpawnRandomBall(SpawnPoint point)             // main spawning of balls happens here
         {
-            var selectedPrefab = GetRandomBall();
+            var selectedPrefab = GetRandomBall();       // get a random selection from the network object prefab array,   calls to ScriptableObject BallSpawningData
             // Get object from pool before spawning
             var networkObject = m_ballPool.GetNetworkObject(selectedPrefab.gameObject, point.transform.position + Vector3.up * 0.35f, Quaternion.identity);
             if (!networkObject.IsSpawned)       // Spawning the ball is only required the first time it is fetched from the pool.
@@ -75,7 +75,7 @@ namespace UltimateGloveBall.Arena.Balls
             var ball = networkObject.GetComponent<BallNetworking>();
             ball.SetSpawnState(true);
             m_balls.Add(ball);
-            ball.BallDied += OnBallDied;
+            ball.BallDied += OnBallDied;         // bind to the balls OnBallDied event
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace UltimateGloveBall.Arena.Balls
         /// <param name="position">The position to place the ball.</param>
         /// <param name="orientation">The rotation of the ball.</param>
         /// <returns>The ball instance</returns>
-        public BallNetworking SpawnExtraBall(NetworkObject ballToSpawnPrefab, Vector3 position, Quaternion orientation)
+        public BallNetworking SpawnExtraBall(NetworkObject ballToSpawnPrefab, Vector3 position, Quaternion orientation)        // spawning extra balls (eg for TripleBall power?)
         {
             // Get ball from pool before spawning
             var networkObject = m_ballPool.GetNetworkObject(ballToSpawnPrefab.gameObject, position, orientation);
@@ -112,7 +112,7 @@ namespace UltimateGloveBall.Arena.Balls
             if (!IsServer) return;
 
             foreach (var ball in m_balls)
-                ReturnBall(ball);
+                ReturnBall(ball);           // return ball calls NetworkManager.Despawn   and we have a pool manager which intercepts that and returns to a pool
 
             m_balls.Clear();
 
@@ -125,7 +125,7 @@ namespace UltimateGloveBall.Arena.Balls
             DeSpawnBall(ball, !dieInstantly);    // When a ball dies we make sure we let it despawn slowly
         }
 
-        private void OnExtraBallDied(BallNetworking ball, bool dieInstantly)
+        private void OnExtraBallDied(BallNetworking ball, bool dieInstantly)      // not clear why ExtraBalls need their own bind function here
         {
             ball.BallDied -= OnExtraBallDied;
             DeSpawnBall(ball, !dieInstantly, false);
@@ -137,7 +137,7 @@ namespace UltimateGloveBall.Arena.Balls
         /// <param name="ball">Ball to despawn.</param>
         /// <param name="letDespawnSlowly">If true we spin up a coroutine which holds the ball alive for a moment before despawning it. Respawning a new ball happens instantly regardless.</param>
         /// <param name="respawnNewBall">Setting this to false will not respawn a new ball upon despawning the original ball.</param>
-        public void DeSpawnBall(BallNetworking ball, bool letDespawnSlowly = true, bool respawnNewBall = true)
+        public void DeSpawnBall(BallNetworking ball, bool letDespawnSlowly = true, bool respawnNewBall = true)       // leave option to despawn ball after a timer
         {
             ball.BallDied -= OnBallDied;
 
@@ -177,7 +177,7 @@ namespace UltimateGloveBall.Arena.Balls
             m_respawnWait ??= new WaitForSeconds(m_respawnDelay);
             yield return m_respawnWait;     // Wait a couple of seconds before respawning a ball to avoid spamming balls
 
-            var availableSpawns = m_ballSpawnPoints.Where(s => s.Claimed == false).ToArray();
+            var availableSpawns = m_ballSpawnPoints.Where(s => s.Claimed == false).ToArray();        // get element from array with predicate
 
             if (availableSpawns.Length <= 0) yield break;
 

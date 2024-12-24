@@ -66,7 +66,7 @@ namespace UltimateGloveBall.Arena.Player.Menu
 
         }
 
-        public void OnSwitchSidesButtonClicked()
+        public void OnSwitchSidesButtonClicked()     // get the SpectatorNetwork comp on our client owned PlayerAvatarEntity
         {
             var spectatorNet =
                 NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject().GetComponent<SpectatorNetwork>();

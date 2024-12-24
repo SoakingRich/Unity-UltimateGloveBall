@@ -7,7 +7,7 @@ namespace UltimateGloveBall.App
     /// <summary>
     /// This is to deserialize the deeplink message we receive from the Arena Destinations.
     /// </summary>
-    public class ArenaDeepLinkMessage
+    public class ArenaDeepLinkMessage   /// used in PlayerPresenceHandler
     {
         public string Region;
     }

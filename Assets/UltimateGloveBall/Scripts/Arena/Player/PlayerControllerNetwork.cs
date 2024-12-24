@@ -19,9 +19,10 @@ namespace UltimateGloveBall.Arena.Player
     /// Controls the player state. Handles the state of the shield, the invulnerability, team state and reference the
     /// respawn controller.
     /// </summary>
-    public class PlayerControllerNetwork : NetworkBehaviour
-    {
-        private const float SHIELD_USAGE_RATE = 20f;
+    public class PlayerControllerNetwork : NetworkBehaviour                  // Playercontroller in the unreal sense, kind of. This is not a playerstateNetwork, and its not a localplayerstate??
+    {                                                                         // it seems to mainly handle health and abilities,     I think its mainly so one can access other player's shield and ability properties
+
+    private const float SHIELD_USAGE_RATE = 20f;    
         private const float SHIELD_CHARGE_RATE = 32f;
         private const float SHIELD_MAX_CHARGE = 100f;
         private const float SHIELD_RESET_TIME = 0.5f;
@@ -54,27 +55,27 @@ namespace UltimateGloveBall.Arena.Player
 
         public Action<bool> OnInvulnerabilityStateUpdatedEvent;
 
-        public override void OnNetworkSpawn()
+        public override void OnNetworkSpawn()             // 
         {
-            enabled = IsServer;
+            enabled = IsServer;  // enabled is a Behavior variable (parent of monobehavior). Only be enabled if we are server.   This allows us to disable tick
             if (IsOwner)
             {
                 LocalPlayerEntities.Instance.LocalPlayerController = this;
             }
             else
             {
-                LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId).PlayerController = this;
+                LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId).PlayerController = this;            // initialize LocalPlayerEntities with _this
             }
 
-            IsInvulnerable.OnValueChanged += OnInvulnerabilityStateChanged;
-            OnInvulnerabilityStateChanged(IsInvulnerable.Value, IsInvulnerable.Value);
+            IsInvulnerable.OnValueChanged += OnInvulnerabilityStateChanged;         // on rep notify made for IsInvulnerable  for all clients
+            OnInvulnerabilityStateChanged(IsInvulnerable.Value, IsInvulnerable.Value);      // run it once on begin
         }
 
         public void SetInvulnerability(Object setter)
         {
             if (IsServer)
             {
-                _ = m_invulnerabilityActors.Add(setter);
+                _ = m_invulnerabilityActors.Add(setter);    // server,  set this as invulnerable if were not already
                 if (!IsInvulnerable.Value)
                 {
                     IsInvulnerable.Value = true;
@@ -103,39 +104,38 @@ namespace UltimateGloveBall.Arena.Player
             }
         }
 
-        private void OnInvulnerabilityStateChanged(bool previousValue, bool newValue)
+        private void OnInvulnerabilityStateChanged(bool previousValue, bool newValue)   //rep notify function
         {
             m_collider.enabled = !newValue;
             _ = StartCoroutine(SetAvatarState());
             OnInvulnerabilityStateUpdatedEvent?.Invoke(newValue);
         }
 
-        private IEnumerator SetAvatarState()
+        private IEnumerator SetAvatarState()    // this might get called everytime avatar materials need to get updated from gameplay effects
         {
             if (!m_avatar.IsSkeletonReady)
             {
-                yield return new WaitUntil(() => m_avatar.IsSkeletonReady);
+                yield return new WaitUntil(() => m_avatar.IsSkeletonReady);       //wait til skeleton is ready
             }
 
 
             var material = m_avatar.Material;
-            material.SetKeyword("ENABLE_GHOST_EFFECT", IsInvulnerable.Value);
+            material.SetKeyword("ENABLE_GHOST_EFFECT", IsInvulnerable.Value);      // set a material parameter on avatar to match current IsInvulnerable.    Aplly material to all sub meshes of avatar
             m_avatar.ApplyMaterial();
-
-            ArmatureLeft.SetGhostEffect(IsInvulnerable.Value);
+            ArmatureLeft.SetGhostEffect(IsInvulnerable.Value);    // do same for Gloves
             ArmatureRight.SetGhostEffect(IsInvulnerable.Value);
 
             GloveLeft.SetGhostEffect(IsInvulnerable.Value);
             GloveRight.SetGhostEffect(IsInvulnerable.Value);
         }
 
-        public void TriggerShield(Glove.GloveSide side)
+        public void TriggerShield(Glove.GloveSide side)           // run locally by all clients
         {
-            if (m_shieldDisabled.Value)
+            if (m_shieldDisabled.Value)   // check if shield is disabled (out of charge)
             {
                 if (side == Glove.GloveSide.Right)
                 {
-                    ArmatureRight.OnShieldNotAvailable();
+                    ArmatureRight.OnShieldNotAvailable();    
                 }
                 else
                 {
@@ -144,11 +144,11 @@ namespace UltimateGloveBall.Arena.Player
             }
             else
             {
-                TriggerShieldServerRPC(side);
+                TriggerShieldServerRPC(side);    //server trigger shield
             }
         }
 
-        public void OnShieldHit(Glove.GloveSide side)
+        public void OnShieldHit(Glove.GloveSide side)      // called by OnTriggerEnter somewhere ONLY for server
         {
             m_shieldCharge.Value = 0;
             StopShield(side);
@@ -232,9 +232,9 @@ namespace UltimateGloveBall.Arena.Player
                 return;
             }
 
-            if (m_shieldActivated)
+            if (m_shieldActivated)   // handle while Shields are On
             {
-                m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;
+                m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;     // server handles decrease of shieldCharge for all clients
                 if (m_shieldCharge.Value <= 0)
                 {
                     m_shieldCharge.Value = 0;
@@ -248,7 +248,7 @@ namespace UltimateGloveBall.Arena.Player
                 ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
                 ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
             }
-            else if (m_shieldInResetMode.Value)
+            else if (m_shieldInResetMode.Value)          // handle if shield is in ResetMode, count time til it should not be. during reset it wont be recharging yet
             {
                 m_shieldOffTimer.Value += Time.deltaTime;
                 if (m_shieldOffTimer.Value >= SHIELD_RESET_TIME)
@@ -257,16 +257,16 @@ namespace UltimateGloveBall.Arena.Player
                     m_shieldInResetMode.Value = false;
                 }
             }
-            else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)
+            else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)        // handle shield recharging
             {
                 m_shieldCharge.Value += SHIELD_CHARGE_RATE * Time.deltaTime;
                 if (m_shieldCharge.Value >= SHIELD_MAX_CHARGE)
                 {
-                    m_shieldCharge.Value = SHIELD_MAX_CHARGE;
+                    m_shieldCharge.Value = SHIELD_MAX_CHARGE;     // when sheild reaches full charge, enable it to be used again
                     if (m_shieldDisabled.Value)
                     {
                         m_shieldDisabled.Value = false;
-                        ArmatureLeft.EnableShield();
+                        ArmatureLeft.EnableShield();            // these funcs are just Setters for a networked variable elsewhere
                         ArmatureRight.EnableShield();
                     }
                 }

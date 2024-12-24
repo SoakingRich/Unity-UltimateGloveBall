@@ -39,9 +39,9 @@ namespace UltimateGloveBall.Arena.Services
             out Vector3 position, out Quaternion rotation);
 
         [ServerRpc(RequireOwnership = false)]
-        public void RequestSpawnServerRpc(ulong clientId, string playerId, bool isSpectator, Vector3 playerPos)
+        public void RequestSpawnServerRpc(ulong clientId, string playerId, bool isSpectator, Vector3 playerPos)   
         {
-            _ = SpawnPlayer(clientId, playerId, isSpectator, playerPos);
+            _ = SpawnPlayer(clientId, playerId, isSpectator, playerPos);   // spawn player overriden in ArenaPlayerSpawningManager
         }
 
         protected virtual void OnClientDisconnected(ulong clientId)

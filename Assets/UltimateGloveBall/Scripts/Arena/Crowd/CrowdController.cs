@@ -17,7 +17,7 @@ namespace UltimateGloveBall.Arena.Crowd
     /// </summary>
     public class CrowdController : NetworkBehaviour, IGamePhaseListener
     {
-        private static readonly int s_attachmentColorID = Shader.PropertyToID("_Attachment_Color");
+        private static readonly int s_attachmentColorID = Shader.PropertyToID("_Attachment_Color");     // gets a shader property ("_Attachment_Color") as an Int ID for use with material m_teamAAccessoriesAndItemsMat.SetColor
 
         public enum CrowdLevel
         {
@@ -58,16 +58,16 @@ namespace UltimateGloveBall.Arena.Crowd
 
         private void Start()
         {
-            Initialize(m_teamACrowd, m_teamAAccessoriesAndItemsMat);
+            Initialize(m_teamACrowd, m_teamAAccessoriesAndItemsMat);    // give all npcs random faces and anim offsets
             Initialize(m_teamBCrowd, m_teamBAccessoriesAndItemsMat);
-            m_gameManager.RegisterPhaseListener(this);
+            m_gameManager.RegisterPhaseListener(this);        // by registering as a PhaseListener with game manager, game manager will call IGamePhaseListener interface functions on us
 
             StartIdleSound();
         }
 
         private void Update()
         {
-            if (m_nextChantTimeTeamA > 0 && Time.realtimeSinceStartup >= m_nextChantTimeTeamA)
+            if (m_nextChantTimeTeamA > 0 && Time.realtimeSinceStartup >= m_nextChantTimeTeamA)          // do cheers at random intervals
             {
                 PlayChant(0);
                 m_nextChantTimeTeamA += Random.Range(30f, 50f);
@@ -100,9 +100,9 @@ namespace UltimateGloveBall.Arena.Crowd
             // Nothing   
         }
 
-        public void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB)
+        public void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB)     // when colors for both teams have been set to a new pair
         {
-            SetAttachmentColor(teamColorA, teamColorB);
+            SetAttachmentColor(teamColorA, teamColorB);    // attachment refers to hats/jerseys/baloons?
         }
 
         public override void OnNetworkSpawn()
@@ -121,11 +121,11 @@ namespace UltimateGloveBall.Arena.Crowd
 
         public void SetAttachmentColor(TeamColor teamAColor, TeamColor teamBColor)
         {
-            m_teamAAccessoriesAndItemsMat.SetColor(s_attachmentColorID, TeamColorProfiles.Instance.GetColorForKey(teamAColor));
+            m_teamAAccessoriesAndItemsMat.SetColor(s_attachmentColorID, TeamColorProfiles.Instance.GetColorForKey(teamAColor));    // set material param name by int ID,  get color for team from Singleton dictionary
             m_teamBAccessoriesAndItemsMat.SetColor(s_attachmentColorID, TeamColorProfiles.Instance.GetColorForKey(teamBColor));
         }
 
-        public void SetCrowdLevel(CrowdLevel crowdLevel)
+        public void SetCrowdLevel(CrowdLevel crowdLevel)        // not clear when this is ever called,  maybe in a UnityEvent somewhere??  Im guessing the crowd is only half full when theres less spectators present?
         {
             var pct = 100;
             switch (crowdLevel)
@@ -156,24 +156,24 @@ namespace UltimateGloveBall.Arena.Crowd
         private void UpdateCrowdLevel(CrowdNPC[] crowd, int pct)
         {
             var activeCount = pct >= 100 ? crowd.Length :
-                pct <= 0 ? 0 : Mathf.FloorToInt(crowd.Length * pct / 100f);
+                pct <= 0 ? 0 : Mathf.FloorToInt(crowd.Length * pct / 100f);        // set  activeCount to either Crowd.Length or  ( zero or crowd.length divide by 100 * percent arg ) 
             for (var i = 0; i < crowd.Length; ++i)
             {
-                crowd[i].gameObject.SetActive(i < activeCount);
+                crowd[i].gameObject.SetActive(i < activeCount);              // set a percentage of the crowd npcs to be Inactive
             }
         }
 
-        private void Initialize(CrowdNPC[] crowd, Material accessoryAndItemsMat)
+        private void Initialize(CrowdNPC[] crowd, Material accessoryAndItemsMat)    // CrowdNPC is an array of CrowdNPC.cs scripts,    // give all npcs random faces and anim offsets
         {
             foreach (var npc in crowd)
             {
                 // 3x3 faces
                 var faceSwap = new Vector2(Random.Range(0, 3), Random.Range(0, 3));
-                npc.Init(Random.Range(0f, 1f), Random.Range(0.9f, 1.1f), faceSwap);
+                npc.Init(Random.Range(0f, 1f), Random.Range(0.9f, 1.1f), faceSwap);  // give a random face, random anim speed, random anim offset
             }
         }
 
-        private void SetTeamColor(CrowdNPC[] crowd, TeamColor teamColor)
+        private void SetTeamColor(CrowdNPC[] crowd, TeamColor teamColor)        // set team color for a crowd array
         {
             var color = TeamColorProfiles.Instance.GetColorForKey(teamColor);
             foreach (var npc in crowd)
@@ -188,26 +188,26 @@ namespace UltimateGloveBall.Arena.Crowd
             {
                 m_scoreA = teamAScore;
                 m_scoreB = teamBScore;
-                return;
+                return;            // dont do anything
             }
 
-            var scoredA = teamAScore > m_scoreA;
-            var scoredB = teamBScore > m_scoreB;
+            var scoredA = teamAScore > m_scoreA;       // check if TeamA score increased?
+            var scoredB = teamBScore > m_scoreB;        // check if TeamB score increased?
 
             if (scoredA)
             {
-                PlayHitReaction(0);
+                PlayHitReaction(0);                            // A player got hit, therefore score went up for opposite team, do cheering when a player gets hit, 
                 if (teamAScore > teamBScore && m_nextChantTimeTeamA <= 0)
                 {
-                    m_nextChantTimeTeamA = Time.realtimeSinceStartup + Random.Range(0, 10);
+                    m_nextChantTimeTeamA = Time.realtimeSinceStartup + Random.Range(0, 10);            // if teamA hasnt had a chant in a while, and they are winning,   schedule a cheer in the next 10 seconds or so 
                 }
 
-                if (teamAScore >= teamBScore + m_booingDifferential)
+                if (teamAScore >= teamBScore + m_booingDifferential)               // we seem to check for if TeamA are only very-close to winning, and if so, the other team boos?
                 {
                     if (m_nextBooTimeTeamA <= Time.realtimeSinceStartup)
                     {
                         PlayBoo(1);
-                        m_nextBooTimeTeamA = Time.realtimeSinceStartup + Random.Range(12f, 20f);
+                        m_nextBooTimeTeamA = Time.realtimeSinceStartup + Random.Range(12f, 20f); //     schedule more booing sometime 12-20 secs from now
                     }
                 }
             }
@@ -234,13 +234,13 @@ namespace UltimateGloveBall.Arena.Crowd
             m_scoreB = teamBScore;
         }
 
-        private void PlayHitReaction(int team)
+        private void PlayHitReaction(int team)        // play crowd audio reaction to a player getting hit
         {
-            PlaySoundClientRpc(new SoundParametersMessage(
-                team, AudioEvents.HitReaction, Random.Range(0, m_hitReactionSounds.Length)));
+            PlaySoundClientRpc(new SoundParametersMessage(                                         // a SoundParametersMessage is a ISerializable that is defined at bottom of script
+                team, AudioEvents.HitReaction, Random.Range(0, m_hitReactionSounds.Length)));        // its constructed with 3 optional params, Team, enumType,  an index (array index)
         }
 
-        private void PlayBoo(int team)
+        private void PlayBoo(int team)                            // it seems odd that a ISerializable needed to be created just to call an RPC on clients with params
         {
             PlaySoundClientRpc(new SoundParametersMessage(
                 team, AudioEvents.Boo));
@@ -295,11 +295,11 @@ namespace UltimateGloveBall.Arena.Crowd
                 audioSource.time = Random.Range(0, clip.length);
                 audioSource.Play();
                 // wait a full audio loop
-                yield return new WaitForSeconds(clip.length);
+                yield return new WaitForSeconds(clip.length);            // constantly play idle sounds while enumerator is running
             }
         }
 
-        internal enum AudioEvents
+        internal enum AudioEvents                // enum that is only used in this class, thus Internal
         {
             Idle,
             HitReaction,
@@ -307,13 +307,14 @@ namespace UltimateGloveBall.Arena.Crowd
             Chant,
         }
 
-        private struct SoundParametersMessage : INetworkSerializable
-        {
+        private struct SoundParametersMessage : INetworkSerializable               // looks like we override the class of INetworkSerializable that gets used for this class
+        {                              // allows us to override NetworkSerialize to serialize less properties than what would otherwise   ( by default, all public member variables are serialized??)
+                                       // we override the constructor of this INetworkSerializable to populate the variables to sync
             public int Team;
             public AudioEvents AudioEvent;
             public int AudioEventIndex;
 
-            internal SoundParametersMessage(int team, AudioEvents audioEvent, int index = 0)
+            internal SoundParametersMessage(int team, AudioEvents audioEvent, int index = 0)        // the constructor for   SoundParametersMessage  is internal, as it is not to be used by any other class
             {
                 Team = team;
                 AudioEvent = audioEvent;
@@ -329,3 +330,4 @@ namespace UltimateGloveBall.Arena.Crowd
         }
     }
 }
+

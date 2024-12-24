@@ -11,7 +11,7 @@ namespace UltimateGloveBall.Arena.Balls
     /// or was taken.
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]
-    public class SpawnPoint : MonoBehaviour
+    public class SpawnPoint : MonoBehaviour        // spawn point for Balls not for players
     {
         public bool Claimed => OwnedBall != null;
 

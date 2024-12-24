@@ -60,7 +60,7 @@ namespace UltimateGloveBall.Arena.Balls
 
         private void Update()
         {
-            if (m_thrown)
+            if (m_thrown)     // this would only ever be true on server??  theres no other check for server here
             {
                 m_timer += Time.deltaTime;
                 if (m_timer >= m_timeBeforeSplit)

@@ -13,7 +13,7 @@ namespace UltimateGloveBall.Arena.Balls
     /// The ghost ball will change to a bland ball after the effect timer runs out. It also set the player holding the
     /// ball to be in an invulnerable state. When thrown the player loses the invunerability.
     /// </summary>
-    public class GhostBall : BallBehaviour
+    public class GhostBall : BallBehaviour          // gives player invunerability for a while, if holding
     {
         [SerializeField, AutoSet] private BallNetworking m_ballNet;
         [SerializeField, AutoSet] private AudioSource m_audioSource;
@@ -41,7 +41,7 @@ namespace UltimateGloveBall.Arena.Balls
                 if (m_isGhostMode && m_ballNet.HasOwner)
                 {
                     m_ownershipTimer += Time.deltaTime;
-                    if (m_ownershipTimer >= m_effectTimeSec)
+                    if (m_ownershipTimer >= m_effectTimeSec)       // count holding time on server
                     {
                         m_isGhostMode = false;
                         SwitchToBlandBallClientRPC(true);
@@ -83,7 +83,7 @@ namespace UltimateGloveBall.Arena.Balls
 
 
         [ClientRpc]
-        private void SwitchToBlandBallClientRPC(bool playVfx)
+        private void SwitchToBlandBallClientRPC(bool playVfx)    // this only happens on Server despite being a ClientRPC ??
         {
             m_isGhostMode = false;
             m_blandBallVisual.SetActive(true);

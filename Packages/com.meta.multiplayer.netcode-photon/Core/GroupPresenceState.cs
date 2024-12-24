@@ -15,7 +15,7 @@ namespace Meta.Multiplayer.Core
     /// Usage: Set the group presence of the player
     /// https://developer.oculus.com/documentation/unity/ps-group-presence-overview/
     /// </summary>
-    public class GroupPresenceState
+    public class GroupPresenceState                                  // i believe UGB only uses LobbySessionIDs and not MatchSessionIDs.  eg ("ArenaSoakingRich0537984")
     {
         public string Destination { get; private set; }
         public string LobbySessionID { get; private set; }
