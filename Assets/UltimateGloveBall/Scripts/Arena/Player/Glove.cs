@@ -123,7 +123,7 @@ namespace UltimateGloveBall.Arena.Player
             CurrentState = State.Anchored;
         }
 
-        public void Move(Vector3 position, Quaternion rotation)
+        public void Move(Vector3 position, Quaternion rotation)                  // used by GloveTracker.cs 
         {
             var isOwner = m_gloveNetworking.IsOwner;
             if ((isOwner && CurrentState == State.Anchored) || (!isOwner && !m_gloveNetworking.Flying))
@@ -137,7 +137,7 @@ namespace UltimateGloveBall.Arena.Player
 
         public void TriggerAction(bool released, float chargeUpPct = 0)
         {
-            // If we hove on UI the glove is not active and can't trigger an action
+            // If we hover on UI the glove is not active and can't trigger an action
             if (m_uiRayInteractor.State == InteractorState.Hover)
             {
                 m_actionPressed = false;

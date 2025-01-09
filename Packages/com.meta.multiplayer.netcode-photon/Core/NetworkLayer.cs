@@ -17,7 +17,7 @@ namespace Meta.Multiplayer.Core
     /// Register to the callbacks to handle different events through the connection flow. 
     /// </summary>
     [RequireComponent(typeof(PhotonRealtimeTransport))]
-    public class NetworkLayer : MonoBehaviour, IConnectionCallbacks, IInRoomCallbacks     // a network layer script by meta for use with Photon
+    public class NetworkLayer : MonoBehaviour, IConnectionCallbacks, IInRoomCallbacks                                       // a network layer script by meta for use with Photon
     {
         public enum ClientState
         {
@@ -35,6 +35,10 @@ namespace Meta.Multiplayer.Core
             Connected,
             ConnectedToLobby,
         }
+        
+        
+        public ClientState CurrentClientState { get; private set; } = ClientState.Disconnected;
+        
 
         // We register this function so that we can call it internally when we receive the message
         // in ReceiveServerToClientSetDisconnectReason_CustomMessage
@@ -58,7 +62,6 @@ namespace Meta.Multiplayer.Core
         public Func<string> GetOnClientConnectingPayloadFunc;
         public Func<bool> CanMigrateAsHostFunc;
 
-        public ClientState CurrentClientState { get; private set; } = ClientState.Disconnected;
 
         public string CurrentRoom => m_photonRealtime?.RoomName ?? m_photonRealtime?.Client?.CurrentRoom?.Name;
 
@@ -67,13 +70,199 @@ namespace Meta.Multiplayer.Core
         private bool m_callFailureOnDisconnect = false;
         private int m_failureCode = 0;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         private void OnEnable()
         {
             DontDestroyOnLoad(this);
+            
             // Assign the OnDisconnectReasonReceived to keep track of it when
             // ReceiveServerToClientSetDisconnectReason_CustomMessage is called
-            s_onDisconnectReasonReceivedStatic = OnDisconnectReasonReceived;
+            s_onDisconnectReasonReceivedStatic = OnDisconnectReasonReceived;       // function pointer?
         }
+        
+        
+        public void Init(string room, string region)           //called by Application on first init of everything
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;        // either start a new lobby based on self, or join a private editor room??
+            m_photonRealtime.RoomName = room;
+            if (string.IsNullOrEmpty(room))
+            {
+                _ = StartCoroutine(StartLobby());                // start lobby and join lobby are the same ? pretty sure
+            }
+            else
+            {
+                // On init if we fail to load client we want to host a private game
+                // this failure will mostly come from in Editor when AutoJoining a specific room as the first player.
+                m_photonRealtime.UsePrivateRoom = true;
+                m_photonRealtime.RegionOverride = region;
+                _ = StartCoroutine(StartClient());
+            }
+        }
+        
+        
+        
+        
+        private IEnumerator StartLobby()
+        {
+            CurrentClientState = ClientState.StartingLobby;
+
+            _ = m_photonRealtime.StartLobby();
+            m_photonRealtime.Client.AddCallbackTarget(this);
+
+            yield return new WaitUntil(() => m_photonRealtime.Client.InLobby);
+
+            CurrentClientState = ClientState.ConnectedToLobby;
+
+            StartLobbyCallback?.Invoke();
+
+            Debug.LogWarning("You are in the Lobby.");
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        private IEnumerator StartClient()
+        {
+            CurrentClientState = ClientState.StartingClient;
+
+            var networkManager = NetworkManager.Singleton;
+            if (GetOnClientConnectingPayloadFunc != null)
+            {
+                var payload = GetOnClientConnectingPayloadFunc();
+                var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+
+                networkManager.NetworkConfig.ConnectionData = payloadBytes;
+            }
+
+            _ = networkManager.StartClient();
+            m_photonRealtime.Client.AddCallbackTarget(this);
+
+            NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(
+                nameof(ReceiveServerToClientSetDisconnectReason_CustomMessage),
+                ReceiveServerToClientSetDisconnectReason_CustomMessage);
+
+            yield return WaitForLocalPlayerObject();                          // wait for a LocalPlayerObject from ArenaSpawningManager
+            if (CurrentClientState != ClientState.StartingClient)
+                yield break;
+
+            CurrentClientState = ClientState.Connected;
+
+            StartClientCallback.Invoke();
+
+            Debug.LogWarning("You are a client.");
+        }
+        
+        
+        
+        
+        
+        private static WaitUntil WaitForLocalPlayerObject()
+        {
+            return new WaitUntil(() => NetworkManager.Singleton.LocalClient != null && NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject() != null);
+        }
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        private IEnumerator StartHost()
+        {
+            CurrentClientState = ClientState.StartingHost;
+
+            _ = NetworkManager.Singleton.StartHost();
+            m_photonRealtime.Client.AddCallbackTarget(this);
+
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            yield return new WaitUntil(() => m_photonRealtime.Client.InRoom);
+            if (CurrentClientState != ClientState.StartingHost)
+                yield break;
+
+            CurrentClientState = ClientState.Connected;
+
+            StartHostCallback.Invoke();
+
+            Debug.LogWarning("StartHost:: You are the host.");
+            yield break;
+        }
+
+        
+        
+        
+        
+        
+        
+        private IEnumerator RestoreHost()
+        {
+            Debug.LogWarning("Restore Host.");
+            _ = NetworkManager.Singleton.StartHost();
+            m_photonRealtime.Client.AddCallbackTarget(this);
+
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            yield return new WaitUntil(() => m_photonRealtime.Client.InRoom);
+            if (CurrentClientState != ClientState.RestoringHost)
+                yield break;
+            Debug.LogWarning("Restore Host Connected.");
+            CurrentClientState = ClientState.Connected;
+
+            RestoreHostCallback.Invoke();
+
+            Debug.LogWarning("You are the host.");
+        }
+        
+        
+        
+        
+        public void SwitchPhotonRealtimeRoom(string room, bool isHosting, string region)
+        {
+            m_photonRealtime.RoomName = room;
+            m_photonRealtime.RegionOverride = region;
+            if (m_photonRealtime.Client.InRoom)
+            {
+                CurrentClientState = ClientState.SwitchingPhotonRealtimeRoom;
+
+                NetworkManager.Singleton.Shutdown();
+            }
+            else
+            {
+                if (isHosting)
+                {
+                    // When starting has host we want to use private rooms
+                    m_photonRealtime.UsePrivateRoom = true;
+                    _ = StartCoroutine(StartHost());                              // start host or start client on the Network Transport Layer
+                }
+                else
+                {
+                    m_photonRealtime.UsePrivateRoom = false;
+                    _ = StartCoroutine(StartClient());
+                }
+            }
+        }
+        
+        
+        
+        
 
         public string GetRegion()
         {
@@ -95,118 +284,18 @@ namespace Meta.Multiplayer.Core
             _ = m_photonRealtime.Client.CurrentRoom.SetCustomProperties(properties);
         }
 
-        public void Init(string room, string region)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            m_photonRealtime.RoomName = room;
-            if (string.IsNullOrEmpty(room))
-            {
-                _ = StartCoroutine(StartLobby());
-            }
-            else
-            {
-                // On init if we fail to load client we want to host a private game
-                // this failure will mostly come from in Editor when AutoJoining a specific room as teh first player.
-                m_photonRealtime.UsePrivateRoom = true;
-                m_photonRealtime.RegionOverride = region;
-                _ = StartCoroutine(StartClient());
-            }
-        }
+        
 
         public void GoToLobby()
         {
             _ = StartCoroutine(StartLobby());
         }
 
-        private IEnumerator StartLobby()
-        {
-            CurrentClientState = ClientState.StartingLobby;
+      
 
-            _ = m_photonRealtime.StartLobby();
-            m_photonRealtime.Client.AddCallbackTarget(this);
+      
 
-            yield return new WaitUntil(() => m_photonRealtime.Client.InLobby);
-
-            CurrentClientState = ClientState.ConnectedToLobby;
-
-            StartLobbyCallback?.Invoke();
-
-            Debug.LogWarning("You are in the Lobby.");
-        }
-
-        private IEnumerator StartHost()
-        {
-            CurrentClientState = ClientState.StartingHost;
-
-            _ = NetworkManager.Singleton.StartHost();
-            m_photonRealtime.Client.AddCallbackTarget(this);
-
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-            yield return new WaitUntil(() => m_photonRealtime.Client.InRoom);
-            if (CurrentClientState != ClientState.StartingHost)
-                yield break;
-
-            CurrentClientState = ClientState.Connected;
-
-            StartHostCallback.Invoke();
-
-            Debug.LogWarning("StartHost:: You are the host.");
-            yield break;
-        }
-
-        private IEnumerator StartClient()
-        {
-            CurrentClientState = ClientState.StartingClient;
-
-            var networkManager = NetworkManager.Singleton;
-            if (GetOnClientConnectingPayloadFunc != null)
-            {
-                var payload = GetOnClientConnectingPayloadFunc();
-                var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
-
-                networkManager.NetworkConfig.ConnectionData = payloadBytes;
-            }
-
-            _ = networkManager.StartClient();
-            m_photonRealtime.Client.AddCallbackTarget(this);
-
-            NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(
-                nameof(ReceiveServerToClientSetDisconnectReason_CustomMessage),
-                ReceiveServerToClientSetDisconnectReason_CustomMessage);
-
-            yield return WaitForLocalPlayerObject();
-            if (CurrentClientState != ClientState.StartingClient)
-                yield break;
-
-            CurrentClientState = ClientState.Connected;
-
-            StartClientCallback.Invoke();
-
-            Debug.LogWarning("You are a client.");
-        }
-
-        private static WaitUntil WaitForLocalPlayerObject()
-        {
-            return new WaitUntil(() => NetworkManager.Singleton.LocalClient != null && NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject() != null);
-        }
-
-        private IEnumerator RestoreHost()
-        {
-            Debug.LogWarning("Restore Host.");
-            _ = NetworkManager.Singleton.StartHost();
-            m_photonRealtime.Client.AddCallbackTarget(this);
-
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-            yield return new WaitUntil(() => m_photonRealtime.Client.InRoom);
-            if (CurrentClientState != ClientState.RestoringHost)
-                yield break;
-            Debug.LogWarning("Restore Host Connected.");
-            CurrentClientState = ClientState.Connected;
-
-            RestoreHostCallback.Invoke();
-
-            Debug.LogWarning("You are the host.");
-        }
+     
 
         private IEnumerator RestoreClient()
         {
@@ -239,6 +328,8 @@ namespace Meta.Multiplayer.Core
             OnRestoreFailedCallback?.Invoke(m_failureCode);
         }
 
+        
+        
         public void OnDisconnected(DisconnectCause cause)
         {
             Debug.LogWarning($"OnDisconnected: {cause}");
@@ -387,6 +478,8 @@ namespace Meta.Multiplayer.Core
             }
         }
 
+        
+        
         private void OnClientConnected(ulong clientId)
         {
             m_photonRealtime.Client.LoadBalancingPeer.SendInCreationOrder = false;
@@ -406,6 +499,9 @@ namespace Meta.Multiplayer.Core
             OnClientDisconnectedCallback.Invoke(clientId);
         }
 
+        
+        
+        
         public void Leave()
         {
             if (CurrentClientState == ClientState.Connected)
@@ -435,31 +531,7 @@ namespace Meta.Multiplayer.Core
             return CanMigrateAsHostFunc == null || CanMigrateAsHostFunc();
         }
 
-        public void SwitchPhotonRealtimeRoom(string room, bool isHosting, string region)
-        {
-            m_photonRealtime.RoomName = room;
-            m_photonRealtime.RegionOverride = region;
-            if (m_photonRealtime.Client.InRoom)
-            {
-                CurrentClientState = ClientState.SwitchingPhotonRealtimeRoom;
-
-                NetworkManager.Singleton.Shutdown();
-            }
-            else
-            {
-                if (isHosting)
-                {
-                    // When starting has host we want to use private rooms
-                    m_photonRealtime.UsePrivateRoom = true;
-                    _ = StartCoroutine(StartHost());
-                }
-                else
-                {
-                    m_photonRealtime.UsePrivateRoom = false;
-                    _ = StartCoroutine(StartClient());
-                }
-            }
-        }
+        
 
         private void OnDisconnectReasonReceived(int failureCode)
         {

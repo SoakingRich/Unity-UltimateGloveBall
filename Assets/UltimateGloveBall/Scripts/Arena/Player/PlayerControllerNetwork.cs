@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Blockami.Scripts;
 using Meta.Utilities;
 using UltimateGloveBall.Arena.Gameplay;
 using UltimateGloveBall.Arena.Player.Respawning;
@@ -19,8 +20,8 @@ namespace UltimateGloveBall.Arena.Player
     /// Controls the player state. Handles the state of the shield, the invulnerability, team state and reference the
     /// respawn controller.
     /// </summary>
-    public class PlayerControllerNetwork : NetworkBehaviour                  // Playercontroller in the unreal sense, kind of. This is not a playerstateNetwork, and its not a localplayerstate??
-    {                                                                         // it seems to mainly handle health and abilities,     I think its mainly so one can access other player's shield and ability properties
+    public class PlayerControllerNetwork : NetworkBehaviour                  // Handle gameplay input functions
+    {                                                                        
 
     private const float SHIELD_USAGE_RATE = 20f;    
         private const float SHIELD_CHARGE_RATE = 32f;
@@ -55,22 +56,112 @@ namespace UltimateGloveBall.Arena.Player
 
         public Action<bool> OnInvulnerabilityStateUpdatedEvent;
 
-        public override void OnNetworkSpawn()             // 
+        public DrawingGrid OwnedDrawingGrid;
+        
+        
+        public NetworkVariable<BlockamiData.ColorType> m_ColorType = new();
+        public NetworkVariable<ulong> CurrentPlayerShot = new NetworkVariable<ulong>(writePerm: NetworkVariableWritePermission.Owner);
+        
+        public List<PlayerShotObject> AllPlayerShots = new List<PlayerShotObject>();
+        
+       // public NetworkVariable<PlayerShot> CurrentPlayerShot = new NetworkVariable<PlayerShot>();
+     
+        public override void OnNetworkSpawn()             
         {
-            enabled = IsServer;  // enabled is a Behavior variable (parent of monobehavior). Only be enabled if we are server.   This allows us to disable tick
-            if (IsOwner)
+            enabled = IsServer;           //    set enabled false if not server.   This allows us to disable Update()
+                                              // 'enabled' belongs to 'Behavior' class (parent of monobehavior).
+                                              
+            
+                                              
+                                              
+            if (IsOwner)                                                               
             {
-                LocalPlayerEntities.Instance.LocalPlayerController = this;
+                LocalPlayerEntities.Instance.LocalPlayerController = this;                                   // register with LocalPlayerEntities if owner
             }
             else
             {
-                LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId).PlayerController = this;            // initialize LocalPlayerEntities with _this
+                LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId).PlayerController = this;            // if other player, fetch PlayerObjects for client ID from tracked dictionary in LocalPlayerEntities and populate it with this
             }
 
-            IsInvulnerable.OnValueChanged += OnInvulnerabilityStateChanged;         // on rep notify made for IsInvulnerable  for all clients
-            OnInvulnerabilityStateChanged(IsInvulnerable.Value, IsInvulnerable.Value);      // run it once on begin
+            IsInvulnerable.OnValueChanged += OnInvulnerabilityStateChanged;                                      // add rep notify func for IsInvulnerable 
+            OnInvulnerabilityStateChanged(IsInvulnerable.Value, IsInvulnerable.Value);      // run rep notify func once on begin
         }
+        
 
+        private void Update()
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            // if (m_shieldActivated)   // while Shield is on
+            // {
+            //     m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;     // server handles decrease of shieldCharge for all clients
+            //     if (m_shieldCharge.Value <= 0)                      // if shield is out of charge, stop it
+            //     {
+            //         m_shieldCharge.Value = 0;
+            //         StopShield(m_shieldSide);
+            //         m_shieldInResetMode.Value = true;
+            //         m_shieldDisabled.Value = true;
+            //         ArmatureLeft.DisableShield();
+            //         ArmatureRight.DisableShield();
+            //     }
+            //
+            //     ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+            //     ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+            // }
+            // else if (m_shieldInResetMode.Value)          // handle if shield is in Cooldown (ResetMode), count time til it should not be. during reset it wont be recharging yet
+            // {
+            //     m_shieldOffTimer.Value += Time.deltaTime;
+            //     if (m_shieldOffTimer.Value >= SHIELD_RESET_TIME)
+            //     {
+            //         m_shieldOffTimer.Value = 0;
+            //         m_shieldInResetMode.Value = false;
+            //     }
+            // }
+            // else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)        // handle shield recharging
+            // {
+            //     m_shieldCharge.Value += SHIELD_CHARGE_RATE * Time.deltaTime;
+            //     if (m_shieldCharge.Value >= SHIELD_MAX_CHARGE)
+            //     {
+            //         m_shieldCharge.Value = SHIELD_MAX_CHARGE;     // when shield reaches full charge, enable it to be used again
+            //         if (m_shieldDisabled.Value)
+            //         {
+            //             m_shieldDisabled.Value = false;
+            //             ArmatureLeft.EnableShield();            // these funcs are just Setters for a networked variable elsewhere
+            //             ArmatureRight.EnableShield();
+            //         }
+            //     }
+            //     ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+            //     ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+            // }
+        }
+        
+        
+        
+        private IEnumerator SetAvatarState()    // called everytime avatar materials need to be updated due to gameplay effects (invulnerability)
+        {
+            if (!m_avatar.IsSkeletonReady)
+            {
+                yield return new WaitUntil(() => m_avatar.IsSkeletonReady);       //wait til skeleton is ready
+            }
+            
+            var material = m_avatar.Material;
+            material.SetKeyword("ENABLE_GHOST_EFFECT", IsInvulnerable.Value);      // set a material parameter on avatar to match current IsInvulnerable.    Apply material to all sub meshes of avatar
+            m_avatar.ApplyMaterial();
+            
+            // ArmatureLeft.SetGhostEffect(IsInvulnerable.Value);    // do same for Gloves
+            // ArmatureRight.SetGhostEffect(IsInvulnerable.Value);
+            //
+            // GloveLeft.SetGhostEffect(IsInvulnerable.Value);
+            // GloveRight.SetGhostEffect(IsInvulnerable.Value);
+        }
+        
+        
+        
+        
+        
         public void SetInvulnerability(Object setter)
         {
             if (IsServer)
@@ -111,168 +202,110 @@ namespace UltimateGloveBall.Arena.Player
             OnInvulnerabilityStateUpdatedEvent?.Invoke(newValue);
         }
 
-        private IEnumerator SetAvatarState()    // this might get called everytime avatar materials need to get updated from gameplay effects
+        
+        
+      
+
+        public void TriggerShield(Glove.GloveSide side)           // clients check if shield is disabled, if not, trigger shield via RPC to server - called from PlayerInputController
         {
-            if (!m_avatar.IsSkeletonReady)
-            {
-                yield return new WaitUntil(() => m_avatar.IsSkeletonReady);       //wait til skeleton is ready
-            }
-
-
-            var material = m_avatar.Material;
-            material.SetKeyword("ENABLE_GHOST_EFFECT", IsInvulnerable.Value);      // set a material parameter on avatar to match current IsInvulnerable.    Aplly material to all sub meshes of avatar
-            m_avatar.ApplyMaterial();
-            ArmatureLeft.SetGhostEffect(IsInvulnerable.Value);    // do same for Gloves
-            ArmatureRight.SetGhostEffect(IsInvulnerable.Value);
-
-            GloveLeft.SetGhostEffect(IsInvulnerable.Value);
-            GloveRight.SetGhostEffect(IsInvulnerable.Value);
+            // if (m_shieldDisabled.Value)   // check if shield is disabled (out of charge)
+            // {
+            //     if (side == Glove.GloveSide.Right)
+            //     {
+            //         ArmatureRight.OnShieldNotAvailable();    
+            //     }
+            //     else
+            //     {
+            //         ArmatureLeft.OnShieldNotAvailable();
+            //     }
+            // }
+            // else
+            // {
+            //     TriggerShieldServerRPC(side);    //server trigger shield
+            // }
         }
 
-        public void TriggerShield(Glove.GloveSide side)           // run locally by all clients
-        {
-            if (m_shieldDisabled.Value)   // check if shield is disabled (out of charge)
-            {
-                if (side == Glove.GloveSide.Right)
-                {
-                    ArmatureRight.OnShieldNotAvailable();    
-                }
-                else
-                {
-                    ArmatureLeft.OnShieldNotAvailable();
-                }
-            }
-            else
-            {
-                TriggerShieldServerRPC(side);    //server trigger shield
-            }
-        }
-
-        public void OnShieldHit(Glove.GloveSide side)      // called by OnTriggerEnter somewhere ONLY for server
-        {
-            m_shieldCharge.Value = 0;
-            StopShield(side);
-            m_shieldInResetMode.Value = true;
-            m_shieldDisabled.Value = true;
-            ArmatureLeft.DisableShield();
-            ArmatureRight.DisableShield();
-            ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-            ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
-        }
+    
 
         [ServerRpc]
         public void TriggerShieldServerRPC(Glove.GloveSide side)
         {
-            if (m_shieldActivated)
-            {
-                if (m_shieldSide == side)
-                {
-                    return;
-                }
-                // We are switching sides, deactivate current side first
-                {
-                    if (m_shieldSide == Glove.GloveSide.Right)
-                    {
-                        ArmatureRight.DeactivateShield();
-                    }
-                    else
-                    {
-                        ArmatureLeft.DeactivateShield();
-                    }
-                }
-            }
-
-            m_shieldActivated = true;
-            m_shieldSide = side;
-
-            if (m_shieldSide == Glove.GloveSide.Right)
-            {
-                ArmatureRight.ActivateShield();
-            }
-            else
-            {
-                ArmatureLeft.ActivateShield();
-            }
+            // if (m_shieldActivated)
+            // {
+            //     if (m_shieldSide == side)
+            //     {
+            //         return;
+            //     }
+            //                                                          // We are switching sides, deactivate current side first
+            //     {
+            //         if (m_shieldSide == Glove.GloveSide.Right)
+            //         {
+            //             ArmatureRight.DeactivateShield();
+            //         }
+            //         else
+            //         {
+            //             ArmatureLeft.DeactivateShield();
+            //         }
+            //     }
+            // }
+            //
+            // m_shieldActivated = true;
+            // m_shieldSide = side;
+            //
+            // if (m_shieldSide == Glove.GloveSide.Right)
+            // {
+            //     ArmatureRight.ActivateShield();
+            // }
+            // else
+            // {
+            //     ArmatureLeft.ActivateShield();
+            // }
         }
 
+       
+        public void OnShieldHit(Glove.GloveSide side)      // called by OnTriggerEnter (probably from Ball), ONLY server detects hits
+        {
+            // m_shieldCharge.Value = 0;
+            // StopShield(side);
+            // m_shieldInResetMode.Value = true;
+            // m_shieldDisabled.Value = true;
+            // ArmatureLeft.DisableShield();
+            // ArmatureRight.DisableShield();
+            // ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+            // ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+        }
+        
+        
+        private void StopShield(Glove.GloveSide side)
+        {
+            // if (!IsServer)
+            // {
+            //     return;
+            // }
+            //
+            // if (!m_shieldActivated || side != m_shieldSide)
+            // {
+            //     return;
+            // }
+            //
+            // m_shieldActivated = false;
+            //
+            // if (m_shieldSide == Glove.GloveSide.Right)
+            // {
+            //     ArmatureRight.DeactivateShield();
+            // }
+            // else
+            // {
+            //     ArmatureLeft.DeactivateShield();
+            // }
+        }
+
+        
         [ServerRpc]
         public void StopShieldServerRPC(Glove.GloveSide side)
         {
-            StopShield(side);
+            // StopShield(side);
         }
 
-        private void StopShield(Glove.GloveSide side)
-        {
-            if (!IsServer)
-            {
-                return;
-            }
-
-            if (!m_shieldActivated || side != m_shieldSide)
-            {
-                return;
-            }
-
-            m_shieldActivated = false;
-
-            if (m_shieldSide == Glove.GloveSide.Right)
-            {
-                ArmatureRight.DeactivateShield();
-            }
-            else
-            {
-                ArmatureLeft.DeactivateShield();
-            }
-        }
-
-        private void Update()
-        {
-            if (!IsServer)
-            {
-                return;
-            }
-
-            if (m_shieldActivated)   // handle while Shields are On
-            {
-                m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;     // server handles decrease of shieldCharge for all clients
-                if (m_shieldCharge.Value <= 0)
-                {
-                    m_shieldCharge.Value = 0;
-                    StopShield(m_shieldSide);
-                    m_shieldInResetMode.Value = true;
-                    m_shieldDisabled.Value = true;
-                    ArmatureLeft.DisableShield();
-                    ArmatureRight.DisableShield();
-                }
-
-                ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-                ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
-            }
-            else if (m_shieldInResetMode.Value)          // handle if shield is in ResetMode, count time til it should not be. during reset it wont be recharging yet
-            {
-                m_shieldOffTimer.Value += Time.deltaTime;
-                if (m_shieldOffTimer.Value >= SHIELD_RESET_TIME)
-                {
-                    m_shieldOffTimer.Value = 0;
-                    m_shieldInResetMode.Value = false;
-                }
-            }
-            else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)        // handle shield recharging
-            {
-                m_shieldCharge.Value += SHIELD_CHARGE_RATE * Time.deltaTime;
-                if (m_shieldCharge.Value >= SHIELD_MAX_CHARGE)
-                {
-                    m_shieldCharge.Value = SHIELD_MAX_CHARGE;     // when sheild reaches full charge, enable it to be used again
-                    if (m_shieldDisabled.Value)
-                    {
-                        m_shieldDisabled.Value = false;
-                        ArmatureLeft.EnableShield();            // these funcs are just Setters for a networked variable elsewhere
-                        ArmatureRight.EnableShield();
-                    }
-                }
-                ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-                ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
-            }
-        }
     }
 }

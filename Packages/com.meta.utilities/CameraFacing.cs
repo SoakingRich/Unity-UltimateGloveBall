@@ -10,6 +10,11 @@ namespace Meta.Utilities
 
         private void LateUpdate()
         {
+            if(Camera.main == null)
+            {
+                return;
+            }
+            
             var cameraPosition = Camera.main.transform;
             var dir = transform.position - cameraPosition.position;
             if (m_fixY)

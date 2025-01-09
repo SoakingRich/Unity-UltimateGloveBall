@@ -24,7 +24,7 @@ namespace UltimateGloveBall.App
         {
             get
             {
-                s_instance ??= new IAPManager();
+                s_instance ??= new IAPManager();                     // gets created on first Get
                 return s_instance;
             }
         }

@@ -28,15 +28,15 @@ namespace Meta.Multiplayer.Core
         #region FallbackHost
         public void DetermineFallbackHost(ulong clientId)
         {
-            // if the new client that joined has a smaller id, 
-            // make them the new fallback host
+                                                                                        // if the new client that joined has a smaller id, 
+                                                                                        // make them the new fallback host
             if (clientId < FallbackHostId)
             {
-                // broadcast to all clients
+                                                                                                            // broadcast to all clients
                 SetFallbackHostClientRpc(clientId);
             }
-            // this new client that joined didn't change the fallback host information.
-            // just send the current fallback host information to this new client.
+                                                                                // this new client that joined didn't change the fallback host information.
+                                                                                // just send the current fallback host information to this new client.
             else
             {
                 // only broadcast to new client

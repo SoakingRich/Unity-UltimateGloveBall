@@ -131,7 +131,7 @@ namespace Meta.Multiplayer.Avatar
 
             if (m_networking != null)
             {
-                m_networking.Init();
+                m_networking.Init();                  // do Init for   AvatarNetworking
             }
 
             if (IsLocal)

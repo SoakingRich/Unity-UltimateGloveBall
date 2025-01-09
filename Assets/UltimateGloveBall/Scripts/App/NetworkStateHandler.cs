@@ -62,52 +62,88 @@ namespace UltimateGloveBall.App
             m_networkLayer.CanMigrateAsHostFunc = CanMigrateAsHost;
         }
 
-        public void Dispose()
-        {
-            m_networkLayer.OnClientConnectedCallback -= OnClientConnected;
-            m_networkLayer.OnClientDisconnectedCallback -= OnClientDisconnected;
-            m_networkLayer.OnMasterClientSwitchedCallback -= OnMasterClientSwitched;
-            m_networkLayer.StartLobbyCallback -= OnLobbyStarted;
-            m_networkLayer.StartHostCallback -= OnHostStarted;
-            m_networkLayer.StartClientCallback -= OnClientStarted;
-            m_networkLayer.RestoreHostCallback -= OnHostRestored;
-            m_networkLayer.RestoreClientCallback -= OnClientRestored;
-            m_networkLayer.OnRestoreFailedCallback -= OnRestoreFailed;
-        }
+     
 
-        private Coroutine StartCoroutine(IEnumerator routine)
+        private Coroutine StartCoroutine(IEnumerator routine)         // use this function to startcoroutines because m_coroutineRunner is a MonoBehavior
         {
-            return m_coroutineRunner.StartCoroutine(routine);         // we use this function to startcoroutines because m_coroutineRunner is a MonoBehavior
+            return m_coroutineRunner.StartCoroutine(routine);        
         }
+        
+        
+        
 
-        private void StartVoip(Transform transform)
+        private void StartVoip(Transform transform)                 // start in menu
         {
             m_voip.StartVoip(transform);
         }
 
+        
+        
+        private void OnLobbyStarted()
+        {
+            Debug.Log("OnLobbyStarted");
+
+            m_navigationController.LoadMainMenu();          // when player has made initial connection to photon,  Load the main menu
+        }
+        
+        
+        
+        
+        private void OnHostStarted()            // Started means Requesting connection
+        {
+            Debug.Log("OnHostStarted");      // host player is ready to enter Arena
+
+            m_navigationController.LoadArena();              // go to arena
+
+            _ = StartCoroutine(Impl());
+
+            IEnumerator Impl()
+            {
+                yield return new WaitUntil(() => m_navigationController.IsSceneLoaded());
+
+                SpawnSession();                        // spawn a session,    the session exists and replicates vars to all,  but only server should spawn it
+
+                var player = SpawningManagerBase.Instance.SpawnPlayer(NetworkManager.Singleton.LocalClientId,           //spawn playerEntity for host
+                    m_localPlayerState.PlayerUid, false, Vector3.zero);
+
+                StartVoip(player.transform);
+            }
+        }
+        
+        
+        
         private void SpawnSession()
         {
-            m_session = m_createSessionFunc.Invoke();        // this class had a func passed into it when constructed. It will return a NetworkSession. 
-            // Append Region to lobbyId to ensure unique voice room, since we use only 1 region for voice
+            m_session = m_createSessionFunc.Invoke();                         // networkStateHandler has this func defined in its constructor. It will return a NetworkSession.    its in UGBApplication  - InstantiateSession
+                                                                                                    // Append Region to lobbyId to ensure unique voice room, since we use only 1 region for voice
             var lobbyId = m_playerPresenceHandler.GroupPresenceState.LobbySessionID;
             m_session.SetPhotonVoiceRoom($"{m_networkLayer.GetRegion()}-{lobbyId}");
             m_session.GetComponent<NetworkObject>().Spawn();
         }
 
+        
+        
+        
         #region Network Layer Callbacks
-        private void OnClientConnected(ulong clientId)                 // this will happen for all clients (including server/master) ?? really?  seems Server-y
+        
+        
+      
+        
+        
+        
+        private void OnClientConnected(ulong clientId)                 // this will happen for all clients (including server/master) 
         {
             _ = StartCoroutine(Impl());
-            var destinationAPI = m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion());   // get the correct Destination string using the network layer Region
+            var destinationAPI = m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion());   // get the correct DestinationAPI by querying the region were connected to
             _ = StartCoroutine(
-                m_playerPresenceHandler.GenerateNewGroupPresence(destinationAPI, m_networkLayer.CurrentRoom));     // this func is really just Set params on current group presence, or create one
+                m_playerPresenceHandler.GenerateNewGroupPresence(destinationAPI, m_networkLayer.CurrentRoom));     // generate a new group presence in this new place
 
             IEnumerator Impl()
             {
-                if (NetworkManager.Singleton.IsHost)
+                if (NetworkManager.Singleton.IsHost)                                                          // host doesnt spawn playerEntity,  already did in OnHostStarted
                 {
-                    yield return new WaitUntil(() => m_session != null);         // m_session is only valid for IsHost ??
-                    m_session.DetermineFallbackHost(clientId);          // meta class NetworkSession has a paradigm for a FallbackHost ??          
+                    yield return new WaitUntil(() => m_session != null);                                 // wait til session is valid, that was spawned in OnHostStarted
+                    m_session.DetermineFallbackHost(clientId);                                       // Sessions can have FallbackHosts - from a clientID        
                     m_session.UpdatePhotonVoiceRoomToClient(clientId);
                 }
                 else if (NetworkManager.Singleton.IsClient)
@@ -122,6 +158,16 @@ namespace UltimateGloveBall.App
                 }
             }
         }
+        
+        
+          
+        private void OnClientStarted()
+        {
+            var player = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();      // i guess localplayerobject becomes PlayerAvatarEntity
+            StartVoip(player.transform);                                        // start voip really early
+        }
+        
+        
 
         private void OnClientDisconnected(ulong clientId)
         {
@@ -131,58 +177,30 @@ namespace UltimateGloveBall.App
             }
         }
 
-        private static ulong OnMasterClientSwitched()
+        private static ulong OnMasterClientSwitched()             // return the new master client id,   a new fallback id will soon be determined
         {
             return NetworkSession.FallbackHostId;
         }
 
-        private void OnLobbyStarted()
+       
+
+     
+
+        
+
+        private void OnHostRestored()                  // i guess players can lose connections fairly easily? and reconnect
         {
-            Debug.Log("OnLobbyStarted");
-
-            m_navigationController.LoadMainMenu();          // when player has made intiial connection to photon,  Load the main menu
-        }
-
-        private void OnHostStarted()
-        {
-            Debug.Log("OnHostStarted");      // host player is ready to enter Arena
-
-            m_navigationController.LoadArena();
-
-            _ = StartCoroutine(Impl());
-
-            IEnumerator Impl()
-            {
-                yield return new WaitUntil(() => m_navigationController.IsSceneLoaded());
-
-                SpawnSession();
-
-                var player = SpawningManagerBase.Instance.SpawnPlayer(NetworkManager.Singleton.LocalClientId,
-                    m_localPlayerState.PlayerUid, false, Vector3.zero);
-
-                StartVoip(player.transform);
-            }
-        }
-
-        private void OnClientStarted()
-        {
-            var player = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
-            StartVoip(player.transform);
-        }
-
-        private void OnHostRestored()
-        {
-            SpawnSession();
+            SpawnSession();                              // instantiate a new session ???
 
             var player = SpawningManagerBase.Instance.SpawnPlayer(NetworkManager.Singleton.LocalClientId,
-                m_localPlayerState.PlayerUid, false, m_localPlayerState.transform.position);
+                m_localPlayerState.PlayerUid, false, m_localPlayerState.transform.position);                   // spawn playerEntity for host, i guess the other may have been removed
 
             StartVoip(player.transform);
         }
 
         private void OnClientRestored()
         {
-            var player = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
+            var player = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();               // i guess Client entities are not disposed of the same way??
             StartVoip(player.transform);
         }
 
@@ -191,18 +209,40 @@ namespace UltimateGloveBall.App
             m_navigationController.GoToMainMenu((ArenaApprovalController.ConnectionStatus)failureCode);
         }
 
-        private string GetClientConnectingPayload()
+        
+        private bool CanMigrateAsHost()
         {
-            return JsonUtility.ToJson(new ArenaApprovalController.ConnectionPayload()
+            return !IsSpectator;
+        }
+        
+        
+        
+        
+        private string GetClientConnectingPayload()                         // serializing to json whether or not connecting client is a spectator or not, and informing ArenaApprovalController
+        {
+            return JsonUtility.ToJson(new ArenaApprovalController.ConnectionPayload()             
             {
                 IsPlayer = !IsSpectator,
             });
         }
 
-        private bool CanMigrateAsHost()
-        {
-            return !IsSpectator;
-        }
+        
         #endregion // Network Layer Callbacks
+        
+        
+        
+        
+        public void Dispose()                                  // dispose of NetworkStateHandler 
+        {
+            m_networkLayer.OnClientConnectedCallback -= OnClientConnected;
+            m_networkLayer.OnClientDisconnectedCallback -= OnClientDisconnected;
+            m_networkLayer.OnMasterClientSwitchedCallback -= OnMasterClientSwitched;
+            m_networkLayer.StartLobbyCallback -= OnLobbyStarted;
+            m_networkLayer.StartHostCallback -= OnHostStarted;
+            m_networkLayer.StartClientCallback -= OnClientStarted;
+            m_networkLayer.RestoreHostCallback -= OnHostRestored;
+            m_networkLayer.RestoreClientCallback -= OnClientRestored;
+            m_networkLayer.OnRestoreFailedCallback -= OnRestoreFailed;
+        }
     }
 }

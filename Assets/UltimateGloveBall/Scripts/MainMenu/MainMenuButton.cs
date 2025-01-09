@@ -2,6 +2,12 @@
 // Use of the material below is subject to the terms of the MIT License
 // https://github.com/oculus-samples/Unity-UltimateGloveBall/tree/main/Assets/UltimateGloveBall/LICENSE
 
+using System.Collections;
+using Meta.Utilities;
+using UltimateGloveBall.App;
+using UltimateGloveBall.Arena.Gameplay;
+using UltimateGloveBall.Arena.Services;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -16,6 +22,8 @@ namespace UltimateGloveBall.MainMenu
     /// </summary>
     public class MainMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
+        public bool m_autoStart = true;
+        
         private static readonly Color s_highlightTextColor = new(174f / 255f, 0f, 1f);
         private static readonly Color s_normalTextColor = Color.black;
 
@@ -26,6 +34,19 @@ namespace UltimateGloveBall.MainMenu
         [SerializeField] private UnityEvent<string> m_onHover;
         private int m_currentPointerCount = 0;
 
+
+        
+        
+        
+        void Awake()
+        {
+            if(UGBApplication.Instance == null)
+            {
+                Destroy(this.gameObject);
+            }
+        }
+        
+        
         private void OnEnable()
         {
             // Reset
@@ -81,5 +102,24 @@ namespace UltimateGloveBall.MainMenu
 
             m_currentPointerCount = 0;
         }
+        
+        void Start()
+        {
+              //  m_autoStart = NetworkSettings.AutostartGame;
+
+              if (!m_autoStart) return; 
+              
+            _ = StartCoroutine(Impl());
+
+            IEnumerator Impl()
+            {
+               // yield return new WaitUntil(() => LocalPlayerEntities.Instance.GetPlayerObjects(NetworkManager.Singleton.LocalClientId).Avatar.IsSkeletonReady);
+                yield return new WaitUntil(() => NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject() != null);
+
+                FindObjectOfType<GameManager>().StartGame();
+            }
+            
+        }
+        
     }
 }

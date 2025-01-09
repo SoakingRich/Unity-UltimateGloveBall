@@ -18,7 +18,7 @@ namespace UltimateGloveBall.Arena.Player
     /// Handles player inputs.
     /// Based on the state of the player it will process to the proper inputs and call the appropriate methods.
     /// </summary>
-    public class PlayerInputController : Singleton<PlayerInputController>
+    public class PlayerInputController : Singleton<PlayerInputController>      // Use PlayerInput component to interpret input actions
     {
         [SerializeField, AutoSet] private PlayerInput m_input;
         [SerializeField] private PlayerInGameMenu m_playerMenu;
@@ -32,29 +32,22 @@ namespace UltimateGloveBall.Arena.Player
         private bool m_wasMoving = false;
         private InputAction m_moveAction;
 
-        public void SetSpectatorMode(SpectatorNetwork spectator)
-        {
-            m_spectatorNet = spectator;
-            m_input.SwitchCurrentActionMap(m_spectatorNet != null ? "Spectator" : "Player");               // can switch between Action mappings defined in PlayerInput unity component, from Player to Spectator
-        }
-
-        public void OnSettingsUpdated()
-        {
-            m_freeLocomotionEnabled = !GameSettings.Instance.IsFreeLocomotionDisabled;
-            PlayerMovement.Instance.RotationEitherThumbstick = !m_freeLocomotionEnabled;
-        }
-
+        
+        
+        
+        
+        
+        
+        
         private void Start()
         {
-            m_freeLocomotionEnabled = !GameSettings.Instance.IsFreeLocomotionDisabled;
+            m_freeLocomotionEnabled = !GameSettings.Instance.IsFreeLocomotionDisabled;             // player can turn off FreeLoco in GameSettings
             PlayerMovement.Instance.RotationEitherThumbstick = !m_freeLocomotionEnabled;
         }
-
-        private void OnDestroy()
-        {
-            PlayerMovement.Instance.RotationEitherThumbstick = true;
-        }
-
+        
+        
+        
+        
         private void Update()
         {
             if (m_spectatorNet == null)
@@ -62,10 +55,66 @@ namespace UltimateGloveBall.Arena.Player
                 ProcessPlayerInput();
             }
         }
+        
+        
+        
+        
+        private void ProcessPlayerInput()
+        {
+            if (!InputEnabled)
+            {
+                if (m_wasMoving)
+                {
+                    ScreenFXManager.Instance.ShowLocomotionFX(false);             // why should this handle VFX here in PlayerInputController instead of movement script? no idea, i guess we want VFX even if we're spinning wheels
+                    m_wasMoving = false;
+                }
+                return;
+            }
 
-        public void OnSnapTurnLeft(CallbackContext context) => OnSnapTurn(context, false);
+            if (MovementEnabled && m_freeLocomotionEnabled)
+            {
+                var direction = m_moveAction?.ReadValue<Vector2>() ?? default;
+                if (direction != Vector2.zero)
+                {
+                    var dir = new Vector3(direction.x, 0, direction.y);
+                    PlayerMovement.Instance.WalkInDirectionRelToForward(dir);    // tell playermovement to move
+                    if (!m_wasMoving)
+                    {
+                        ScreenFXManager.Instance.ShowLocomotionFX(true);
+                    }
+
+                    m_wasMoving = true;
+                }
+                else if (m_wasMoving)
+                {
+                    ScreenFXManager.Instance.ShowLocomotionFX(false);
+                    m_wasMoving = false;
+                }
+            }
+        }
+
+        
+        
+        
+        
+        public void OnMove(CallbackContext context)
+        {
+            m_moveAction = context.phase is InputActionPhase.Disabled ? null : context.action;     
+                        // PlayerInput component on this gO has a UnityEvents sections where funcs can be bound to input triggering events
+                        // seems like this func can be made to negate the move being executed.
+        }
+
+        
+        public void OnSnapTurnLeft(CallbackContext context) => OnSnapTurn(context, false);   // in either case, call OnSnapTurn 
         public void OnSnapTurnRight(CallbackContext context) => OnSnapTurn(context, true);
 
+        private void OnSnapTurn(CallbackContext context, bool toRight)
+        {
+            if (context.performed)                                  // check input wasnt denied?? for some reason??
+                PlayerMovement.Instance.DoSnapTurn(toRight);
+        }
+        
+        
         public void OnSnapTurnLeftNoFree(CallbackContext context)
         {
             if (PlayerMovement.Instance.RotationEitherThumbstick)
@@ -77,11 +126,7 @@ namespace UltimateGloveBall.Arena.Player
                 OnSnapTurnRight(context);
         }
 
-        private void OnSnapTurn(CallbackContext context, bool toRight)
-        {
-            if (context.performed)
-                PlayerMovement.Instance.DoSnapTurn(toRight);
-        }
+        
 
         public void OnMenuButton(CallbackContext context)
         {
@@ -99,11 +144,6 @@ namespace UltimateGloveBall.Arena.Player
         {
             if (context.phase is InputActionPhase.Performed)
                 m_spectatorNet?.TriggerRightAction();
-        }
-
-        public void OnMove(CallbackContext context)
-        {
-            m_moveAction = context.phase is InputActionPhase.Disabled ? null : context.action;
         }
 
         public void OnThrowLeft(CallbackContext context)
@@ -144,40 +184,8 @@ namespace UltimateGloveBall.Arena.Player
             OnShield(Glove.GloveSide.Right, context.phase is InputActionPhase.Performed);
         }
 
-        private void ProcessPlayerInput()
-        {
-            if (!InputEnabled)
-            {
-                if (m_wasMoving)
-                {
-                    ScreenFXManager.Instance.ShowLocomotionFX(false);             // why should this handle VFX here instead of movement script? no idea, i guess we want VFX even if we're spinning wheels
-                    m_wasMoving = false;
-                }
-                return;
-            }
-
-            if (MovementEnabled && m_freeLocomotionEnabled)
-            {
-                var direction = m_moveAction?.ReadValue<Vector2>() ?? default;
-                if (direction != Vector2.zero)
-                {
-                    var dir = new Vector3(direction.x, 0, direction.y);
-                    PlayerMovement.Instance.WalkInDirectionRelToForward(dir);    // tell playermovement to move
-                    if (!m_wasMoving)
-                    {
-                        ScreenFXManager.Instance.ShowLocomotionFX(true);
-                    }
-
-                    m_wasMoving = true;
-                }
-                else if (m_wasMoving)
-                {
-                    ScreenFXManager.Instance.ShowLocomotionFX(false);
-                    m_wasMoving = false;
-                }
-            }
-        }
-
+        
+        
         private static void OnShield(Glove.GloveSide side, bool state)
         {
             var playerController = LocalPlayerEntities.Instance.LocalPlayerController;
@@ -208,5 +216,33 @@ namespace UltimateGloveBall.Arena.Player
                 gloveArmature.Activated = true;
             }
         }
+        
+        
+        public void OnSettingsUpdated()
+        {
+            m_freeLocomotionEnabled = !GameSettings.Instance.IsFreeLocomotionDisabled;
+            PlayerMovement.Instance.RotationEitherThumbstick = !m_freeLocomotionEnabled;
+        }
+        
+        
+        
+        
+        public void SetSpectatorMode(SpectatorNetwork spectator)
+        {
+            m_spectatorNet = spectator;
+            m_input.SwitchCurrentActionMap(m_spectatorNet != null ? "Spectator" : "Player");               // can switch between Action mappings defined in PlayerInput unity component, from Player to Spectator
+        }
+
+      
+
+    
+
+        private void OnDestroy()
+        {
+            PlayerMovement.Instance.RotationEitherThumbstick = true;
+        }
+
+     
+
     }
 }

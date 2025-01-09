@@ -22,6 +22,14 @@ namespace UltimateGloveBall.Arena.Player
         [SerializeField] private GameObject m_respawnVfx;
         public bool IsSkeletonReady { get; private set; } = false;
 
+        
+        
+        
+        
+        
+        
+        
+        
         protected override void OnSkeletonLoaded()
         {
             base.OnSkeletonLoaded();
@@ -30,9 +38,9 @@ namespace UltimateGloveBall.Arena.Player
             if (netComp.IsOwner)
             {
                 LocalPlayerEntities.Instance.Avatar = this;
-                LocalPlayerEntities.Instance.TryAttachGloves();
+                LocalPlayerEntities.Instance.TryAttachGloves();          //init with LocalPlayerEntities      // only owner runs TryAttachGloves here
 
-                if (m_rightHandPose != null)
+                if (m_rightHandPose != null)                  // if using a custom hand pose, enable it
                 {
                     m_rightHandPose.enabled = true;
                 }

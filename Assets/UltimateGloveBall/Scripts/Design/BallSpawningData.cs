@@ -50,7 +50,7 @@ namespace UltimateGloveBall.Design
             for (var i = 0; i < m_ballCount; i++)            // get a RandNum between 0 and 20,  loop through each array element and if accumulated weight has gone over RandNum, stop accumulating and return prefab
             {
                 var ballInfo = m_ballsToSpawn[i];
-                cumWeight += ballInfo.Weight;            // 
+                cumWeight += ballInfo.Weight;            
                 if (rng <= cumWeight)
                 {
                     return ballInfo.BallPrefab;

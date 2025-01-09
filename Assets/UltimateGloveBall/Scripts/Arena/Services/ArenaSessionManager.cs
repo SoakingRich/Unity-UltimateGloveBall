@@ -23,35 +23,41 @@ namespace UltimateGloveBall.Arena.Services
             m_clientIdToPlayerId = new Dictionary<ulong, string>();
         }
 
-        public void SetupPlayerData(ulong clientId, string playerId, ArenaPlayerData playerData)
+        
+        // why does this class not use Session prefab at all???
+        
+        
+        
+        
+        public void SetupPlayerData(ulong clientId, string playerId, ArenaPlayerData playerData)      // Update Dictionary of IDs and isConnected status   -   only called by SpawnPlayer in ArenaPlayerSpawningManager
         {
             var isReconnecting = false;
             if (IsDuplicateConnection(playerId))
             {
-                Debug.LogError($"Player Already in game: {playerId}");
-                // player already connected
+                Debug.LogError($"Player Already in game: {playerId}");                           // player already connected
+              
                 return;
             }
 
-            // Check for reconnecting player
-            if (m_playerDataDict.ContainsKey(playerId))
+                                                                 // Check for reconnecting player
+            if (m_playerDataDict.ContainsKey(playerId))           // dictionairy of all current players
             {
                 if (!m_playerDataDict[playerId].IsConnected)
                 {
-                    // If this connecting client has the same player Id as a disconnected client, this is a reconnection.
+                                                                 // If this connecting client has the same player Id as a disconnected client, this is a reconnection.
                     isReconnecting = true;
                 }
             }
 
-            if (isReconnecting)
+            if (isReconnecting)                        
             {
                 playerData = m_playerDataDict[playerId];
                 playerData.ClientId = clientId;
                 playerData.IsConnected = true;
             }
 
-            // Update dictionaries
-            m_clientIdToPlayerId[clientId] = playerId;
+            
+            m_clientIdToPlayerId[clientId] = playerId;                     // Update dictionaries of ArenaPlayerData
             m_playerDataDict[playerId] = playerData;
         }
 
@@ -60,7 +66,7 @@ namespace UltimateGloveBall.Arena.Services
             return m_playerDataDict.ContainsKey(playerId) && m_playerDataDict[playerId].IsConnected;
         }
 
-        public string GetPlayerId(ulong clientId)
+        public string GetPlayerId(ulong clientId)             // get a playerID from a clientID,  ie Player 3
         {
             if (m_clientIdToPlayerId.TryGetValue(clientId, out var playerId))
             {
@@ -80,7 +86,7 @@ namespace UltimateGloveBall.Arena.Services
 
             Debug.Log($"No PlayerData found for player ID: {playerId}");
             return null;
-        }
+        }          // get ArenaPlayerData from either a playerID or ClientID (2 signatures)
 
         public ArenaPlayerData? GetPlayerData(ulong clientId)
         {
@@ -94,7 +100,7 @@ namespace UltimateGloveBall.Arena.Services
             return null;
         }
 
-        public void SetPlayerData(ulong clientId, ArenaPlayerData playerData)
+        public void SetPlayerData(ulong clientId, ArenaPlayerData playerData)        // set data directly from ArenaPlayerSpawningManager
         {
             if (m_clientIdToPlayerId.TryGetValue(clientId, out var playerId))
             {

@@ -23,7 +23,11 @@ namespace UltimateGloveBall.Arena.VFX
         {
             if (m_mainCamera == null)
             {
-                m_mainCamera = Camera.main.transform;
+                if (Camera.main == null) return;
+                
+                    m_mainCamera = Camera.main.transform;
+                
+                
             }
 
             var thisTransform = transform;

@@ -80,10 +80,10 @@ public class TransformTrackingInputManager : OvrAvatarInputManager
 
     private void Start()
     {
-        if (BodyTracking != null)
-        {
-            BodyTracking.InputControlDelegate = new TrackingTransformsInputControlDelegate();
-            BodyTracking.InputTrackingDelegate = new TrackingTransformsInputTrackingDelegate(this);
-        }
+        // if (BodyTracking != null)
+        // {
+        //     BodyTracking.InputControlDelegate = new TrackingTransformsInputControlDelegate();
+        //     BodyTracking.InputTrackingDelegate = new TrackingTransformsInputTrackingDelegate(this);
+        // }
     }
 }

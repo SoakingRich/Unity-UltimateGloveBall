@@ -46,9 +46,9 @@ namespace UltimateGloveBall.App
         {
             if (UnityEngine.Application.isEditor)   // editor only
             {
-                if (NetworkSettings.Autostart)
+                if (NetworkSettings.Autostart)                // if Autostart is true, via the Editor GUI
                 {
-                    LocalPlayerState.SetApplicationID(             
+                   LocalPlayerState.SetApplicationID(             
                         // this is the only call to SetApplicationID anywhere
                         // we set ApplicationID to either Device UID or a RoomName denoted in network settings
                             // this lets us join a room someone else is hosting in the editor if needed
@@ -61,34 +61,42 @@ namespace UltimateGloveBall.App
 
         private IEnumerator Init()
         {
-            _ = InitializeOculusModules();        // this is an Async Task
+            _ = InitializeOculusModules();                                          // Async Task
 
             // Initialize Player Presence
             Debug.Log("constructing PlayerPresenceHandler");
             PlayerPresenceHandler = new PlayerPresenceHandler();
             yield return PlayerPresenceHandler.Init();
 
-#if !UNITY_EDITOR && !UNITY_STANDALONE_WIN         // LocalPlayerState is Init is InitializeOculusModules
+#if !UNITY_EDITOR && !UNITY_STANDALONE_WIN         // If Android, wait for LocalPlayerState to have been init in InitializeOculusModules
              Debug.Log("waiting for LocalPlayerState to not be null");    
             yield return new WaitUntil(() => !string.IsNullOrWhiteSpace(LocalPlayerState.Username));
 #else
-            m_launchType = LaunchType.Normal;      // seems like Quest is always first given LaunchType Normal ?? cant see anywhere this is set to anything different 
+            m_launchType = LaunchType.Normal;      // In Editor, we're always using a normal launch type,  not invite, coordinated or deeplink
 #endif
+            
             _ = BlockUserManager.Instance.Initialize();
             NavigationController =
                 new NavigationController(this, NetworkLayer, LocalPlayerState, PlayerPresenceHandler);
+            
+            
             NetworkStateHandler = new NetworkStateHandler(this, NetworkLayer, NavigationController, Voip,
                 LocalPlayerState, PlayerPresenceHandler, InstantiateSession);
+            
+            
+            
             // Get the products and the purchases of the current logged in user
             // get all icons products
-            IAPManager.Instance.FetchProducts(UserIconManager.Instance.AllSkus, ProductCategories.ICONS);     // fetchProducts has two signatures, one to retrieve all SKUs and one to specificy only select category types
+            IAPManager.Instance.FetchProducts(UserIconManager.Instance.AllSkus, ProductCategories.ICONS);     // fetchProducts has two signatures, one to retrieve all SKUs and one to specify only select category types
             // get cat consumable
             IAPManager.Instance.FetchProducts(new[] { ProductCategories.CAT }, ProductCategories.CONSUMABLES);
             IAPManager.Instance.FetchPurchases();
 
+            
+            
             if (m_launchType == LaunchType.Normal)            // launch type is a enum defined by Oculus Platform
             {
-                if (LocalPlayerState.HasCustomAppId)        // app id is really just GameInstanceID rather than actual appID
+                if (LocalPlayerState.HasCustomAppId)        // app id is really just GameInstanceID rather than actual appID ?? 
                 {
                     StartCoroutine(PlayerPresenceHandler.GenerateNewGroupPresence(               // if HasCustomAppId is true   (only when using editor???), our group presense is created as Arena-<applicationID>  where applicationID has been set custom
                         "Arena",
@@ -105,8 +113,8 @@ namespace UltimateGloveBall.App
 
           //  wating for GroupPresence state to be null or something ??
             yield return new WaitUntil(() => PlayerPresenceHandler.GroupPresenceState is { Destination: { } });
-
-            NetworkLayer.Init(
+ 
+            NetworkLayer.Init(                                                          // init gets passed in LobbySessionID and Region from GroupPresenceState,  these WILL BE NULL, if no invite launch is being used
                 PlayerPresenceHandler.GroupPresenceState.LobbySessionID,
                 PlayerPresenceHandler.GetRegionFromDestination(PlayerPresenceHandler.GroupPresenceState.Destination));
         }

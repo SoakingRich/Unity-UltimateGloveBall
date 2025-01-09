@@ -9,6 +9,7 @@ using UltimateGloveBall.Arena.Player;
 using UltimateGloveBall.Arena.Spectator;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace UltimateGloveBall.Arena.Services
@@ -21,7 +22,8 @@ namespace UltimateGloveBall.Arena.Services
     public class ArenaPlayerSpawningManager : SpawningManagerBase
     {
         [SerializeField] private NetworkObject m_playerPrefab;
-        [SerializeField] private NetworkObject m_gloveArmaturePrefab;
+        
+        [SerializeField] private NetworkObject m_gloveArmaturePrefab; 
         [SerializeField] private NetworkObject m_gloveHandPrefab;
 
         [SerializeField] private NetworkObject m_spectatorPrefab;
@@ -30,6 +32,8 @@ namespace UltimateGloveBall.Arena.Services
 
         [SerializeField] private Transform[] m_teamASpawnPoints = Array.Empty<Transform>();
         [SerializeField] private Transform[] m_teamBSpawnPoints = Array.Empty<Transform>();
+        [SerializeField] private Transform[] m_teamCSpawnPoints = Array.Empty<Transform>();
+        [SerializeField] private Transform[] m_teamDSpawnPoints = Array.Empty<Transform>();
 
         [SerializeField] private SpawnPointReservingService m_spectatorASpawnPoints;
         [SerializeField] private SpawnPointReservingService m_spectatorBSpawnPoints;
@@ -38,19 +42,263 @@ namespace UltimateGloveBall.Arena.Services
         [SerializeField] private SpawnPointReservingService m_loserSpawnPoints;
         private bool m_tieAlternateToWin = true;
 
-        // spawn point randomizer
+       // spawn point randomizer
         private Queue<int> m_teamARandomSpawnOrder = new();
         private Queue<int> m_teamBRandomSpawnOrder = new();
 
         private readonly List<int> m_tempListForSpawnPoints = new();
 
-        protected override void Awake()
+        
+        
+        
+        
+        
+        
+        
+        public override NetworkObject SpawnPlayer(ulong clientId, string playerId, bool isSpectator, Vector3 playerPos)         // main spawn player,  from OnHostStarted or OnClientConnected
         {
-            RandomizeSpawnPoints(m_teamASpawnPoints.Length, ref m_teamARandomSpawnOrder);
-            RandomizeSpawnPoints(m_teamBSpawnPoints.Length, ref m_teamBRandomSpawnOrder);
-            base.Awake();
+            if (isSpectator) return  SpawnSpectator(clientId, playerId, playerPos);
+            //
+            // {
+            //     var spectator = SpawnSpectator(clientId, playerId, playerPos);
+            //     return spectator;
+            // }
+
+            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId, new ArenaPlayerData(clientId, playerId));    // check if the player is reconnecting and other...     add a new ArenaPlayerData struct to ArenaSessionManager dictionary
+            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;
+            
+         
+            GetSpawnData(ref playerData, playerPos, out var position, out var rotation, out var team,                    // setup which team for the spawning player
+                out var color, out var spawnTeam);                                                                                  // setup spawning data based on gamePhase   
+
+            var player = Instantiate(m_playerPrefab, position, rotation);
+            player.SpawnAsPlayerObject(clientId);                                                        // after spawning, Netcode designate it as a PlayerObject    ( this is kinda Possess event ? )
+            player.GetComponent<NetworkedTeam>().MyTeam = team;
+
+            var leftArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);        // spawn gloves/hands for player   LEFT
+            var leftArmature = leftArmatureNet.GetComponent<GloveArmatureNetworking>();
+            leftArmature.Side = Glove.GloveSide.Left;
+            leftArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;                                 // anything that has TeamColoringNetComponents need color updated on RepNotify of changed var
+            var leftHandNet = Instantiate(m_gloveHandPrefab, Vector3.down, Quaternion.identity);
+            var leftHand = leftHandNet.GetComponent<GloveNetworking>();
+            leftHand.Side = Glove.GloveSide.Left;
+            leftHandNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;                           
+
+            var rightArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);       // spawn right hand/glove
+            var rightArmature = rightArmatureNet.GetComponent<GloveArmatureNetworking>();
+            rightArmature.Side = Glove.GloveSide.Right;
+            rightArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
+            var rightHandNet = Instantiate(m_gloveHandPrefab, Vector3.down, Quaternion.identity);
+            var rightHand = rightHandNet.GetComponent<GloveNetworking>();
+            rightHand.Side = Glove.GloveSide.Right;
+            rightHandNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
+            
+            
+            rightArmatureNet.SpawnWithOwnership(clientId);                                                  // instead of telling these NetworkObject hand/armatures to networkspawn, we do SpawnWithOwnerShip
+            rightHandNet.SpawnWithOwnership(clientId);
+            leftArmatureNet.SpawnWithOwnership(clientId);
+            leftHandNet.SpawnWithOwnership(clientId);                                                         // give the client player ownership of gloves/hands
+
+            player.GetComponent<PlayerControllerNetwork>().ArmatureLeft = leftArmature;                      //populate vars on  PlayerControllerNetwork
+            player.GetComponent<PlayerControllerNetwork>().ArmatureRight = rightArmature;
+            player.GetComponent<PlayerControllerNetwork>().GloveLeft = leftHand;
+            player.GetComponent<PlayerControllerNetwork>().GloveRight = rightHand;
+
+            playerData.SelectedTeam = team;
+            m_gameManager.UpdatePlayerTeam(clientId, spawnTeam);                                        // update the player team in the game manager - dictionary of ID to teams
+            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);                        // update the playerdata in the ArenaSession,   now we know the team (etc??)
+
+            AssignDrawingGrid(player);
+
+            return player;
         }
 
+        public void AssignDrawingGrid(NetworkObject player)        // assign the player to a DrawingGrid
+        {
+            DrawingGrid[] allDrawingGrids = FindObjectsOfType<DrawingGrid>();
+
+            if (allDrawingGrids.Length == 0)  Debug.LogWarning("No DrawingGrid objects found in the scene.");
+            
+            // Get the player's position
+            Vector3 playerPosition = player.transform.position;
+
+            // Find the closest DrawingGrid
+            DrawingGrid closestGrid = null;
+            float closestDistance = Mathf.Infinity;
+
+            foreach (DrawingGrid grid in allDrawingGrids)
+            {
+                float distance = Vector3.Distance(playerPosition, grid.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestGrid = grid;
+                }
+            }
+            
+            if (closestGrid != null)
+            {
+                closestGrid.OwningPlayer.Value = player.OwnerClientId;
+               // closestGrid.NetworkObject.SpawnWithOwnership(player.OwnerClientId); 
+                closestGrid.NetworkObject.ChangeOwnership(player.OwnerClientId);
+                if (LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController)
+                {
+                    LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController
+                        .OwnedDrawingGrid = closestGrid;
+                }
+                else
+                {
+                    Debug.Log($"no playercontrollernetwork for player???");
+                }
+
+                Debug.Log($"Assigned DrawingGrid at {closestGrid.transform.position} to player.");
+            }
+            else
+            {
+                Debug.LogWarning("No closest DrawingGrid found.");
+            }
+        }        
+
+
+        private void GetSpawnData(ref ArenaPlayerData playerData, Vector3 currentPos, out Vector3 position,           // setup where the joining player should spawn given the current game phase
+            out Quaternion rotation, out NetworkedTeam.Team team, out TeamColor teamColor,
+            out NetworkedTeam.Team spawnTeam)
+        {
+            
+            var currentPhase = m_gameManager.CurrentPhase;
+            
+            team = currentPhase switch                          // choose team based on game current phase
+            {
+                GameManager.GamePhase.InGame or GameManager.GamePhase.CountDown => GetTeam(playerData, currentPos),             // if in game already, this might be a reconnection, playerdata might already have a team and position, use it
+                                                                                                                                //respawning players also already have positions
+                
+                GameManager.GamePhase.PostGame => GetTeam(playerData, currentPos),              // if post game, same scanerio, use it
+                
+                GameManager.GamePhase.PreGame => NetworkedTeam.Team.NoTeam,                     // if pregame, treat as no team yet, go with least populated
+                
+                _ => NetworkedTeam.Team.NoTeam,         // default case never happen
+            };
+            
+            spawnTeam = team;
+            if (spawnTeam == NetworkedTeam.Team.NoTeam)       // if after those checks theres no team, get one
+            {
+               spawnTeam = GetTeam(playerData, currentPos);
+            }
+
+            GetSpawnPositionForTeam(currentPhase, spawnTeam, ref playerData, out position, out rotation);     // get spawn position now that player has a team
+
+            teamColor = GetTeamColor(spawnTeam);
+        }
+
+        
+        
+        
+        
+        
+        private NetworkedTeam.Team GetTeam(ArenaPlayerData playerData, Vector3 currentPos)     // return a team thats already setin playerData or else get a new one
+        {
+            if (playerData.SelectedTeam != NetworkedTeam.Team.NoTeam)
+            {
+                return playerData.SelectedTeam;
+            }
+
+            NetworkedTeam.Team team;
+            team = m_gameManager.GetTeamWithLeastPlayers();
+            return team;
+            
+            // if (currentPos == Vector3.zero)             // if we are a new player joining
+            // {
+            //     team = m_gameManager.GetTeamWithLeastPlayers();
+            // }
+            // else
+            // {
+            //     if (m_gameManager.CurrentPhase == GameManager.GamePhase.PostGame)        // if were in the post game and player already has a position, join the losing side??
+            //     {
+            //         var winningTeam = GameState.Instance.Score.GetWinningTeam();
+            //         if (winningTeam == NetworkedTeam.Team.NoTeam) { winningTeam = NetworkedTeam.Team.TeamA; }
+            //
+            //         var losingTeam = winningTeam == NetworkedTeam.Team.TeamA               // losing team equals the opposite of winning team
+            //             ? NetworkedTeam.Team.TeamB
+            //             : NetworkedTeam.Team.TeamA;
+            //         team = Mathf.Abs(currentPos.z - m_winnerSpawnPoints.transform.position.z) >=
+            //                Mathf.Abs(currentPos.z - m_loserSpawnPoints.transform.position.z)
+            //             ? winningTeam
+            //             : losingTeam;
+            //     }
+            //     else
+            //     {
+            //         team = currentPos.z < 0 ? NetworkedTeam.Team.TeamA : NetworkedTeam.Team.TeamB;
+            //     }
+            // }
+            //
+            // return team;
+        }
+
+        
+        
+        
+        
+        private void GetSpawnPositionForTeam(GameManager.GamePhase gamePhase, NetworkedTeam.Team team,                    // get a spawn position, dequeued randomized spawn point on team side, or on podium
+            ref ArenaPlayerData playerData,
+            out Vector3 position, out Quaternion rotation)
+        {
+            if (gamePhase == GameManager.GamePhase.PostGame)
+            {
+                var winningTeam = GameState.Instance.Score.GetWinningTeam();              // handle spawning into a postgame podium
+                var useWin = winningTeam == team;
+                if (winningTeam == NetworkedTeam.Team.NoTeam)
+                {
+                    useWin = m_tieAlternateToWin;
+                    m_tieAlternateToWin = !m_tieAlternateToWin;
+                }
+                
+                Transform trans = null;
+                if (useWin)
+                {
+                    trans = m_winnerSpawnPoints.ReserveRandomSpawnPoint(out var index);
+                    playerData.PostGameWinnerSide = true;
+                    playerData.SpawnPointIndex = index;
+                }
+                
+                if (trans == null)
+                {
+                    trans = m_loserSpawnPoints.ReserveRandomSpawnPoint(out var index);
+                    playerData.PostGameWinnerSide = false;
+                    playerData.SpawnPointIndex = index;
+                }
+                
+                position = trans.position;
+                rotation = trans.rotation;
+                
+                return;
+            }
+
+            if (team == NetworkedTeam.Team.TeamA)
+            {
+                if (m_teamARandomSpawnOrder.Count <= 0)                                                 // read a list of randomized indexes for spawn points
+                {
+                    RandomizeSpawnPoints(m_teamASpawnPoints.Length, ref m_teamARandomSpawnOrder);
+                }
+
+                var point = m_teamASpawnPoints[m_teamARandomSpawnOrder.Dequeue()];                  // remove the index from the queue and use it
+                position = point.position;
+                rotation = point.rotation;
+            }
+            else
+            {
+                if (m_teamBRandomSpawnOrder.Count <= 0)
+                {
+                    RandomizeSpawnPoints(m_teamBSpawnPoints.Length, ref m_teamBRandomSpawnOrder);
+                }
+
+                var point = m_teamBSpawnPoints[m_teamBRandomSpawnOrder.Dequeue()];
+                position = point.position;
+                rotation = point.rotation;
+            }
+        }
+
+
+        
         private void RandomizeSpawnPoints(int length, ref Queue<int> randomQueue)
         {
             m_tempListForSpawnPoints.Clear();
@@ -78,106 +326,6 @@ namespace UltimateGloveBall.Arena.Services
             m_tempListForSpawnPoints.Clear();
         }
 
-        public override NetworkObject SpawnPlayer(ulong clientId, string playerId, bool isSpectator, Vector3 playerPos)
-        {
-            if (isSpectator)
-            {
-                var spectator = SpawnSpectator(clientId, playerId, playerPos);
-                return spectator;
-            }
-
-            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId, new ArenaPlayerData(clientId, playerId));    // check if the player is reconnecting and other...     make a new ArenaPlayerData struct to populate
-            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;
-            // setup data based on gamePhase
-            GetSpawnData(ref playerData, playerPos, out var position, out var rotation, out var team,      // setup which team for the spawning player
-                out var color, out var spawnTeam);
-
-            var player = Instantiate(m_playerPrefab, position, rotation);
-            player.SpawnAsPlayerObject(clientId);                                // after spawning, Netcode designate it as a PlayerObject    ( this is basically Possess event )
-            player.GetComponent<NetworkedTeam>().MyTeam = team;
-
-            var leftArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);        // spawn gloves/hands for player
-            var leftArmature = leftArmatureNet.GetComponent<GloveArmatureNetworking>();
-            leftArmature.Side = Glove.GloveSide.Left;
-            leftArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
-            var leftHandNet = Instantiate(m_gloveHandPrefab, Vector3.down, Quaternion.identity);
-            var leftHand = leftHandNet.GetComponent<GloveNetworking>();
-            leftHand.Side = Glove.GloveSide.Left;
-            leftHandNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
-
-            var rightArmatureNet = Instantiate(m_gloveArmaturePrefab, Vector3.down, Quaternion.identity);
-            var rightArmature = rightArmatureNet.GetComponent<GloveArmatureNetworking>();
-            rightArmature.Side = Glove.GloveSide.Right;
-            rightArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
-            var rightHandNet = Instantiate(m_gloveHandPrefab, Vector3.down, Quaternion.identity);
-            var rightHand = rightHandNet.GetComponent<GloveNetworking>();
-            rightHand.Side = Glove.GloveSide.Right;
-            rightHandNet.GetComponent<TeamColoringNetComponent>().TeamColor = color;
-            rightArmatureNet.SpawnWithOwnership(clientId);
-            rightHandNet.SpawnWithOwnership(clientId);
-            leftArmatureNet.SpawnWithOwnership(clientId);
-            leftHandNet.SpawnWithOwnership(clientId);               // give the client player ownership of gloves/hands
-
-            player.GetComponent<PlayerControllerNetwork>().ArmatureLeft = leftArmature;
-            player.GetComponent<PlayerControllerNetwork>().ArmatureRight = rightArmature;
-            player.GetComponent<PlayerControllerNetwork>().GloveLeft = leftHand;
-            player.GetComponent<PlayerControllerNetwork>().GloveRight = rightHand;
-
-            playerData.SelectedTeam = team;
-            m_gameManager.UpdatePlayerTeam(clientId, spawnTeam);
-            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);       // update the playerdata now we know the team
-
-            return player;
-        }
-
-        public void ResetPostGameSpawnPoints()
-        {
-            m_winnerSpawnPoints.Reset();
-            m_loserSpawnPoints.Reset();
-        }
-
-        public void ResetInGameSpawnPoints()
-        {
-            RandomizeSpawnPoints(m_teamASpawnPoints.Length, ref m_teamARandomSpawnOrder);
-            RandomizeSpawnPoints(m_teamBSpawnPoints.Length, ref m_teamBRandomSpawnOrder);
-        }
-
-        public override void GetRespawnPoint(ulong clientId, NetworkedTeam.Team team,
-            out Vector3 position, out Quaternion rotation)
-        {
-            var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;
-            GetSpawnPositionForTeam(m_gameManager.CurrentPhase, team, ref playerData, out position, out rotation);
-            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
-        }
-
-        public Transform SwitchSpectatorSide(ulong clientId, SpectatorNetwork spectator)
-        {
-            var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;
-            if (!playerData.IsSpectator)
-            {
-                return null;
-            }
-
-            var spawnPoints = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
-                ? m_spectatorASpawnPoints
-                : m_spectatorBSpawnPoints;
-            spawnPoints.ReleaseSpawnPoint(playerData.SpawnPointIndex);
-
-            // switch teams
-            playerData.SelectedTeam = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
-                ? NetworkedTeam.Team.TeamB
-                : NetworkedTeam.Team.TeamA;
-            spectator.TeamSideColor = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
-                ? m_gameManager.TeamAColor
-                : m_gameManager.TeamBColor;
-            spawnPoints = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
-                ? m_spectatorASpawnPoints
-                : m_spectatorBSpawnPoints;
-            var newLocation = spawnPoints.ReserveRandomSpawnPoint(out var spawnIndex);
-            playerData.SpawnPointIndex = spawnIndex;
-            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
-            return newLocation;
-        }
 
         protected override void OnClientDisconnected(ulong clientId)       // this is a NetworkBehavior so it gets OnClientDisconnected callbacks
         {
@@ -185,14 +333,16 @@ namespace UltimateGloveBall.Arena.Services
             if (playerData.HasValue)
             {
                 var data = playerData.Value;
-                data.IsConnected = false;
+                data.IsConnected = false;                   // set is connected to false
+                
+                
                 if (m_gameManager.CurrentPhase == GameManager.GamePhase.PostGame)
                 {
                     if (data.SpawnPointIndex > 0)
                     {
                         if (data.PostGameWinnerSide)
                         {
-                            m_winnerSpawnPoints.ReleaseSpawnPoint(data.SpawnPointIndex);
+                            m_winnerSpawnPoints.ReleaseSpawnPoint(data.SpawnPointIndex);                // release podium spawn points if client disconnects,  others might join
                         }
                         else
                         {
@@ -201,10 +351,46 @@ namespace UltimateGloveBall.Arena.Services
                     }
                 }
 
-                ArenaSessionManager.Instance.SetPlayerData(clientId, data);      // set data as player IsConnected false
+                ArenaSessionManager.Instance.SetPlayerData(clientId, data);               // set data as player IsConnected false
             }
         }
 
+
+        private TeamColor GetTeamColor(NetworkedTeam.Team team)            // ask the game manager what colors teams get
+        {
+            var useTeamA = team == NetworkedTeam.Team.TeamA;
+            var color = useTeamA ? m_gameManager.TeamAColor : m_gameManager.TeamBColor;
+            return color;
+        }
+        
+        
+        
+        public override void GetRespawnPoint(ulong clientId, NetworkedTeam.Team team,                       // i dont need respawning
+            out Vector3 position, out Quaternion rotation)
+        {
+            var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;
+            GetSpawnPositionForTeam(m_gameManager.CurrentPhase, team, ref playerData, out position, out rotation);         // get a new spawn position given PlayerData already exists, player already has a position
+            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
+        }
+
+        
+        
+        public void ResetPostGameSpawnPoints()
+        {
+            m_winnerSpawnPoints.Reset();           // unclaim all the spawn points in reserving service
+            m_loserSpawnPoints.Reset();
+        }
+
+        public void ResetInGameSpawnPoints()
+        {
+            RandomizeSpawnPoints(m_teamASpawnPoints.Length, ref m_teamARandomSpawnOrder);             // randomize the main team spawn points
+            RandomizeSpawnPoints(m_teamBSpawnPoints.Length, ref m_teamBRandomSpawnOrder);
+        }
+        
+        
+        
+        
+        
         private NetworkObject SpawnSpectator(ulong clientId, string playerId, Vector3 playerPos)           // spawn a player without Gloves
         {
             ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId,
@@ -266,134 +452,38 @@ namespace UltimateGloveBall.Arena.Services
             spectator.SpawnAsPlayerObject(clientId);
             ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
             return spectator;
+            
         }
 
-        private void GetSpawnData(ref ArenaPlayerData playerData, Vector3 currentPos, out Vector3 position,
-            out Quaternion rotation, out NetworkedTeam.Team team, out TeamColor teamColor,
-            out NetworkedTeam.Team spawnTeam)
+        public Transform SwitchSpectatorSide(ulong clientId, SpectatorNetwork spectator)
         {
-            var currentPhase = m_gameManager.CurrentPhase;
-            team = currentPhase switch
+            var playerData = ArenaSessionManager.Instance.GetPlayerData(clientId).Value;
+            if (!playerData.IsSpectator)
             {
-                GameManager.GamePhase.InGame or GameManager.GamePhase.CountDown => GetTeam(playerData, currentPos),    // setup the team for the spawning player
-                GameManager.GamePhase.PostGame => GetTeam(playerData, currentPos),
-                GameManager.GamePhase.PreGame => NetworkedTeam.Team.NoTeam,
-                _ => NetworkedTeam.Team.NoTeam,
-            };
-            spawnTeam = team;
-            if (spawnTeam == NetworkedTeam.Team.NoTeam)
-            {
-                spawnTeam = GetTeam(playerData, currentPos);
+                return null;
             }
 
-            GetSpawnPositionForTeam(currentPhase, spawnTeam, ref playerData, out position, out rotation);     // get spawn position
+            var spawnPoints = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
+                ? m_spectatorASpawnPoints
+                : m_spectatorBSpawnPoints;
+            spawnPoints.ReleaseSpawnPoint(playerData.SpawnPointIndex);
 
-            teamColor = GetTeamColor(spawnTeam);
-        }
-
-        private NetworkedTeam.Team GetTeam(ArenaPlayerData playerData, Vector3 currentPos)
-        {
-            if (playerData.SelectedTeam != NetworkedTeam.Team.NoTeam)
-            {
-                return playerData.SelectedTeam;
-            }
-
-            NetworkedTeam.Team team;
-            if (currentPos == Vector3.zero)
-            {
-                team = m_gameManager.GetTeamWithLeastPlayers();
-            }
-            else
-            {
-                if (m_gameManager.CurrentPhase == GameManager.GamePhase.PostGame)
-                {
-                    var winningTeam = GameState.Instance.Score.GetWinningTeam();
-                    if (winningTeam == NetworkedTeam.Team.NoTeam)
-                    {
-                        winningTeam = NetworkedTeam.Team.TeamA;
-                    }
-
-                    var losingTeam = winningTeam == NetworkedTeam.Team.TeamA
-                        ? NetworkedTeam.Team.TeamB
-                        : NetworkedTeam.Team.TeamA;
-                    team = Mathf.Abs(currentPos.z - m_winnerSpawnPoints.transform.position.z) >=
-                           Mathf.Abs(currentPos.z - m_loserSpawnPoints.transform.position.z)
-                        ? winningTeam
-                        : losingTeam;
-                }
-                else
-                {
-                    team = currentPos.z < 0 ? NetworkedTeam.Team.TeamA : NetworkedTeam.Team.TeamB;
-                }
-            }
-
-            return team;
-        }
-
-        private void GetSpawnPositionForTeam(GameManager.GamePhase gamePhase, NetworkedTeam.Team team,
-            ref ArenaPlayerData playerData,
-            out Vector3 position, out Quaternion rotation)
-        {
-            if (gamePhase == GameManager.GamePhase.PostGame)
-            {
-                var winningTeam = GameState.Instance.Score.GetWinningTeam();
-                var useWin = winningTeam == team;
-                if (winningTeam == NetworkedTeam.Team.NoTeam)
-                {
-                    useWin = m_tieAlternateToWin;
-                    m_tieAlternateToWin = !m_tieAlternateToWin;
-                }
-
-                Transform trans = null;
-                if (useWin)
-                {
-                    trans = m_winnerSpawnPoints.ReserveRandomSpawnPoint(out var index);
-                    playerData.PostGameWinnerSide = true;
-                    playerData.SpawnPointIndex = index;
-                }
-
-                if (trans == null)
-                {
-                    trans = m_loserSpawnPoints.ReserveRandomSpawnPoint(out var index);
-                    playerData.PostGameWinnerSide = false;
-                    playerData.SpawnPointIndex = index;
-                }
-
-                position = trans.position;
-                rotation = trans.rotation;
-
-                return;
-            }
-
-            if (team == NetworkedTeam.Team.TeamA)
-            {
-                if (m_teamARandomSpawnOrder.Count <= 0)
-                {
-                    RandomizeSpawnPoints(m_teamASpawnPoints.Length, ref m_teamARandomSpawnOrder);
-                }
-
-                var point = m_teamASpawnPoints[m_teamARandomSpawnOrder.Dequeue()];
-                position = point.position;
-                rotation = point.rotation;
-            }
-            else
-            {
-                if (m_teamBRandomSpawnOrder.Count <= 0)
-                {
-                    RandomizeSpawnPoints(m_teamBSpawnPoints.Length, ref m_teamBRandomSpawnOrder);
-                }
-
-                var point = m_teamBSpawnPoints[m_teamBRandomSpawnOrder.Dequeue()];
-                position = point.position;
-                rotation = point.rotation;
-            }
-        }
-
-        private TeamColor GetTeamColor(NetworkedTeam.Team team)
-        {
-            var useTeamA = team == NetworkedTeam.Team.TeamA;
-            var color = useTeamA ? m_gameManager.TeamAColor : m_gameManager.TeamBColor;
-            return color;
+            // switch teams
+            playerData.SelectedTeam = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
+                ? NetworkedTeam.Team.TeamB
+                : NetworkedTeam.Team.TeamA;
+            spectator.TeamSideColor = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
+                ? m_gameManager.TeamAColor
+                : m_gameManager.TeamBColor;
+            spawnPoints = playerData.SelectedTeam == NetworkedTeam.Team.TeamA
+                ? m_spectatorASpawnPoints
+                : m_spectatorBSpawnPoints;
+            var newLocation = spawnPoints.ReserveRandomSpawnPoint(out var spawnIndex);
+            playerData.SpawnPointIndex = spawnIndex;
+            ArenaSessionManager.Instance.SetPlayerData(clientId, playerData);
+            return newLocation;
         }
     }
+    
+    
 }

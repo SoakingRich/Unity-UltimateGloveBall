@@ -46,8 +46,11 @@ namespace UltimateGloveBall.Arena.Player
 
         public void SetLimits(float minX, float maxX, float minZ, float maxZ)
         {
-            m_useLimits = true;
-            m_limits = new float[4] { minX, maxX, minZ, maxZ };
+            m_useLimits = false;    // dont use limits
+            return;
+            
+            // m_useLimits = true;
+            // m_limits = new float[4] { minX, maxX, minZ, maxZ };
         }
 
         public void ResetLimits()

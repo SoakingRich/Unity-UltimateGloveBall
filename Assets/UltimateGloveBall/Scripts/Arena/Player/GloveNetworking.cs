@@ -119,7 +119,7 @@ namespace UltimateGloveBall.Arena.Player
                     playerEnts.RightGloveHand = GetComponent<Glove>();
                 }
 
-                playerEnts.TryAttachGloves();
+                playerEnts.TryAttachGloves();                            // only if owner, run TryAttachGloves
                 m_glove.SetLODLocal();
             }
             else

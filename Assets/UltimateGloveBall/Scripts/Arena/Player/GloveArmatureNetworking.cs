@@ -167,7 +167,7 @@ namespace UltimateGloveBall.Arena.Player
                     playerEnts.RightGloveArmature = this;
                 }
 
-                playerEnts.TryAttachGloves();
+                playerEnts.TryAttachGloves();                          // only if owner, run TryAttachGloves
                 SetLocalLoDs();
             }
             else

@@ -48,13 +48,36 @@ namespace UltimateGloveBall.Arena.Player.Respawning
         #region LifeCycle
 
         public bool IsKnockedOut => KnockedOut.Value;
+        
+        public Action OnKnockedOutEvent;
+        public Action OnRespawnCompleteEvent;
+        
+        
+        
+        
+        
         public override void OnNetworkSpawn()
         {
             if (IsOwner)
             {
-                PlayerHud.WhenInstantiated(_ => OnHudInstantiated());  //  WhenInstantiated takes a func pointer to be run on PlayerHud awake function,  i dont get it, if PlayerHud exists here surely its awake func has already happened
+                PlayerHud.WhenInstantiated(_ => OnHudInstantiated());  //  WhenInstantiated takes a func pointer to be run on PlayerHud awake function, i guess on NetworkSpawn the playerhud hasnt instantiated yet
             }
         }
+        
+        
+        
+        private void OnHudInstantiated()
+        {
+            m_hud = PlayerHud.Instance.RespawnHud;
+
+            if (IsOwner)
+            {
+                m_hud.RespawnInitiated += RequestRespawnServerRpc;              // add bindings to PlayerHud once its instantiated
+            }
+        }
+        
+        
+        
 
         public override void OnNetworkDespawn()
         {
@@ -67,6 +90,8 @@ namespace UltimateGloveBall.Arena.Player.Respawning
             }
         }
 
+        
+        
         private void OnEnable()
         {
             KnockedOut.OnValueChanged += OnKnockedOut;        // rep notify for KnockedOut
@@ -81,21 +106,27 @@ namespace UltimateGloveBall.Arena.Player.Respawning
 
         #endregion
 
-        public Action OnKnockedOutEvent;
-        public Action OnRespawnCompleteEvent;
+        
+        
+        
 
         [ContextMenu("Knockout Player")]
-        public void KnockOutPlayer()
+        public void KnockOutPlayer()                           // called by BallNetworking
         {
-            if (!IsServer) return;
+            if (!IsServer) return;             // only server from here
 
-            if (KnockedOut.Value) return;
+            if (KnockedOut.Value==true) return;                
 
-            KnockedOut.Value = true; // Notify everyone about new knockout state   OnKnockedOut
-            _ = StartCoroutine(StartRespawnCountdown()); // Start countdown on server
+            KnockedOut.Value = true; // RepNotify everyone about new knockout state   OnKnockedOut
+            
+            _ = StartCoroutine(StartRespawnCountdown()); // Start countdown
         }
 
-        private IEnumerator StartRespawnCountdown()
+        
+        
+        
+        
+        private IEnumerator StartRespawnCountdown()             // literal timer in a while loop
         {
             RespawnTimer.Value = RESPAWN_TIMER_VALUE;
             while (RespawnTimer.Value > 0)
@@ -107,9 +138,14 @@ namespace UltimateGloveBall.Arena.Player.Respawning
             KnockedOut.Value = false;
         }
 
-        private void OnKnockedOut(bool wasKnockedOut, bool isKnockedOut)
+        
+        
+        
+        
+        
+        private void OnKnockedOut(bool wasKnockedOut, bool isKnockedOut)         // all clients get this from RepNotify
         {
-            if (IsOwner)            // only happens on the client that owns the RespawnController,   does Server own all RespawnControllers??
+            if (IsOwner)            // if we locally are the knocked out player
             {
                 if (m_hud == null)
                 {
@@ -117,8 +153,9 @@ namespace UltimateGloveBall.Arena.Player.Respawning
                     return;
                 }
 
-                m_playerController.ClearInvulnerability();                    // surely only server
-                if (!wasKnockedOut && isKnockedOut) // Just got knocked out
+                m_playerController.ClearInvulnerability();                    // contnet is server-only
+                
+                if (!wasKnockedOut && isKnockedOut) // check that rep variable has actually changed value, and that we are now knocked out
                 {
                     m_hud.DisplayText(true);
                     m_hud.DisplayRespawnButton(false);
@@ -128,7 +165,7 @@ namespace UltimateGloveBall.Arena.Player.Respawning
 
                     PlayerInputController.Instance.InputEnabled = false;
 
-                    _ = StartCoroutine(DespawnPlayer());
+                    _ = StartCoroutine(DespawnPlayer());                       // despawn the local player (hide gloves, play dissolve effect)
                     var entities = LocalPlayerEntities.Instance;
                     entities.LeftGloveHand.DropBall();
                     entities.RightGloveHand.DropBall();
@@ -137,17 +174,17 @@ namespace UltimateGloveBall.Arena.Player.Respawning
                 if (wasKnockedOut && !isKnockedOut) // No longer knocked out
                 {
                     m_hud.SetText("Respawning");
-                    RequestRespawnServerRpc();
+                    RequestRespawnServerRpc();                       // request respawn from server
                     // m_hud.DisplayText(false);
                     //m_hud.DisplayRespawnButton(true);
                 }
             }
             else
             {
-                if (!wasKnockedOut && isKnockedOut) // Just got knocked out
+                if (!wasKnockedOut && isKnockedOut) // Someone else just got knocked out
                 {
                     m_collider.enabled = false;
-                    _ = StartCoroutine(DespawnPlayer());
+                    _ = StartCoroutine(DespawnPlayer());              // despawn that player (hide gloves, play dissolve effect)
                 }
             }
 
@@ -156,25 +193,42 @@ namespace UltimateGloveBall.Arena.Player.Respawning
                 OnKnockedOutEvent?.Invoke();
             }
         }
-
-        private void Update()
+        
+        
+        
+        
+        private IEnumerator DespawnPlayer()                                             // despawn really just means, play dissolve effect on playerAvatar and hide gloves,   run for self entity and others
         {
-            if (KnockedOut.Value && m_hud)
+            var timer = 2f;
+            var avatar = GetComponentInChildren<PlayerAvatarEntity>();
+            var material = avatar.Material;
+            material.SetKeyword("ENABLE_CUSTOM_EFFECT", true);
+
+            while (timer > 0)                                                                             // Handle material Fade     // 'while' is used a bit like a timeline component would be in unreal,   inside an IEnumerator
             {
-                m_hud.UpdateText(RespawnTimer.Value);
+                timer -= Time.deltaTime;
+                _ = material.SetFloat("_DisAmount", Mathf.Lerp(-1.2f, 0.8f, timer / 2f));
+                avatar.ApplyMaterial();
+                yield return null;
             }
+
+            var entities = LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId);             // hide all the player's objects
+            entities.LeftGloveArmature.gameObject.SetActive(false);
+            entities.RightGloveArmature.gameObject.SetActive(false);
+            entities.LeftGloveHand.gameObject.SetActive(false);
+            entities.RightGloveHand.gameObject.SetActive(false);
+            m_playerNameVisual.SetVisibility(false);
+            avatar.Hide();
+            yield return null;
+            material.SetKeyword("ENABLE_CUSTOM_EFFECT", false);           // set a boolean state on material
+            avatar.ApplyMaterial();                                           // ovr method for Applying Material  ???
         }
-
-        private void OnHudInstantiated()
-        {
-            m_hud = PlayerHud.Instance.RespawnHud;
-
-            if (IsOwner)
-            {
-                m_hud.RespawnInitiated += RequestRespawnServerRpc;
-            }
-        }
-
+        
+        
+        
+        
+        
+        
         [ServerRpc(RequireOwnership = false)]       // let server run this on RespawnControllers it doesnt own,  this implies that clients do in fact own their own RespawnControllers
         private void RequestRespawnServerRpc()
         {
@@ -185,9 +239,13 @@ namespace UltimateGloveBall.Arena.Player.Respawning
                     m_networkedTeamComponent.MyTeam,
                     out var position,
                     out var rotation);
+                
                 OnRespawnClientRpc(position, rotation);
             }
         }
+        
+        
+        
 
         [ClientRpc]
         private void OnRespawnClientRpc(Vector3 position, Quaternion rotation)
@@ -201,33 +259,27 @@ namespace UltimateGloveBall.Arena.Player.Respawning
 
             _ = StartCoroutine(ShowPlayerDelayed());          // handle visibility for this player on All Clients
         }
+        
+        
+        
+        
+        
+        
+        
 
-        private IEnumerator DespawnPlayer()    // despawn really just means, play dissolve effect on playerAvatar and hide gloves
+        private void Update()
         {
-            var timer = 2f;
-            var avatar = GetComponentInChildren<PlayerAvatarEntity>();
-            var material = avatar.Material;
-            material.SetKeyword("ENABLE_CUSTOM_EFFECT", true);
-
-            while (timer > 0)                      // 'while' is used like a timeline component,   in an IEnumerator
+            if (KnockedOut.Value && m_hud)
             {
-                timer -= Time.deltaTime;
-                _ = material.SetFloat("_DisAmount", Mathf.Lerp(-1.2f, 0.8f, timer / 2f));
-                avatar.ApplyMaterial();
-                yield return null;
+                m_hud.UpdateText(RespawnTimer.Value);          // update text on HUD with RespawnTimer
             }
-
-            var entities = LocalPlayerEntities.Instance.GetPlayerObjects(OwnerClientId);
-            entities.LeftGloveArmature.gameObject.SetActive(false);
-            entities.RightGloveArmature.gameObject.SetActive(false);
-            entities.LeftGloveHand.gameObject.SetActive(false);
-            entities.RightGloveHand.gameObject.SetActive(false);
-            m_playerNameVisual.SetVisibility(false);
-            avatar.Hide();
-            yield return null;
-            material.SetKeyword("ENABLE_CUSTOM_EFFECT", false);
-            avatar.ApplyMaterial();
         }
+
+        
+
+     
+
+       
 
         private IEnumerator ShowPlayerDelayed()       // Show the player once theyve been respawned
         {

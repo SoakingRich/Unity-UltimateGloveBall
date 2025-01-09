@@ -15,7 +15,7 @@ public class DynamicInputAndBehaviorAssignment : MonoBehaviour
     public bool AssignEyePose = true;
     public bool AssignLipSync = true;
 
-    private OvrAvatarBodyTrackingBehavior bodyTrackingBehavior = null;
+   // private OvrAvatarBodyTrackingBehavior bodyTrackingBehavior = null;
     private OvrAvatarFacePoseBehavior facePoseBehavior = null;
     private OvrAvatarEyePoseBehavior eyePoseBehavior = null;
     private OvrAvatarLipSyncBehavior lipSyncBehavior = null;
@@ -36,15 +36,15 @@ public class DynamicInputAndBehaviorAssignment : MonoBehaviour
 
     public void FindManagers()
     {
-        OvrAvatarBodyTrackingBehavior[] bodyTrackingBehaviors = GameObject.FindObjectsOfType<OvrAvatarBodyTrackingBehavior>();
-        foreach (var behavior in bodyTrackingBehaviors)
-        {
-            if (behavior.gameObject.activeInHierarchy)
-            {
-                bodyTrackingBehavior = behavior;
-                break;
-            }
-        }
+        // OvrAvatarBodyTrackingBehavior[] bodyTrackingBehaviors = GameObject.FindObjectsOfType<OvrAvatarBodyTrackingBehavior>();
+        // foreach (var behavior in bodyTrackingBehaviors)
+        // {
+        //     if (behavior.gameObject.activeInHierarchy)
+        //     {
+        //         bodyTrackingBehavior = behavior;
+        //         break;
+        //     }
+        // }
         OvrAvatarFacePoseBehavior[] facePoseBehaviors = GameObject.FindObjectsOfType<OvrAvatarFacePoseBehavior>();
         foreach (var behavior in facePoseBehaviors)
         {
@@ -83,22 +83,22 @@ public class DynamicInputAndBehaviorAssignment : MonoBehaviour
     {
         foreach (OvrAvatarEntity entity in avatarEntities)
         {
-            if (AssignBodyTracking && bodyTrackingBehavior != null)
-            {
-                entity.SetBodyTracking(bodyTrackingBehavior);
-            }
-            if (AssignFacePose && facePoseBehavior != null)
-            {
-                entity.SetFacePoseProvider(facePoseBehavior);
-            }
-            if (AssignEyePose && eyePoseBehavior != null)
-            {
-                entity.SetEyePoseProvider(eyePoseBehavior);
-            }
-            if (AssignLipSync && lipSyncBehavior != null)
-            {
-                entity.SetLipSync(lipSyncBehavior);
-            }
+            // if (AssignBodyTracking && bodyTrackingBehavior != null)
+            // {
+            //     entity.SetBodyTracking(bodyTrackingBehavior);
+            // }
+            // if (AssignFacePose && facePoseBehavior != null)
+            // {
+            //     entity.SetFacePoseProvider(facePoseBehavior);
+            // }
+            // if (AssignEyePose && eyePoseBehavior != null)
+            // {
+            //     entity.SetEyePoseProvider(eyePoseBehavior);
+            // }
+            // if (AssignLipSync && lipSyncBehavior != null)
+            // {
+            //     entity.SetLipSync(lipSyncBehavior);
+            // }
         }
     }
 

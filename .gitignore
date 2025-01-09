@@ -82,3 +82,6 @@ Assets/Oculus/VR/Editor/Tools/ovr-platform-util.exe.meta
 Assets/Oculus/VR/Editor/Tools.meta
 
 keystore-passwords.txt
+
+# Alex - ignore this, as it is large and GitLFS complains
+Packages/com.meta.xr.sdk.avatars.sample.assets@24.0.0/*

@@ -20,7 +20,7 @@ namespace UltimateGloveBall.Arena.Services
     /// This is necessary since the different entities are different networked object that can be loaded in any order
     /// and we need to setup the player only once all their entities are spawned and loaded.
     /// </summary>
-    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>     // Clients in Arena are spawned by RPC, so things like Gloves can spawn in different order from avatars etc.
+    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>     // collection of locally owned objects for the player
     {
         public PlayerControllerNetwork LocalPlayerController;
         public GloveArmatureNetworking LeftGloveArmature;
@@ -29,19 +29,113 @@ namespace UltimateGloveBall.Arena.Services
         public Glove RightGloveHand;
         public PlayerAvatarEntity Avatar;
 
-        private readonly PlayerGameObjects m_localPlayerGameObjects = new();
+        private readonly PlayerGameObjects m_localPlayerGameObjects = new();            // not a monobehavior
 
-        private readonly Dictionary<ulong, PlayerGameObjects> m_playerObjects = new();
+        private readonly Dictionary<ulong, PlayerGameObjects> m_playerObjects = new();        //  a dictionary of ClientIDs to PlayerGameObjects,  PlayerControllerNetwork will populate this list with other players PlayerGameObjects
+        
         public List<ulong> PlayerIds { get; } = new();
-        private void Start()                  // on start we're not even getting avatars and gloves probably, but this object should exist already even in startup
+        
+        
+        
+        
+        
+        
+        
+        
+        private void Start()                
         {
             DontDestroyOnLoad(this);
             var networkLayer = UGBApplication.Instance.NetworkLayer;
             networkLayer.OnClientDisconnectedCallback += OnClientDisconnected;               // event if any client disconnects
             networkLayer.StartHostCallback += OnHostStarted;
-            networkLayer.RestoreHostCallback += OnHostStarted;                               /// event if we go on to host a game
+            networkLayer.RestoreHostCallback += OnHostStarted;                               /// event if we host a game
+        }
+        
+        
+        
+        private void OnHostStarted()
+        {
+            PlayerIds.Clear();
+            m_playerObjects.Clear();
+        }
+        
+        
+
+        
+        public void TryAttachGloves()   // should probably be renamed to INIT         // once weve had gloves and stuff spawned ( owned by us ), get references to those objects
+        {                                       // THIS SEEMS LIKE THE MAIN FUNCTION for initializing Local entities ala Local PlayerGameObjects,  and even does a FadeIn for the player
+                                                // this func is run in several places, and will abort if already done.    GloveNetworking, PlayerAvatarEntity onSkelLoaded, GloveArmatureNetworking
+            
+            
+            if (LeftGloveHand == null || RightGloveHand == null ||
+                LeftGloveArmature == null || RightGloveArmature == null ||
+                Avatar == null || !Avatar.IsSkeletonReady)
+            {
+                return;
+            }
+
+            if (!PlayerIds.Contains(NetworkManager.Singleton.LocalClientId))         // playerID is a maintained list of all current players that everyone keeps track of independently
+            {
+                PlayerIds.Add(NetworkManager.Singleton.LocalClientId);
+            }
+
+            m_localPlayerGameObjects.Avatar = Avatar;
+            m_localPlayerGameObjects.PlayerController = LocalPlayerController;
+            
+            m_localPlayerGameObjects.LeftGloveArmature = LeftGloveArmature;
+            m_localPlayerGameObjects.LeftGloveHand = LeftGloveHand;
+            m_localPlayerGameObjects.RightGloveArmature = RightGloveArmature;
+            m_localPlayerGameObjects.RightGloveHand = RightGloveHand;
+            
+            m_localPlayerGameObjects.TryAttachObjects();                                   // actually do all the attaching,   not clear why this isnt done here on LocalPlayerEntities instead instead
+
+            LeftGloveHand.IsMovementEnabled += IsMovementEnabled;
+            RightGloveHand.IsMovementEnabled += IsMovementEnabled;
+
+            var apsm = FindObjectOfType<ArenaPlayerSpawningManager>();
+            if (apsm != null) apsm.AssignDrawingGrid(Avatar.GetComponent<NetworkObject>());
+            
+                                                                                       // We find all interactors to set on the gloves so we know if we hover on UI
+            var interactors = FindObjectsOfType<RayInteractor>();
+            foreach (var interactor in interactors)
+            {
+                if (interactor.GetComponent<ControllerRef>().Handedness == Handedness.Left)
+                {
+                    LeftGloveHand.SetRayInteractor(interactor);                                      // get the spawned Interactors and use them as OUR interactors
+                }
+                else
+                {
+                    RightGloveHand.SetRayInteractor(interactor);                   // func TriggerAction uses RayInteractor to perform ball throws
+                }
+            }
+            
+            
+            LocalPlayerController.ArmatureLeft = LeftGloveArmature;
+            LocalPlayerController.ArmatureRight = RightGloveArmature;
+            LocalPlayerController.GloveRight = RightGloveHand.GloveNetworkComponent;
+            LocalPlayerController.GloveLeft = LeftGloveHand.GloveNetworkComponent;
+            
+            // var team = Avatar.GetComponent<NetworkedTeam>().MyTeam;
+            // if (team == NetworkedTeam.Team.TeamA)
+            // {
+            //     PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1f);    // get the movement limits imposed by our 'team' ///  this also happens in NetworkedTeam
+            // }
+            // else if (team == NetworkedTeam.Team.TeamB)
+            // {
+            //     PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, 1f, 9);
+            // }
+            // else
+            // {
+            //     PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, 9);
+            // }
+
+                                                        // Local Player is loaded
+            OVRScreenFade.instance.FadeIn();
         }
 
+        
+        
+        
         private void OnDestroy()
         {
             var networkLayer = UGBApplication.Instance.NetworkLayer;
@@ -50,7 +144,9 @@ namespace UltimateGloveBall.Arena.Services
             networkLayer.RestoreHostCallback -= OnHostStarted;
         }
 
-        public PlayerGameObjects GetPlayerObjects(ulong clientId)
+        
+        
+        public PlayerGameObjects GetPlayerObjects(ulong clientId)     // fetch PlayerGameObjects struct from tracked dictionary, used by PlayerControllerNetwork
         {
             if (clientId == NetworkManager.Singleton.LocalClientId)
             {
@@ -69,81 +165,16 @@ namespace UltimateGloveBall.Arena.Services
 
             return playerData;
         }
-
-        public void TryAttachGloves()            // once weve had gloves and stuff spawned ( owned by us ), get references to those objects
-        {                                       // THIS SEEMS LIKE THE MAIN FUNCTION for initializing Local entities ala Local PlayerGameObjects
-            if (LeftGloveHand == null || RightGloveHand == null ||
-                LeftGloveArmature == null || RightGloveArmature == null ||
-                Avatar == null || !Avatar.IsSkeletonReady)
-            {
-                return;
-            }
-
-            if (!PlayerIds.Contains(NetworkManager.Singleton.LocalClientId))
-            {
-                PlayerIds.Add(NetworkManager.Singleton.LocalClientId);
-            }
-
-            m_localPlayerGameObjects.Avatar = Avatar;
-            m_localPlayerGameObjects.PlayerController = LocalPlayerController;
-            m_localPlayerGameObjects.LeftGloveArmature = LeftGloveArmature;
-            m_localPlayerGameObjects.LeftGloveHand = LeftGloveHand;
-            m_localPlayerGameObjects.RightGloveArmature = RightGloveArmature;
-            m_localPlayerGameObjects.RightGloveHand = RightGloveHand;
-            m_localPlayerGameObjects.TryAttachObjects();
-
-            LeftGloveHand.IsMovementEnabled += IsMovementEnabled;
-            RightGloveHand.IsMovementEnabled += IsMovementEnabled;
-
-
-            // We find the interactor to set on the gloves so we know if we hover on UI
-            var interactors = FindObjectsOfType<RayInteractor>();
-            foreach (var interactor in interactors)
-            {
-                if (interactor.GetComponent<ControllerRef>().Handedness == Handedness.Left)
-                {
-                    LeftGloveHand.SetRayInteractor(interactor);     // get the spawned Interactors and use them as OUR interactors
-                }
-                else
-                {
-                    RightGloveHand.SetRayInteractor(interactor);
-                }
-            }
-
-
-            LocalPlayerController.ArmatureLeft = LeftGloveArmature;
-            LocalPlayerController.ArmatureRight = RightGloveArmature;
-            LocalPlayerController.GloveRight = RightGloveHand.GloveNetworkComponent;
-            LocalPlayerController.GloveLeft = LeftGloveHand.GloveNetworkComponent;
-
-            var team = Avatar.GetComponent<NetworkedTeam>().MyTeam;
-            if (team == NetworkedTeam.Team.TeamA)
-            {
-                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, -1f);    // get the movement limits imposed by our 'team'
-            }
-            else if (team == NetworkedTeam.Team.TeamB)
-            {
-                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, 1f, 9);
-            }
-            else
-            {
-                PlayerMovement.Instance.SetLimits(-4.5f, 4.5f, -9, 9);
-            }
-
-            // Local Player is loaded
-            OVRScreenFade.instance.FadeIn();
-        }
+        
+        
+        
 
         private static bool IsMovementEnabled()
         {
             return PlayerInputController.Instance.MovementEnabled;
         }
 
-        private void OnHostStarted()
-        {
-            PlayerIds.Clear();
-            m_playerObjects.Clear();
-        }
+   
 
         private void OnClientDisconnected(ulong clientId)
         {

@@ -9,15 +9,18 @@ namespace UltimateGloveBall.Arena.Services
     /// <summary>
     /// Handles client disconnect from the arena.
     /// </summary>
-    public class ArenaServerHandler : NetworkBehaviour
+    public class ArenaServerHandler : NetworkBehaviour             // this class only exists to run DisconnectClient on ArenaSessionManager when Server themselves disconnects
     {
         public override void OnNetworkSpawn()
         {
             if (IsServer)
             {
-                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;         // the server should run this function when any client disconnects
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;         // only server
             }
         }
+        
+        
+        
 
         public override void OnNetworkDespawn()
         {
@@ -26,16 +29,20 @@ namespace UltimateGloveBall.Arena.Services
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
             }
         }
+        
+        
+        
+        
 
         private void OnClientDisconnected(ulong clientId)
         {
             if (clientId == OwnerClientId)
             {
-                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;           // If the server themselves is the disconnecting client, just unsubscribe
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;           // If the server themselves is the disconnecting client, dont listen to OnClientDisconnect anymore
             }
             else
             {
-                ArenaSessionManager.Instance.DisconnectClient(clientId);               // else inform the ArenaSessionManager of a disconnect
+                ArenaSessionManager.Instance.DisconnectClient(clientId);               // else run ArenaSessionManager disconnect client
             }
         }
     }

@@ -51,7 +51,7 @@ namespace UltimateGloveBall.App
         private const int DEFAULT_OWNED_CAT_COUNT = 0;
 
         private float m_musicVolume;
-        public float MusicVolume
+        public float MusicVolume                                 // getters and setters,   all funcs are manipulating PlayerPrefs
         {
             get => m_musicVolume;
             set
@@ -139,7 +139,14 @@ namespace UltimateGloveBall.App
             }
         }
 
-        private GameSettings()
+      
+        
+        
+        
+        
+        
+        
+        private GameSettings()                          // constructor
         {
             m_musicVolume = PlayerPrefs.GetFloat(KEY_MUSIC_VOLUME, DEFAULT_MUSIC_VOLUME);
             m_sfxVolume = PlayerPrefs.GetFloat(KEY_SFX_VOLUME, DEFAULT_SFX_VOLUME);
@@ -150,6 +157,9 @@ namespace UltimateGloveBall.App
             m_selectedUserIconSku = PlayerPrefs.GetString(KEY_SELECTED_USER_ICON_SKU, DEFAULT_USER_ICON_SKU);
             m_ownedCatsCount = PlayerPrefs.GetInt(KEY_OWNED_CAT_COUNT, DEFAULT_OWNED_CAT_COUNT);
         }
+        
+        
+        
 
         private void SetFloat(string key, float value)
         {
