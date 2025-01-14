@@ -8,29 +8,29 @@ using UnityEngine;
 public class SnapZone : MonoBehaviour
 {
   public  DrawingGrid OwningGrid;
-
   public bool HasCurrentlySpawnedCube;
   public bool OnCooldown = false;
-
+ [SerializeField] public MeshRenderer HighlightCube;
   public Vector3 Coords;
+  
+  
+  
+  
+  
+  
+  
   
   
     private void Awake()
     {
-        OwningGrid = transform.parent.GetComponent<DrawingGrid>();
+        OwningGrid = UtilityLibrary.FindObjectInParents<DrawingGrid>(this.transform);
+           // transform.parent.GetComponent<DrawingGrid>();
+           
+           HighlightCube.enabled = false;   
     }
-
-    void Start()
-    {
-       
-    }
-
-   
-    void Update()
-    {
-        
-    }
-
+    
+    
+    
     private void OnTriggerStay(Collider other)
     {
         if (!HasCurrentlySpawnedCube)
@@ -47,6 +47,10 @@ public class SnapZone : MonoBehaviour
                     var TPE = other.GetComponent<TriggerPinchEvents>();
                     if (TPE != null)
                     {
+
+                        HighlightCube.enabled = true;          // show highlight cube
+                        OwningGrid.PointerUI?.Move(this);
+                        
                         // Check if the button is pressed
                         if (TPE.m_IsCurrentlyPressed)
                         {
@@ -60,6 +64,9 @@ public class SnapZone : MonoBehaviour
                         else
                         {
                             OnCooldown = false;
+                            
+                            
+                            
                         }
                     }
                 }
@@ -69,7 +76,7 @@ public class SnapZone : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (OnCooldown)
+        if (OnCooldown)                   // handle removing of cooldown
         {
             if (other.gameObject.CompareTag("Player"))
             {
@@ -78,6 +85,7 @@ public class SnapZone : MonoBehaviour
                     var TPE = other.GetComponent<TriggerPinchEvents>();
                     if (TPE != null)
                     {
+                        HighlightCube.enabled = false;                // hide highlight cube
                         OnCooldown = false;
                     }
 
@@ -93,6 +101,6 @@ public class SnapZone : MonoBehaviour
     void TrySpawnCube(bool isRight)
    {
         SpawnManager.Instance.SpawnPlayerCubeServerRpc(transform.position,OwningGrid.NetworkObject.OwnerClientId, isRight);
-        //OwningGrid.RequestSpawnPlayerCubeServerRpc(transform.position, transform.rotation);
+     
     }
 }

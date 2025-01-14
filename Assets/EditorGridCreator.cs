@@ -1,7 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.SceneManagement;
+
+#if UNITY_EDITOR
+		using UnityEditor.SceneManagement;
+
+
+
 
 // E:\UnityProjectsE\Unity-UltimateGloveBall\Assets\Scripts\Editor\EditorGridCreator.cs
 
@@ -21,7 +26,9 @@ public class EditorGridCreator : MonoBehaviour
     
     
     
-    
+// #if UNITY_EDITOR
+//         using UnityEditor.SceneManagement;
+// #endif
 
     public void CreateGrid()
     {
@@ -80,8 +87,10 @@ public class EditorGridCreator : MonoBehaviour
                            {
                                sZ.Coords = new Vector3(x, y, z);
                            }
-                            
+
                             EditorSceneManager.MarkSceneDirty(instance.scene);
+
+                            
                         }
                     }
                     else
@@ -159,4 +168,9 @@ public class EditorGridCreator : MonoBehaviour
             prefab.transform.position += offset;
         }
     }
+    
+
 }
+
+
+#endif

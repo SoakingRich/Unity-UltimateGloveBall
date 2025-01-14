@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using AYellowpaper.SerializedCollections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Blockami.Scripts
@@ -9,18 +12,38 @@ namespace Blockami.Scripts
     [CreateAssetMenu(fileName = "BlockamiData", menuName = "ScriptableObjects/BlockamiData", order = 1)]
     public class BlockamiData : ScriptableObject
     {
-
+        [Header("Prefabs")]
         public NetworkObject PlayerCubePrefab;
         
+        [Header("Game")]
         public float DefaultSpawnRate = 1.0f;
         public float FrenzySpawnRate = 0.5f;
         public int MaxCubes = 100;
-        public float SpecialCubeSpawnChance = 0.1f; // 10% chance
+        public float FrenzyTimeDuration = 7.0f; 
         
+        [Header("PlayerCube")]
         public float PlayerCubeMoveSpeed = 0.1f;
         public float PlayerCubeShrinkRate = 0.0001f;
-
+        
+        [Header("CubeTypes")]
+        [SerializedDictionary("ID", "Data")]
+        public SerializedDictionary< int, SceneCubeData> AllCubeTypes;
+        [SerializeField] public int MaxNormalColorID = 6;
+        
+        
+        [Header("SquashStretch")] 
+        public  float MoveTowardsMax =  0.005f;
+        public  Vector3 halfExtents = new Vector3(0.2f, 0.105f, 0.2f);
+        public   float springDamper = 0.1f;
+        public   float springStrength = 12500f;
+        public   float m_timeBeforeEnsureDeactivate = 3.0f;
+        public   float m_timeBeforeDeactivate = 1.0f;
+        public   float speed = 10.0f;
+        
+        
         private Vector3 OriginalScale;
+        
+      
 
 
         [System.Serializable]
@@ -51,13 +74,8 @@ namespace Blockami.Scripts
             }
         }
 
-        [SerializeField] public List<ColorType> m_ColorTypes; // array of all colortypes
-        
 
-        public ColorType GetRandomColor()
-        {
-            return m_ColorTypes[Random.Range(0, m_ColorTypes.Count)];
-        }
+
 
 
 
@@ -77,10 +95,7 @@ namespace Blockami.Scripts
 
         [Header("Internal")] private int m_weightcount;
         private int m_totalWeight;
-
-
-
-
+        
 
 
         private void Awake()
@@ -134,8 +149,36 @@ namespace Blockami.Scripts
             return m_CubeWeights[0].SceneCubePrefab;
         }
 
+        public int GetRandomColorID()
+        {
+            int rand = UnityEngine.Random.Range(0,MaxNormalColorID);
+            return rand;
+        }
+
+        public SceneCubeData GetSceneCubeDataFromID(int ID)
+        {
+            SceneCubeData scd = new SceneCubeData();
+            if (AllCubeTypes.TryGetValue(ID, out SceneCubeData foundData))
+            {
+                // If found, assign the found data to scd
+                scd = foundData;
+            }
+            return scd;
+        }
+
+        public Color GetColorFromColorID(int ID)
+        {
+            SceneCubeData scd = new SceneCubeData();
+            if (AllCubeTypes.TryGetValue(ID, out SceneCubeData foundData))
+            {
+                // If found, assign the found data to scd
+                scd = foundData;
+            }
+            return scd.myColor;
+        }
     }
 }
+
 
 
 

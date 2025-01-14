@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3244966623390615973
+--- !u!1 &2559613152820054632
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,50 +8,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8795766908640912350}
-  - component: {fileID: 3077360765206196445}
-  - component: {fileID: 5404788659442258827}
-  - component: {fileID: 7601639408951768878}
-  - component: {fileID: 6889326301878998742}
-  - component: {fileID: 2477488121596093758}
-  - component: {fileID: 4028938867457858520}
+  - component: {fileID: 3103966048033532945}
+  - component: {fileID: 5835170337481262852}
+  - component: {fileID: 5346085763471220535}
+  - component: {fileID: 39917396127141082}
+  - component: {fileID: 996239198544062250}
   m_Layer: 12
-  m_Name: SceneCube
+  m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8795766908640912350
+--- !u!4 &3103966048033532945
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3244966623390615973}
+  m_GameObject: {fileID: 2559613152820054632}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.18181819, y: 0.1818182, z: 0.1818182}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 8795766908640912350}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &3077360765206196445
+--- !u!33 &5835170337481262852
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3244966623390615973}
+  m_GameObject: {fileID: 2559613152820054632}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &5404788659442258827
+--- !u!23 &5346085763471220535
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3244966623390615973}
+  m_GameObject: {fileID: 2559613152820054632}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -87,6 +85,74 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &39917396127141082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2559613152820054632}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de69f96d8c84a0340b8cf10a59ff2867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
+  squashAmount: 0
+  speed: 10
+  deactivated: 0
+  box: {fileID: 0}
+  Ignore: 0
+--- !u!65 &996239198544062250
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2559613152820054632}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.5, y: 0.5, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &3244966623390615973
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8795766908640912350}
+  - component: {fileID: 7601639408951768878}
+  - component: {fileID: 6889326301878998742}
+  - component: {fileID: 2477488121596093758}
+  - component: {fileID: 4028938867457858520}
+  - component: {fileID: 1648493115}
+  m_Layer: 12
+  m_Name: SceneCube
+  m_TagString: SceneCube
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8795766908640912350
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3244966623390615973}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.18181819, y: 0.1818182, z: 0.1818182}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3103966048033532945}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &7601639408951768878
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -95,7 +161,7 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3244966623390615973}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
@@ -108,14 +174,14 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3244966623390615973}
   serializedVersion: 2
-  m_Mass: 1
+  m_Mass: 100
   m_Drag: 0
-  m_AngularDrag: 0.05
+  m_AngularDrag: 0
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 118
-  m_CollisionDetection: 0
+  m_Interpolate: 1
+  m_Constraints: 122
+  m_CollisionDetection: 1
 --- !u!114 &2477488121596093758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -157,3 +223,30 @@ MonoBehaviour:
         color: {r: 0, g: 0, b: 0, a: 0}
         ID: 0
   m_rigidbody: {fileID: 6889326301878998742}
+  OwningDrawingGrid: {fileID: 0}
+  m_fakeSoftCube: {fileID: 0}
+  m_squashStretch: {fileID: 0}
+--- !u!114 &1648493115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3244966623390615973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1057bb6cb3e8e4b907ac58894e7d35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
+  Ignore: 0
+  springStrength: 12500
+  springDamper: 0.1
+  halfExtents: {x: 0.2, y: 0.105, z: 0.2}
+  MoveTowardsMax: 0.005
+  m_timeBeforeEnsureDeactivate: 3
+  m_timeBeforeDeactivate: 1
+  LimitToOnceBounce: 1
+  deactivated: 0
+  squashStretchObjectVisual: {fileID: 39917396127141082}
+  WorldDir: {x: 0, y: 0, z: 0}

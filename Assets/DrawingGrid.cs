@@ -6,19 +6,36 @@ using UnityEngine;
 
 public class DrawingGrid : NetworkBehaviour
 {
-    public List<SnapZone> AllSnapZones = new List<SnapZone>();
+    
+    [Header("Settings")]
+    public int DrawingGridIndex;
+    public Vector3 MoveDirection = Vector3.forward;
+    public bool OnlyShowFirstLayerSnapZones = true;
+    public bool AIPlayerIsActive;
+    public AIPlayer m_AIPlayer;
+    
+    [Header("State")]
     public NetworkVariable<ulong> OwningPlayer;
     
-    public Vector3 MoveDirection = Vector3.forward;
+    [Header("Internal")]
+    public List<SnapZone> AllSnapZones = new List<SnapZone>();
+    public DrawPointerUI PointerUI;
+    public List<HealthCubeTransform> AllHealthCubeTransforms;
+    
+    
 
-    public bool OnlyShowFirstLayerSnapZones = true;
 
+
+    
     
     
     
     private void Awake()
     {
+      MoveDirection = transform.forward;
         AllSnapZones = new List<SnapZone>(GetComponentsInChildren<SnapZone>());
+        AllHealthCubeTransforms = new List<HealthCubeTransform>(GetComponentsInChildren<HealthCubeTransform>());
+     
         
         if (OnlyShowFirstLayerSnapZones)
         {
@@ -32,6 +49,12 @@ public class DrawingGrid : NetworkBehaviour
         }
     }
 
+    public void Update()
+    {
+        m_AIPlayer.gameObject.SetActive(AIPlayerIsActive);
+        m_AIPlayer.enabled = AIPlayerIsActive;
+        m_AIPlayer.AIPlayerIsActive = AIPlayerIsActive;
+    }
 
     public override void OnNetworkSpawn()
     {

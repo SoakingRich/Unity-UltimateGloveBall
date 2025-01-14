@@ -7,6 +7,7 @@ using Blockami.Scripts;
 using Meta.Utilities;
 using UltimateGloveBall.Arena.Player;
 using UltimateGloveBall.Arena.Services;
+using UltimateGloveBall.Arena.VFX;
 using UltimateGloveBall.Networking.Pooling;
 using UnityEngine.Serialization;
 
@@ -19,41 +20,39 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
     [Header("Editor")]
     [SerializeField] public bool BeginSpawnOnStart = true; 
     
-    [FormerlySerializedAs("spawnRateSettings")]
+    
     [Header("Spawn Settings")]
     [SerializeField] public BlockamiData BlockamiData;                      // For tweaking special cube spawn rates
-    [SerializeField] public float defaultSpawnRate = 1f;
-    [SerializeField] public float frenzySpawnRate = 0.2f;
     [SerializeField] public int maxSceneCubes = 50;
-    [SerializeField] private NetworkObjectPool m_cubePool;
+    [SerializeField] public NetworkObjectPool m_cubePool;
 
     [Header("State")]
     [SerializeField] public bool isPaused = false;
-    [SerializeField] private bool isSpawning = false;
-    [SerializeField] private int currentSceneCubeCount = 0;
-    [SerializeField] private float currentSpawnRate;
+    [SerializeField] public bool isSpawning = false;
+    [SerializeField] public bool isFrenzyTime = false;
+    [SerializeField] public int currentSceneCubeCount = 0;
+    [SerializeField] public float currentSpawnRate;
     //[SerializeField] private Object sceneCubePrefab;
     
 
     [Header("World")] 
     [SerializeField] private SpawnZone[] allSpawnZones;
 
-    [Header("Interal")] 
-    private readonly List < SceneCubeNetworking> m_AllScs  = new();
-    private readonly List < PlayerCubeScript> m_AllPcs  = new();
-    private NetworkObject sceneCubePrefab;
+    [Header("Internal")] 
+    public readonly List < SceneCubeNetworking> m_AllScs  = new();
+    public readonly List < PlayerCubeScript> m_AllPcs  = new();
+    public NetworkObject sceneCubePrefab;
     public NetworkObject PlayerShotPrefab;
-    
-    
-    //public static SpawnManager Instance { get; private set; }
-    
-    
-    
-    
-    
-    
+    public NetworkObject HealthCubePrefab;
+    [SerializeField] private NetworkObject HealthCubePickupPrefab;
+    private Coroutine SpawnTimerHandle;
+    private Coroutine FrenzyTimerHandle;
+
+
     private void Awake()
     {
+      
+        
         if (Instance != null && Instance != this)
         {
             Debug.LogWarning("Multiple SpawnManager instances detected. Destroying the duplicate.");
@@ -62,45 +61,44 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
         }
         Instance = this;
 
-    }
-    private void OnDestroy()                    // Optional: Clean up when this instance is destroyed
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
+        
+        allSpawnZones = FindObjectsOfType<SpawnZone>();
+        currentSpawnRate = BlockamiData.DefaultSpawnRate;
+        
     }
     
     
     
+    // override void  OnDestroy()                    // Optional: Clean up when this instance is destroyed
+    // {
+    //   //  base.OnDestroy();
+    //     
+    //     if (Instance == this)
+    //     {
+    //         Instance = null;
+    //     }
+    // }
+    
+   
     
     private void Start()
     {
-        InitFromBlockamiData();
         
-        allSpawnZones = FindObjectsOfType<SpawnZone>();
-        
-        currentSpawnRate = defaultSpawnRate;
+       
         
         if(BeginSpawnOnStart) StartSpawning();
     }
 
                       
-    
-    private void InitFromBlockamiData()                         // Initialize variables from ScriptableObject
-    {
-        if (BlockamiData == null) { Debug.LogError("SpawnRateSettings ScriptableObject is not assigned!"); return; }
-
-     
-        defaultSpawnRate = BlockamiData.DefaultSpawnRate;        
-        frenzySpawnRate = BlockamiData.FrenzySpawnRate;
-        maxSceneCubes = BlockamiData.MaxCubes;
-    }
+ 
     
 
 public void StartSpawning()
 {
-  
+    if (SpawnTimerHandle != null)
+    {
+        StopCoroutine(SpawnTimerHandle);
+    }
     
     if (!isPaused && !isSpawning) 
     {
@@ -108,7 +106,7 @@ public void StartSpawning()
         {
 
             isSpawning = true;
-            StartCoroutine(SpawnSceneCubes());
+            SpawnTimerHandle = StartCoroutine(SpawnSceneCubes());
         }
     }
 }
@@ -118,100 +116,156 @@ public void StartSpawning()
 
 private IEnumerator SpawnSceneCubes()        // repeat state
 {
-    while (currentSceneCubeCount < maxSceneCubes)
+    while (true)
     {
-        if (isPaused) yield break;
+        if (isPaused || currentSceneCubeCount > BlockamiData.MaxCubes)
+        {
+            yield break;
+        }
 
-        float spawnRate = isFrenzyTime() ? frenzySpawnRate : defaultSpawnRate;
+        float spawnRate = isFrenzyTime ? BlockamiData.FrenzySpawnRate : BlockamiData.DefaultSpawnRate;
         
         yield return new WaitForSeconds(1f / spawnRate);
 
       
         SpawnCubeServer();          // Spawn a random cube
 
-        currentSceneCubeCount++;
+      
     }
 }
 
                     
-                    private void SpawnCubeServer()
+                    private void SpawnCubeServer(Transform OverrideTransform = null, int OverrideColorID = -1, bool IsHealthCube = false)
                     {
-                    //    if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient) return;    clients shouldnt spawn scene cubes
+
+
+                        if (!IsHealthCube && currentSceneCubeCount >= maxSceneCubes)
+                        {
+                            Debug.Log("HITTING MAX SCENE CUBES");
+                            return;
+                            
+                        }
                         
-                        if (currentSceneCubeCount >= maxSceneCubes) return;
+                        ////////////////////////////// Get Position  
+                        var spawnPosition = GetRandomSpawnPosition();        // Spawn SceneCube at a random spawn zone in the sky
+                        if (OverrideTransform != null)
+                        {
+                            spawnPosition = OverrideTransform.position;     // health cubes specify location explicitly
+                        }
                         
-                            SceneCubeData newCubeData = new SceneCubeData
+                        
+                        
+                        ////////////////////////////// Get Color ID
+                            int colorID;
+                            colorID = BlockamiData.GetRandomColorID();
+
+                            bool HasHealthPickup = Random.Range(0.0f,1.0f) > 0.92f;
+                            
+                            bool IsRainbow = Random.Range(0.0f,1.0f) > 0.92f;
+                            if (IsRainbow)
                             {
-                               
-                                MyColorType = BlockamiData.GetRandomColor(),            // Set attributes based on your logic, such as random colors, types, pickups, etc.
-                                ContainsPickup = Random.value > 0.5f                 //  CubeType = (CubeType)Random.Range(0, 3), // For example
-                            };
+                                colorID = 10;
+                            }
                             
-                            var spawnPosition = GetRandomSpawnPosition();        // Spawn SceneCube at a random spawn zone in the sky
+                            bool IsEmoji = Random.Range(0.0f,1.0f) > 0.92f;;
+                            if (IsEmoji)
+                            {
+                                colorID = 11;
+                            }
                             
-                            // Get object from pool before spawning
-                            var selectedPrefab = BlockamiData.GetRandomCube(); 
+                            // decide if also has HealthPickup
+                            // decide if is Rainbow
+                            // decide if Emoji
+                                // mutate ColorID if so
+                                
+                            if (OverrideColorID > -1)
+                            {
+                                colorID = OverrideColorID;        // health cubes specify their colorID explicitly
+                            }
+                            
+                            ////////////////////////////// Get Prefab accounting for Exotic Type
+                            SceneCubeData scd = BlockamiData.GetSceneCubeDataFromID(colorID);            // ATM the only reason for SceneCubeData is for clients to retrieve Color from ID
+                            var selectedPrefab = scd.SceneCubePrefab;           // retrieve a prefab associated with colorIds SceneCubeData type
+                            
+                            if (IsHealthCube) selectedPrefab = HealthCubePrefab;   // healthcube prefab is not determined By ID
+                            if (HasHealthPickup) selectedPrefab = HealthCubePickupPrefab;  // healthcubepickup prefab is not determined By ID
+                            
+                            
+                            
+                            ////////////////////////////// SPAWN
                             var networkObject = m_cubePool.GetNetworkObject(selectedPrefab.gameObject, spawnPosition, Quaternion.identity);
                             if (!networkObject.IsSpawned)       // Spawning the ball is only required the first time it is fetched from the pool.
                                 networkObject.Spawn(); 
                             
+                            
+                            ////////////////////////////// INITIALIZE 
                             var go = networkObject.gameObject;
                             SceneCubeNetworking scs = go.GetComponent<SceneCubeNetworking>();
-                            scs.SCData.Value = newCubeData;
+                            scs.NetIsHealthCube.Value = IsHealthCube;
+                            scs.NetColorID.Value = colorID;                          // assign the ID so clients can initialize     
+                            // for exotic cubes, any that have unique prefabs, can initialize variables according to prefab defaults instead of replicated vars   eg. HealthCubes
+                            // exotic cubes with unique ColorIDs can still initialize themselves from that alone
                             scs.Initialize();
+                            
+                            if(!IsHealthCube) currentSceneCubeCount++;
                             m_AllScs.Add(scs);
                             scs.SCDied += OnSceneCubeDied;
-                            
-
-                            
-                            UpdateSceneCubeData(newCubeData);                 // Update the data struct for tracking   ????????
+                        
+             
                         
                     }
-    
-    private void UpdateSceneCubeData(SceneCubeData data)                     // Handle the logic of updating the struct with new cube data
-    {
-     
-    }
+
+                  
+
+   
     
     
     
     private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)
     {
+        if (destroyedCube.IsHealthCube)
+        {
+            TriggerFrenzyTime();
+        }
         DeSpawnCube(destroyedCube);
+    }
+    
+    private void OnHealthCubeDied(SceneCubeNetworking destroyedCube)
+    {
+       
     }
     
     public void DeSpawnCube(SceneCubeNetworking Sc)      
     {
+        
+        PlayHitVFXClientRpc(Sc.transform.position,Sc.transform.forward);
+        
         Sc.SCDied -= OnSceneCubeDied;
         currentSceneCubeCount--;
         _ = m_AllScs.Remove(Sc);
         if (Sc.NetworkObject.IsSpawned) Sc.NetworkObject.Despawn();
         
     }
+
+ 
+    
+    
+    
     
     public void ClearAllCubes()
     {
         if (!IsServer) return;
-
-        foreach (var cube in m_AllScs)
+        
+        foreach (var cube in m_AllScs.ToList())  // return ball calls NetworkManager.Despawn   and we have a pool manager which intercepts that and returns to a pool
         {
-            DeSpawnCube(cube);                      // return ball calls NetworkManager.Despawn   and we have a pool manager which intercepts that and returns to a pool
+            DeSpawnCube(cube);
         }
+        
+       
     }
-
-    private Vector3 GetRandomSpawnPosition()
-    {
-        SpawnZone randomSpawnZone = allSpawnZones[Random.Range(0, allSpawnZones.Length)];
-        return randomSpawnZone.transform.position;
-    }
-
-    private bool isFrenzyTime()
-    {
-        return false;                     // Add your logic for when frenzy time is triggered (e.g., score-based or timer-based)
-    }
-
-  
     
+    
+     
     public void PauseSpawning()
     {
         isPaused = true;
@@ -219,11 +273,53 @@ private IEnumerator SpawnSceneCubes()        // repeat state
         isSpawning = false;
     }
     
+    
+    
     public void ResumeSpawning()
     {
         isPaused = false;
         StartSpawning();
     }
+    
+    
+    
+
+    
+    
+    [ClientRpc(Delivery = RpcDelivery.Unreliable)]
+    public void PlayHitVFXClientRpc(Vector3 position, Vector3 rotation)
+    {
+        VFXManager.Instance.PlayHitVFX(position,rotation);
+    }
+
+    
+    
+    
+    [ContextMenu("TriggerFrenzyTime")]
+    public void TriggerFrenzyTime()
+    {
+        isFrenzyTime = true;
+        
+        // retriggerable delay
+        {
+            CancelInvoke("TriggerFrenzyTime");
+            Invoke("TriggerFrenzyTime", BlockamiData.FrenzyTimeDuration);
+        }
+        
+    }
+    
+    
+    
+    private Vector3 GetRandomSpawnPosition()
+    {
+        SpawnZone randomSpawnZone = allSpawnZones[Random.Range(0, allSpawnZones.Length)];
+        return randomSpawnZone.transform.position;
+    }
+
+   
+
+  
+   
 
 
 
@@ -238,40 +334,53 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     public void SpawnPlayerCubeServerRpc(Vector3 Position, ulong clientId, bool IsRight, int AIPlayerNum = -1)
     {
 
-        // Determine if the player is AI or Local
-        bool isAI = AIPlayerNum > -1;
-        PlayerControllerNetwork localController =
+       
+        bool isAI = AIPlayerNum > -1;                         // Determine if the player is AI or Local
+        PlayerControllerNetwork localController =              // determine PlayerControllerNetwork
             isAI ? null : LocalPlayerEntities.Instance.GetPlayerObjects(clientId).PlayerController;
-        AIPlayer aiController = isAI
+        
+        AIPlayer aiController = isAI                            // Get the AIPlayer script
             ? FindObjectsOfType<AIPlayer>().FirstOrDefault(player => player.AIPlayerNumber == AIPlayerNum)
             : null;
 
-        if (isAI && aiController == null) return; // If AI player not found, exit
+        if (isAI && aiController == null) return;                       // If AI player not found, exit
 
-        // Set the cube's data based on player type (AI or Local)
+        
+        /////////////////////// Get ColorID for new Cube
+        int NewColorID;        
+        if (isAI)
+        {
+            NewColorID = aiController.CurrentColorID;
+        }
+        else
+        {
+            NewColorID = LocalPlayerEntities.Instance.GetPlayerObjects(clientId).PlayerController.ColorID;
+
+        }
+        
+        
+        /////////////////////// Get PlayerCubeData   for colorID, clientID, AIPlayerNum
         PlayerCubeData newCubeData = new PlayerCubeData
         {
-            MyColorType = isAI
-                ? BlockamiData.m_ColorTypes[aiController.CurrentColorID]
-                : LocalPlayerEntities.Instance?.GetPlayerObjects(clientId)?.PlayerController?.m_ColorType?.Value ??
-                  BlockamiData.m_ColorTypes[Random.Range(0, BlockamiData.m_ColorTypes.Count)],
-            AIPlayerNum  = AIPlayerNum, OwningPlayerId = clientId
+            
+            ColorID = NewColorID, AIPlayerNum  = AIPlayerNum, OwningPlayerId = clientId
         };
 
-        // Get or spawn the PlayerCube
+        /////////////////////// Get Prefab
         var selectedPrefab = BlockamiData.PlayerCubePrefab;
         var networkObject = m_cubePool.GetNetworkObject(selectedPrefab.gameObject, Position, Quaternion.identity);
 
         if (!networkObject.IsSpawned) networkObject.Spawn();
 
+        /////////////////////// Intialize
         var go = networkObject.gameObject;
         var pcs = go.GetComponent<PlayerCubeScript>();
-        pcs.PCData.Value = newCubeData;
+        pcs._NetPCData.Value = newCubeData;
         pcs.Initialize();
         m_AllPcs.Add(pcs);
         pcs.PCDied += OnPlayerCubeDied;
 
-        // Determine the current shot object
+        /////////////////////// Try Get PlayerShot for this new cube
         var shotUlong = isAI ? aiController.CurrentPlayerShot.Value : localController.CurrentPlayerShot.Value;
         var netObj = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(shotUlong);
         var shot = netObj?.GetComponent<PlayerShotObject>();
@@ -279,15 +388,15 @@ private IEnumerator SpawnSceneCubes()        // repeat state
         bool needsShotSpawned = false;
         if (shot)
         {
-            needsShotSpawned = shot.AllPcs.Value.Count == 0 || shot.MyColorType != newCubeData.MyColorType;
+            needsShotSpawned = shot.AllPcs.Value.Count == 0 || shot.ColorID != newCubeData.ColorID;
         }
         else
         {
             needsShotSpawned = true;
         }
 
-        // Handle shot spawning if needed
-        if (needsShotSpawned)
+        
+        if (needsShotSpawned)         // spawn a new shot
         {
             var pshot = NetworkManager.Singleton.SpawnManager.InstantiateAndSpawn(PlayerShotPrefab, clientId, false,
                 false, false, Position, Quaternion.identity);
@@ -295,13 +404,13 @@ private IEnumerator SpawnSceneCubes()        // repeat state
 
             if (shot)
             {
-                // Update the shot reference for AI or local player
+                
                 if (isAI)
-                    aiController.CurrentPlayerShot.Value = pshot.NetworkObjectId;
+                    aiController.CurrentPlayerShot.Value = pshot.NetworkObjectId;            // AIPlayer saves ulong of the Shot spawned for them
                 else
-                    localController.CurrentPlayerShot.Value = pshot.NetworkObjectId;
+                    localController.CurrentPlayerShot.Value = pshot.NetworkObjectId;         // PlayerControllerNetwork saves ulong of the Shot spawned for them
 
-                shot.MyColorType = newCubeData.MyColorType;
+                shot.NetColorID.Value = newCubeData.ColorID;
                 shot.AllPcs.Value.Add(pcs.NetworkObjectId);
                 shot.IsRight.Value = IsRight;
                 shot.IsSuccess.Value = false;
@@ -321,13 +430,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
             shot?.AllPcs.Value.Add(pcs.NetworkObjectId); // If shot is valid, add cube to shot's list
         }
 
-        // if (pcs.OwningPlayerShot == null)
-        // {
-        //     Debug.LogError("Shot is null");
-        //
-        // }
-
-
+        
 }
     
     
@@ -339,9 +442,50 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     public void DeSpawnPlayerCube(PlayerCubeScript PC)      
     {
         PC.PCDied -= OnPlayerCubeDied;
-        currentSceneCubeCount--;
+        
         _ = m_AllPcs.Remove(PC);
         if (PC.NetworkObject.IsSpawned) PC.NetworkObject.Despawn();
         
     }
+
+    
+    
+    
+    
+    
+    public void ResetAllPlayerHealthCubes()
+    {
+        
+        List<DrawingGrid> AllDrawingGrids = FindObjectsOfType<DrawingGrid>().ToList();
+
+        foreach (var dg in AllDrawingGrids)
+        {
+         
+            HealthCubeTransform[] hcts = dg.GetComponentsInChildren<HealthCubeTransform>();
+
+        
+            for (int idx = 0; idx < hcts.Length; idx++)
+            {
+                var hct = hcts[idx]; 
+                hct.HealthCubeIndex = idx;
+
+                if (hct.HasHealthCube)
+                {
+                    hct.OwningHealthCube.KillSceneCubeServerRpc();
+                }
+               
+                int colorID = idx;
+                Transform spawnTransform = hct.transform;
+                SpawnCubeServer(spawnTransform, colorID, true);
+                   
+                
+            }
+        }
+        
+        TriggerFrenzyTime();
+    }
+
+
+    
+
 }

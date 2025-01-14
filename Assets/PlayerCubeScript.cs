@@ -14,65 +14,79 @@ using Vector3 = UnityEngine.Vector3;
 
 public class PlayerCubeScript : NetworkBehaviour
 {
-    [SerializeField] public BlockamiData BlockamiData;   
-    
-    public NetworkVariable<PlayerCubeData> PCData;
-    
-    public event System.Action<PlayerCubeScript> PCDied;
-    bool m_CubeisDead = false;
-    
-    private Material m_CubeMaterial;
-    private static readonly int s_color = Shader.PropertyToID("_Color");
-
-    public PlayerShotObject OwningPlayerShot;
     public NetworkVariable<bool> ShouldMove;
     public NetworkVariable<ulong> OwningPlayerID;
+    public NetworkVariable<PlayerCubeData> _NetPCData;
+    public int ColorID => _NetPCData.Value.ColorID;
     
+    [Header("State")]
+    bool m_CubeisDead = false;
+    public PlayerShotObject OwningPlayerShot;
     public DrawingGrid OwningGrid;
     
+    [Header("Internal")]
+    [SerializeField] public BlockamiData BlockamiData;   
+    public event System.Action<PlayerCubeScript> PCDied;
+    private Material m_CubeMaterial;
+    private static readonly int s_color = Shader.PropertyToID("_Color");
     private Renderer Rend;
     private SceneCubeNetworking ScsToDestroy;
-
-    private NetworkObject m_NetworkObject;
     private Vector3 OriginalScale;
+    
+    
+    
+    
 
     private void Awake()
     {
         OriginalScale = gameObject.transform.localScale;
         m_CubeMaterial = GetComponent<MeshRenderer>().material;
-        PCData.OnValueChanged += OnPCDataChanged;
+        _NetPCData.OnValueChanged += OnPCDataChanged;
         ShouldMove.OnValueChanged += OnShouldMoveChanged;
         Rend = GetComponent<Renderer>();
-        m_NetworkObject = GetComponent<NetworkObject>();
     }
 
+
+    public void ResetPlayerCube()
+    {
+        _NetPCData.Value = PlayerCubeData.Default;                // i think this is unnecessary, despawned cubes must have their vars wiped already ??
+    }
     
     public void Initialize( )         // on rep change of     PCData.OnValueChanged
     {
         Rend.enabled = true;
-       transform.localScale = OriginalScale;
+        transform.localScale = OriginalScale;
         m_CubeisDead = false;
-        m_CubeMaterial.SetColor(s_color, PCData.Value.MyColorType.color);
+        var col = BlockamiData.GetColorFromColorID(ColorID);
+        m_CubeMaterial.SetColor(s_color, col);
+        
        // LocalPlayerEntities.Instance.GetPlayerObjects(PCData.Value.OwningPlayerId).PlayerController.grid
+       
        var grids = FindObjectsOfType<DrawingGrid>();
        foreach (var grid in grids)
        {
-           if (grid.OwnerClientId  == PCData.Value.OwningPlayerId)
+           if (grid.OwnerClientId  == _NetPCData.Value.OwningPlayerId)
            {
                OwningGrid = grid;
+               break;
            }
        }
+       
 
-       if (PCData.Value.AIPlayerNum > -1)
+       if (_NetPCData.Value.AIPlayerNum > -1)
        {
            AIPlayer ai = FindObjectsOfType<AIPlayer>()
-               .FirstOrDefault(player => player.AIPlayerNum.Value == PCData.Value.AIPlayerNum);
+               .FirstOrDefault(player => player.AIPlayerNum.Value == _NetPCData.Value.AIPlayerNum);
            if (ai)
            {
                OwningGrid = ai.OwningDrawingGrid;
            }
        }
 
+       if (!OwningGrid)
+       {
+           Debug.Log("this is this " + _NetPCData.Value.OwningPlayerId);
+       }
 
     }
 
@@ -80,6 +94,7 @@ public class PlayerCubeScript : NetworkBehaviour
 
     private void OnPCDataChanged(PlayerCubeData previousvalue, PlayerCubeData newvalue)
     {
+        if (newvalue == PlayerCubeData.Default) return;
         Initialize();
     }
     
@@ -116,9 +131,11 @@ public class PlayerCubeScript : NetworkBehaviour
 
     void Update()
     {
+        if (!OwningGrid) return;
+        
         if (ShouldMove.Value)
         {
-            if (m_NetworkObject.IsSpawned)
+            if (NetworkObject.IsSpawned)
             {
                 transform.position += OwningGrid.MoveDirection * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
                 transform.localScale *= (1 - BlockamiData.PlayerCubeShrinkRate);
@@ -135,26 +152,37 @@ public class PlayerCubeScript : NetworkBehaviour
         }
         
         var scs = other.GetComponent<SceneCubeNetworking>();
+        if (!scs) return;
         
-        if (scs)
+        Rend.enabled = false;
+        
+        if (ShouldPlayerCubeDestroySceneCube(this,scs))
         {
-            Rend.enabled = false;
-            
-            if (scs.SCData.Value.MyColorType == PCData.Value.MyColorType)
-            {
-                DestroySceneCubeAfterDelay(scs);
-                KillPlayerCubeServerRpc();
-            }
-            else
-            {
-                foreach (var i in OwningPlayerShot.AllPcs.Value)
-                {
-                    var netPc = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(i);
-                    var pc = netPc ? netPc.gameObject.GetComponent<PlayerCubeScript>() : null;
-                    pc?.KillPlayerCubeServerRpc();
-                }
-            }
+            DestroySceneCubeAfterDelay(scs);
+            KillPlayerCubeServerRpc();
         }
+        else
+        {
+            foreach (var i in OwningPlayerShot.AllPcs.Value.ToList())
+            {
+                var netPc = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(i);
+                var pc = netPc ? netPc.gameObject.GetComponent<PlayerCubeScript>() : null;
+                pc?.KillPlayerCubeServerRpc();
+            }
+
+        }
+        
+        
+    }
+
+    bool ShouldPlayerCubeDestroySceneCube(PlayerCubeScript pc, SceneCubeNetworking scs)
+    {
+        if (scs.ColorID == pc._NetPCData.Value.ColorID)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     void DestroySceneCubeAfterDelay(SceneCubeNetworking scs)
@@ -168,11 +196,10 @@ public class PlayerCubeScript : NetworkBehaviour
 
     void DestroySceneCube()
     {
-        if (ScsToDestroy)
-        {
-
-            ScsToDestroy.KillSceneCubeServerRpc();
-        }
+        if (ScsToDestroy == null || !ScsToDestroy.IsSpawned) return;
+        
+        ScsToDestroy.KillSceneCubeServerRpc();
+        
     }
     
     [ServerRpc]
@@ -181,7 +208,10 @@ public class PlayerCubeScript : NetworkBehaviour
         ShouldMove.Value = false;
         m_CubeisDead = true;
         PCDied?.Invoke(this);          // spawn manager returns to pool
+        ResetPlayerCube();
     }
+    
+    
 
    
     private void UpdateVisuals(bool isDead)

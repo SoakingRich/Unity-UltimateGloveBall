@@ -145,6 +145,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   OwningGrid: {fileID: 0}
+  HasCurrentlySpawnedCube: 0
+  OnCooldown: 0
+  HighlightCube: {fileID: 5732648911773925625}
+  Coords: {x: 0, y: 0, z: 0}
 --- !u!65 &2767527176286935708
 BoxCollider:
   m_ObjectHideFlags: 0

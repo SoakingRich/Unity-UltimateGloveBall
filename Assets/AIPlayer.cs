@@ -7,33 +7,27 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class AIPlayer : NetworkBehaviour
 {
 
-
-
-
-
-    [Header("To Set")] [SerializeField] public BlockamiData BlockamiData;
-    public DrawingGrid OwningDrawingGrid;
-
-    public int AIPlayerNumber
-    {
-        get => AIPlayerNum.Value;
-        set => AIPlayerNum.Value = value;
-    }
-
-    public UnityEvent AIShootEvent;
 
     [Header("Settings")] public float SpawnAICubeDelay = 0.2f;
     public float timeEnoughToShoot = 1.0f;
     public int DrawLengthMax = 10;
     public float StartShotRate = 2.0f;
     public bool OnlyUseFirstLayer = true;
+    public NetworkVariable<int> AIPlayerNum = new NetworkVariable<int>();
+    public int AIPlayerNumber
+    {
+        get => AIPlayerNum.Value;
+        set => AIPlayerNum.Value = value;
+    }
+  // public int AIPlayerNum;
 
-    [Header("State")] public bool AIPlayerIsActive;
-    public bool AIAvatarIsActive;
+    [Header("State")] 
+    public bool AIPlayerIsActive;
     public int CurrentColorID;
     public bool ClearedToShoot = true;
     public bool DrawSingleRunning;
@@ -44,8 +38,10 @@ public class AIPlayer : NetworkBehaviour
     public bool timerOn;
 
     [Header("Internal")] 
+    public BlockamiData BlockamiData;
+    public DrawingGrid OwningDrawingGrid;
+    public AIAvatarBlockami AIAvatar;
     public NetworkVariable<ulong> CurrentPlayerShot = new NetworkVariable<ulong>();
-
     public PlayerShotObject CurrentPlayerShotObject
     {
         get
@@ -55,22 +51,28 @@ public class AIPlayer : NetworkBehaviour
             return netObj?.GetComponent<PlayerShotObject>();
         }
     }
-
-    public NetworkVariable<int> AIPlayerNum = new NetworkVariable<int>();
-
-    //public AIAvatarScript myAvatar;
+    public NetworkVariable<bool> NetCurrentDrawingHandIsRight = new NetworkVariable<bool>();
+    public NetworkVariable<Vector3> NetLastGoodDrawLocation = new NetworkVariable<Vector3>();
     public List<SnapZone> mySnapzones;
     public List<SnapZone> SelectedSnapzones = new List<SnapZone>(); // never used
     public List<PlayerCubeScript> currentlyDrawnChildCubes;
     SnapZone[,,] snapzoneMap;
-
     public SnapZone goodSnapzone;
     public SnapZone recentlyUsedSnapzone;
     public int recentlyUsedColorID;
-
     public float ShootTimer;
     RaycastHit hit;
+    
 
+    public UnityEvent AIShootEvent;
+
+    
+    
+    
+    
+    
+    
+    
 
     private void Awake()
     {
@@ -79,14 +81,60 @@ public class AIPlayer : NetworkBehaviour
         Application.runInBackground = true;
     }
 
+    
+    
+    private void OnEnable()
+    {
+        NetLastGoodDrawLocation.OnValueChanged += OnLastGoodDrawLocationChanged;
+        AIAvatar = GetComponentInChildren<AIAvatarBlockami>();
+    }
+    
+    
+    
 
+
+
+    
+    
+    
+    private void OnDisable()
+    {
+        NetLastGoodDrawLocation.OnValueChanged -= OnLastGoodDrawLocationChanged; 
+    }
+
+    
+    
+    
+    
+    
+    private void OnLastGoodDrawLocationChanged(Vector3 previousvalue, Vector3 newvalue)
+    {
+        if (NetCurrentDrawingHandIsRight.Value)
+        {
+            AIAvatar.FromNetRightHandPos = newvalue;
+            AIAvatar.FromNetLeftHandPos = Vector3.zero;
+        }
+        else
+        {
+            AIAvatar.FromNetLeftHandPos = newvalue;
+            AIAvatar.FromNetRightHandPos = Vector3.zero;
+        }
+
+        AIAvatar.FromNetCurrentDrawingHandIsRight = NetCurrentDrawingHandIsRight.Value;
+    }
+    
+    
+    
+    
+    
     void Start() // start
     {
         if ((NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsHost)) return;
 
         currentlyDrawnChildCubes = new List<PlayerCubeScript>();
         mySnapzones = OwningDrawingGrid.AllSnapZones; // get all snapzones from owning drawing grid
-
+        AIPlayerNum.Value = OwningDrawingGrid.DrawingGridIndex;
+        
         //  myAvatar = GetComponentInChildren<AIAvatarScript>();
 
         //ShootingIsPaused = true;                                         // start paused
@@ -191,11 +239,15 @@ public class AIPlayer : NetworkBehaviour
 
                 if (TestForColorMatch(sCs))                                                  //	TestForColorMatch will set be true if its good
                 {
+                   // NetCurrentDrawingHandIsRight.Value = Vector3.Dot(goodSnapzone.transform.position - transform.position, transform.right) > 0;
+                   NetCurrentDrawingHandIsRight.Value = Random.value > 0.5f;   // randomly do left or right
+
 
                     recentlyUsedSnapzone = goodSnapzone;
                     recentlyUsedColorID = CurrentColorID;
-                    SpawnAIPlayerCube();                                                    // trigger a PlayerCubeSpawn after a delay    // delayed 0.2 seconds
-                    Invoke("SpawnAIPlayerCube", SpawnAICubeDelay);                                                                      // trigger a PlayerCubeSpawn after a delay    // delayed 0.2 seconds
+                 //   SpawnAIPlayerCube();                                                    // trigger a PlayerCubeSpawn after a delay    // delayed 0.2 seconds
+                 SetCubeToMoveTo(recentlyUsedSnapzone.gameObject);
+                 Invoke("SpawnAIPlayerCube", SpawnAICubeDelay);                                                                      // trigger a PlayerCubeSpawn after a delay    // delayed 0.2 seconds
                     StartCoroutine("DrawNextSingle");                                                  // start routine for further cube finding                // delays 0.3 before starting
                    // DrawNextSingle();
                     ColorMatchFound = true;                                                               
@@ -270,9 +322,13 @@ public class AIPlayer : NetworkBehaviour
                 continue;
             }
 
-            if (test.HasCurrentlySpawnedCube == true)   continue; // snapzone has already spawned
+            if (test.HasCurrentlySpawnedCube == true)
+            {
+                Debug.Log("alreadyhasSceneCube"); // continuing testing directions
+                continue; // snapzone has already spawned}
+            }
 
-            
+
             /// TEST SNAPZONE ACQUIRED
             
             SceneCubeNetworking sCs = null;
@@ -280,7 +336,7 @@ public class AIPlayer : NetworkBehaviour
 
             if (sCs == null)
             {
-                Debug.Log("no scene cube found by cast ray"); // continuing testing directions
+//                Debug.Log("no scene cube found by cast ray"); // continuing testing directions
                 continue;
             }
             else
@@ -289,7 +345,8 @@ public class AIPlayer : NetworkBehaviour
                 {
                     recentlyUsedSnapzone = test; // update last Origin
                     recentlyUsedColorID = CurrentColorID;
-                    
+
+                    SetCubeToMoveTo(recentlyUsedSnapzone.gameObject);
                     SpawnAIPlayerCube();
                     //    Invoke("SpawnAIPlayerCube",SpawnAICubeDelay);                 // spawn after 0.2,  and find next after 0.3
                     //  Debug.Log("Succesfully draw 2nd Cube");
@@ -307,8 +364,7 @@ public class AIPlayer : NetworkBehaviour
             // END OF FOR LOOP                   
         }
 
-        Debug.Log(
-            "Tested all 4 adjecents and found no hits and matches"); //Tested all 4 adjecents and found no hits and matches
+//        Debug.Log("Tested all 4 adjecents and found no hits and matches"); //Tested all 4 adjecents and found no hits and matches
 
         yield return
             new WaitUntil(() =>ClearedToShoot ==  true); // we end up here when theres no further matches, wait til cleared to shoot via Update() and fire
@@ -318,6 +374,10 @@ public class AIPlayer : NetworkBehaviour
 
     private void ShootShot()
     {
+        foreach (SnapZone item in mySnapzones)
+        {
+            item.HasCurrentlySpawnedCube = false;
+        }
         ColorMatchFound = false;
         AIShootEvent.Invoke();
         ColorMatchFound = false;
@@ -339,7 +399,7 @@ public class AIPlayer : NetworkBehaviour
             
          if (Physics.Raycast(testingSnapZone.transform.position, -testingSnapZone.transform.forward, out hit, 70f, sceneCubeMask))
             {
-                Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * hit.distance, BlockamiData.m_ColorTypes[CurrentColorID].color,0.7f,false);
+             //   Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * hit.distance, BlockamiData.m_ColorTypes[CurrentColorID].color,0.7f,false);
 
                 SceneCubeNetworking s = hit.collider.gameObject.GetComponent<SceneCubeNetworking>();
                 if (s == null)
@@ -354,7 +414,7 @@ public class AIPlayer : NetworkBehaviour
                 }
 
 
-                if (s.isHealthCube)
+                if (s.IsHealthCube)
                 {
                     // Debug.Log("Ai Ray hit HEALTHCUBE with Color "  + s.ColorID);
 
@@ -368,7 +428,7 @@ public class AIPlayer : NetworkBehaviour
             }
             else
             {
-                Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.m_ColorTypes[CurrentColorID].color,1.0f,false);
+           //     Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.m_ColorTypes[CurrentColorID].color,1.0f,false);
 
                 // Debug.Log("AI Ray Hit nothing");
 
@@ -398,6 +458,11 @@ public class AIPlayer : NetworkBehaviour
         return false;   
     }
 
+
+    public void SetCubeToMoveTo(GameObject cube)
+    {
+        NetLastGoodDrawLocation.Value = cube.transform.position;
+    }
     
 	public void SpawnAIPlayerCube()
     {
@@ -406,7 +471,8 @@ public class AIPlayer : NetworkBehaviour
 
         ulong HostClientID = NetworkManager.Singleton.LocalClientId;
         Vector3 pos = recentlyUsedSnapzone.transform.position;
-        
+        recentlyUsedSnapzone.HasCurrentlySpawnedCube = true;
+     
         SpawnManager.Instance.SpawnPlayerCubeServerRpc(pos,HostClientID,false, AIPlayerNumber);
         
         // if (!PhotonNetwork.isMasterClient && !PhotonNetwork.isNonMasterClientInRoom) return;

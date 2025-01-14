@@ -45,7 +45,7 @@ namespace UltimateGloveBall.Design
             {
                 Rebuild();
             }
-            var rng = Random.Range(0, m_totalWeight);        // seems like a very cumbersome way to get a random element from the array
+            var rng = Random.Range(0, m_totalWeight);        // seems like a very cumbersome way to get a random element from the array with weight
             var cumWeight = 0;
             for (var i = 0; i < m_ballCount; i++)            // get a RandNum between 0 and 20,  loop through each array element and if accumulated weight has gone over RandNum, stop accumulating and return prefab
             {

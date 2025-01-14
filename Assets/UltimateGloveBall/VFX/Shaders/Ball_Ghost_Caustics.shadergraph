@@ -1716,7 +1716,7 @@
 }
 
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.Internal.ColorShaderProperty",
     "m_ObjectId": "b9a9fb2c696f2e8eaa10c8413e1bd977",
     "m_Guid": {
@@ -2241,7 +2241,7 @@
 }
 
 {
-    "m_SGVersion": 2,
+    "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.Internal.ColorShaderProperty",
     "m_ObjectId": "ec0c1a7341876b899fcb6de6c3a2de52",
     "m_Guid": {

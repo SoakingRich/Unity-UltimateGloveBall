@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Meta.Multiplayer.Core;
 using Oculus.Platform;
 using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Balls;
@@ -27,6 +28,19 @@ namespace UltimateGloveBall.Arena.Gameplay
     /// </summary>
     public class GameManager : NetworkBehaviour
     {
+        public static GameManager _instance;    
+
+        public static GameManager Instance {          
+            get {
+                if (_instance == null) {
+                    _instance = new GameManager();
+                }
+                return _instance;
+            }
+        }
+        
+        
+        
         private const double GAME_START_COUNTDOWN_TIME_SEC = 4;
         private const double GAME_DURATION_SEC = 180;
         public enum GamePhase
@@ -75,6 +89,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         private GameStateSave m_gameStateSave;
 
         private int m_previousSecondsLeft = int.MaxValue;
+        
 
         public GamePhase CurrentPhase => m_currentGamePhase.Value;                       //   instead of fetching m_currentGamePhase.Value constantly, we can just use this CurrentPhase accessor
         public TeamColor TeamAColor => m_teamAColor.Value;
@@ -82,6 +97,11 @@ namespace UltimateGloveBall.Arena.Gameplay
 
         
         
+        [Header("BLOCKAMI")]
+        public bool AutoStartGameManager = true;
+        public AIPlayer[] m_allAIPlayers;
+        public Action OnEmojiCubeHitFloor;
+
         
         
         
@@ -90,25 +110,55 @@ namespace UltimateGloveBall.Arena.Gameplay
         
         
         
+        
+
         private void OnEnable()
         {
+            m_allAIPlayers  = FindObjectsOfType<AIPlayer>();
+            
+            
             m_currentGamePhase.OnValueChanged += OnPhaseChanged;      // rep notify for replicated variables
             m_gameStartTime.OnValueChanged += OnStartTimeChanged;
             
+         
+            var HCTransforms = FindObjectsOfType<HealthCubeTransform>();
+            foreach (var hct in HCTransforms)
+            {
+                hct.OnHealthCubeDied += OnHealthCubeDied;
+            }
+
+
+
             UGBApplication.Instance.NetworkLayer.OnHostLeftAndStartingMigration += OnHostMigrationStarted;
+
+            
         }
-        
+
+   
+
 
         private void OnDisable()
         {
             m_currentGamePhase.OnValueChanged -= OnPhaseChanged;
             m_gameStartTime.OnValueChanged -= OnStartTimeChanged;
+  
             UGBApplication.Instance.NetworkLayer.OnHostLeftAndStartingMigration -= OnHostMigrationStarted;
+       //    UGBApplication.Instance.NetworkLayer.StartHostCallback -= StartGameGameManager;
         }
-        
-        
-        
-        
+
+
+        void Start()
+        {
+#if UNITY_EDITOR
+            if (AutoStartGameManager)
+            {
+               Invoke("StartGame", 0.2f); 
+            }
+#endif
+        }
+
+       
+
         private void OnStartTimeChanged(double previousvalue, double newvalue)                 // when start button gets pressed
         {
             if (m_currentGamePhase.Value == GamePhase.CountDown)
@@ -140,7 +190,7 @@ namespace UltimateGloveBall.Arena.Gameplay
 
             PlayerInputController.Instance.MovementEnabled = playerCanMove;                       // allow clients sliding movement if InGame or PreGame,  otherwise no
             // only applies for in game players
-            if (LocalPlayerEntities.Instance.Avatar != null)
+            if (LocalPlayerEntities.Instance?.Avatar != null)
             {
                 m_inviteFriendButtonContainer.SetActive(newvalue == GamePhase.PreGame);             // if PreGame,  activate InviteFriends that will open roster menu
             }
@@ -275,7 +325,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
 
             // Find the team with the least players
-            var leastPopulatedTeam = teamCounts.OrderBy(kvp => kvp.Value).First().Key;
+            NetworkedTeam.Team leastPopulatedTeam = teamCounts.OrderBy(kvp => kvp.Value).First().Key;
 
             return leastPopulatedTeam;
         }
@@ -283,27 +333,57 @@ namespace UltimateGloveBall.Arena.Gameplay
         
 
         
-        
-        public void StartGame()             // called by unityEvent bound on this object in editor from UI Button press,   only Host/Server can start game 
+        [ContextMenu("StartGame")]
+        public void StartGame()             // called by unityEvent on the StartGameButton,   only Host/Server can start game 
         {
             if (m_currentGamePhase.Value is GamePhase.PreGame or GamePhase.PostGame)          // only if we're in a compatible GamePhase
             {
                 m_gameState.Score.Reset();
                 _ = StartCoroutine(DeactivateStartButton());
 
-                                                                        // only check side on initial start of game
-                if (m_currentGamePhase.Value is GamePhase.PreGame)
+                                                                        
+                if (m_currentGamePhase.Value is GamePhase.PreGame)            // if in PreGame, in oppose to PostGame
                 {
-                    CheckPlayersSides();                 // assign teams based on which side of the arena people are standing.   If people join afterwards, theyll have teams assigned and spawnlocations
+                    CheckPlayersSides();                 // assign teams based on which side of the arena people are standing.   If people join afterwards, theyll have teams auto assigned and given spawnlocations
                     LockPlayersTeams();              // dont allow team switching from now
                 }
 
-                StartCountdown();                                                                    // START COUNTDOWN                                                  
-                ((ArenaPlayerSpawningManager)SpawningManagerBase.Instance).ResetInGameSpawnPoints();         // set all game spawn points as unclaimed
-                RespawnAllPlayers();                                                                    // despite being sorted into teams based on where they are in the world, everyone gets respawned anyway
+                StartCountdown();                                                                           // START COUNTDOWN                                                  
+                if(SpawningManagerBase.Instance) ((ArenaPlayerSpawningManager)SpawningManagerBase.Instance).ResetInGameSpawnPoints();         // set all game spawn points as unclaimed
+                RespawnAllPlayers();    
+               
             }
+            else
+            {
+                // game is already InPlay
+            }
+            
+            StartBlockamiGame();
         }
 
+
+        public void StartBlockamiGame()
+        {
+            
+            SpawnManager.Instance.Invoke("ResumeSpawning", SpawnManager.Instance.m_AllScs.Any() ? 5.0f : 0.1f);
+            foreach (var ai in m_allAIPlayers)
+            {
+                ai.PauseShootingForSeconds(SpawnManager.Instance.m_AllScs.Any() ? 5.0f : 0.1f,false);
+            }
+            
+            SpawnManager.Instance.PauseSpawning();
+            SpawnManager.Instance.ClearAllCubes();
+            SpawnManager.Instance.TriggerFrenzyTime();
+
+            SpawnManager.Instance.ResetAllPlayerHealthCubes();
+
+
+
+
+
+
+
+        }
         
         
         private void StartCountdown()
@@ -522,8 +602,10 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void RespawnAllPlayers()   // only server surely
+        private void RespawnAllPlayers()   // only server does this
         {
+            if (!LocalPlayerEntities.Instance) return;
+            
             foreach (var clientId in LocalPlayerEntities.Instance.PlayerIds)
             {
                 var allPlayerObjects = LocalPlayerEntities.Instance.GetPlayerObjects(clientId);   // allPlayerObjects is a script of class PlayerGameObjects
@@ -546,7 +628,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         
 
         [ClientRpc]
-        private void OnRespawnClientRpc(Vector3 position, Quaternion rotation, GamePhase phase, ClientRpcParams rpcParams)        // literally just teleport a player somewhere and call it respawn
+        public void OnRespawnClientRpc(Vector3 position, Quaternion rotation, GamePhase phase, ClientRpcParams rpcParams)        // literally just teleport a player somewhere and call it respawn
         {
             if (phase is GamePhase.PostGame or GamePhase.CountDown)       // ensure again, no movement in PostGame or CountDown
             {
@@ -556,5 +638,43 @@ namespace UltimateGloveBall.Arena.Gameplay
             LocalPlayerEntities.Instance.LeftGloveHand.ResetGlove();       // return gloves to uncharged state
             LocalPlayerEntities.Instance.RightGloveHand.ResetGlove();
         }
+        
+        
+        
+        
+        private void OnHealthCubeDied(HealthCubeTransform obj)
+        {
+            var allhct = obj.OwningDrawingGrid.AllHealthCubeTransforms;
+            var filteredHct = allhct.Where(htc => htc.OwningHealthCube != null).ToList();
+            if (filteredHct.Count == 0)
+            {
+                Debug.Log("All Heath cubes destroyed for " + obj.OwningDrawingGrid.name);
+                SpawnManager.Instance.ClearAllCubes();
+                Invoke("GoToPostGame", 5.0f);
+            }
+            else
+            {
+                SpawnManager.Instance.TriggerFrenzyTime();
+            }
+            
+            foreach (var hct in filteredHct)
+            {
+                Debug.Log($"HealthCubeTransform: {hct.name} is still active.");
+            }
+        }
+        
+        
+        
+        
+        public void   EmojiCubeHitFloor()
+        { 
+            OnEmojiCubeHitFloor?.Invoke();
+        }
     }
+    
+   
+    
+    
+    
+    
 }

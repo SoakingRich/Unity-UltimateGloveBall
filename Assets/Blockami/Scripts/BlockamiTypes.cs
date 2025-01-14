@@ -5,75 +5,122 @@ using UnityEngine;
 using Unity.Netcode;
 
 [System.Serializable]
-public struct SceneCubeData : INetworkSerializable
+public struct SceneCubeData /*: INetworkSerializable*/
 {
 
-    public bool ContainsPickup;
-    public bool IsHealthCube;
+   public Color myColor;
+   public NetworkObject SceneCubePrefab;
     
-    public BlockamiData.ColorType MyColorType;
 
-    public SceneCubeData(BlockamiData.ColorType ct, bool containsPickup, bool IsHealthCube)
+    public static readonly SceneCubeData Default = new SceneCubeData();
+   
+    public SceneCubeData( Color c, NetworkObject SCPrefab)
     {
-        MyColorType = ct;
-        ContainsPickup = containsPickup;
-        this.IsHealthCube = IsHealthCube;
-       
+       myColor = c;
+       SceneCubePrefab = SCPrefab;
+
+    }
+    
+    
+    public static bool operator ==(SceneCubeData left, SceneCubeData right)
+    {
+   
+        return left.Equals(right);
     }
 
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    public static bool operator !=(SceneCubeData left, SceneCubeData right)
     {
-        // // Convert the Color to a Vector4 for serialization
-        // BlockamiData.ColorType  ct = MyColorType;
-        // serializer.SerializeValue(ref ct);
-        // MyColorType = ct; // Convert back to Color after deserialization
-    
-        // Serialize the boolean
-        serializer.SerializeValue(ref ContainsPickup);
+        return !(left == right); // Use the == operator
     }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is SceneCubeData)
+        {
+            SceneCubeData other = (SceneCubeData)obj;
+            return this.myColor == other.myColor &&
+                   SceneCubePrefab == other.SceneCubePrefab;
+        }
+        return false;
+    }
+    
+    
 }
+
+
 
 
 
 [System.Serializable]
 public struct PlayerCubeData : INetworkSerializable
 {
-
-    public BlockamiData.ColorType MyColorType;
+    public int ColorID;
     public ulong OwningPlayerId;
     public int AIPlayerNum;
 
-    public PlayerCubeData(BlockamiData.ColorType ct, ulong owningPlayerId,int AIPlayerNum)
+    public static readonly PlayerCubeData Default = new PlayerCubeData();
+    
+    public PlayerCubeData(int ColID, ulong owningPlayerId,int AIPlayerNum)
     {
-        MyColorType = ct;
+        ColorID = ColID;
         OwningPlayerId = owningPlayerId;
         this.AIPlayerNum = AIPlayerNum;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
-        serializer.SerializeValue(ref MyColorType);
+        serializer.SerializeValue(ref ColorID);
         serializer.SerializeValue(ref OwningPlayerId);
         serializer.SerializeValue(ref AIPlayerNum);
     }
+    
+    public static bool operator ==(PlayerCubeData left, PlayerCubeData right)
+    {
+        // Compare fields for equality (adjust as necessary for your struct)
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PlayerCubeData left, PlayerCubeData right)
+    {
+        return !(left == right); // Use the == operator
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is PlayerCubeData)
+        {
+            PlayerCubeData other = (PlayerCubeData)obj;
+
+            // Compare all fields of the struct
+            return this.ColorID == other.ColorID &&
+                   this.OwningPlayerId == other.OwningPlayerId &&
+                   this.AIPlayerNum == other.AIPlayerNum;
+        }
+        return false;
+    }
 
 }
+
+
+
+
+
 
 
 [System.Serializable]
 public class PlayerShot : INetworkSerializable, IEquatable<PlayerShot>
 {
 
-    public BlockamiData.ColorType MyColorType;
+   // public BlockamiData.ColorType MyColorType;
     public List<ulong> AllPcs; 
     public bool IsSuccess;
     public bool IsFailure;
     public float TotalScore;
     public bool IsRight;
 
-    public PlayerShot(BlockamiData.ColorType ct, List<ulong> allpcs, bool isSuccess, bool isFailure, float totalScore, bool isRight)
+    public PlayerShot(List<ulong> allpcs, bool isSuccess, bool isFailure, float totalScore, bool isRight)
     {
-        MyColorType = ct;
+      //  MyColorType = ct;
         AllPcs = allpcs;
         IsSuccess = isSuccess;
         IsFailure = isFailure;
@@ -152,7 +199,7 @@ public class PlayerShot : INetworkSerializable, IEquatable<PlayerShot>
             return true;
         }
 
-        return MyColorType.Equals(other.MyColorType) && Equals(AllPcs, other.AllPcs) && IsSuccess == other.IsSuccess && IsFailure == other.IsFailure && TotalScore.Equals(other.TotalScore) && IsRight == other.IsRight;
+        return Equals(AllPcs, other.AllPcs) && IsSuccess == other.IsSuccess && IsFailure == other.IsFailure && TotalScore.Equals(other.TotalScore) && IsRight == other.IsRight;
     }
 
     public override bool Equals(object obj)
@@ -175,7 +222,7 @@ public class PlayerShot : INetworkSerializable, IEquatable<PlayerShot>
         return Equals((PlayerShot)obj);
     }
 
-    public override int GetHashCode() => HashCode.Combine(MyColorType, AllPcs, IsSuccess, IsFailure, TotalScore, IsRight);
+    public override int GetHashCode() => HashCode.Combine(AllPcs, IsSuccess, IsFailure, TotalScore, IsRight);
 }
 
 

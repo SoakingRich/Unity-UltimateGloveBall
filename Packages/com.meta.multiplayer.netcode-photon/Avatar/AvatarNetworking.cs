@@ -183,6 +183,7 @@ namespace Meta.Multiplayer.Avatar
         
         private void ReceiveAvatarData(byte[] data)
         {
+#if !UNITY_EDITOR
             if (!m_entity)
             {
                 return;
@@ -196,6 +197,7 @@ namespace Meta.Multiplayer.Avatar
             m_currentStreamDelay = Mathf.LerpUnclamped(m_currentStreamDelay, delay, PLAYBACK_SMOOTH_FACTOR);
             m_entity.SetPlaybackTimeDelay(m_currentStreamDelay);
             m_streamDelayWatch.Restart();
+#endif
         }
     }
 }

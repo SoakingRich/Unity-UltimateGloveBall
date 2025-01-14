@@ -6,8 +6,9 @@ using UnityEngine;
 
 public class PlayerShotObject : NetworkBehaviour
 {
-   
-    public BlockamiData.ColorType MyColorType = new BlockamiData.ColorType();
+
+    public NetworkVariable<int> NetColorID = new NetworkVariable<int>();
+    public int ColorID => NetColorID.Value;
     public NetworkVariable<List<ulong>> AllPcs = new NetworkVariable<List<ulong>>();
     public NetworkVariable<bool> IsSuccess = new NetworkVariable<bool>();
     public NetworkVariable<bool> IsFailure = new NetworkVariable<bool>();

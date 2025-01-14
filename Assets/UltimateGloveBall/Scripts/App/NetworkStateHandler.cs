@@ -89,7 +89,7 @@ namespace UltimateGloveBall.App
         
         
         
-        private void OnHostStarted()            // Started means Requesting connection
+        private void OnHostStarted()            // Started seems to mean Requesting connection
         {
             Debug.Log("OnHostStarted");      // host player is ready to enter Arena
 

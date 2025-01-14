@@ -137,6 +137,8 @@ namespace UltimateGloveBall.Arena.Player
 
         public void TriggerAction(bool released, float chargeUpPct = 0)
         {
+            if (!m_uiRayInteractor) return;
+            
             // If we hover on UI the glove is not active and can't trigger an action
             if (m_uiRayInteractor.State == InteractorState.Hover)
             {

@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 490503990959102976}
   m_Layer: 0
   m_Name: PlayerCube
-  m_TagString: Untagged
+  m_TagString: PlayerCube
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -111,7 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2788813331
+  GlobalObjectIdHash: 2019278245
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -133,22 +133,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
-  PCData:
+  _NetPCData:
     m_InternalValue:
       MyColorType:
         color: {r: 0, g: 0, b: 0, a: 0}
         ID: 0
       OwningPlayerId: 0
-  OwningPlayerShot:
-    m_InternalValue:
-      MyColorType:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        ID: 0
-      AllPcs: 
-      IsSuccess: 0
-      IsFailure: 0
-      TotalScore: 0
-      IsRight: 0
+      AIPlayerNum: 0
+  OwningPlayerShot: {fileID: 0}
   ShouldMove:
     m_InternalValue: 0
   OwningPlayerID:

@@ -2,6 +2,7 @@
 // Use of the material below is subject to the terms of the MIT License
 // https://github.com/oculus-samples/Unity-UltimateGloveBall/tree/main/Assets/UltimateGloveBall/LICENSE
 
+using System.Linq;
 using Meta.Utilities;
 using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Player.Menu;
@@ -32,8 +33,9 @@ namespace UltimateGloveBall.Arena.Player
         private bool m_wasMoving = false;
         private InputAction m_moveAction;
 
-        
-        
+
+        private TriggerPinchEvents TPELeft;
+        private TriggerPinchEvents TPERight;
         
         
         
@@ -41,6 +43,16 @@ namespace UltimateGloveBall.Arena.Player
         
         private void Start()
         {
+            TriggerPinchEvents[] AllTPELeft = FindObjectsOfType<TriggerPinchEvents>()
+                .Where(tpe => tpe.IsRight == false)
+                .ToArray();
+            TPELeft = AllTPELeft[0];
+            
+            TriggerPinchEvents[] AllTPERight = FindObjectsOfType<TriggerPinchEvents>()
+                .Where(tpe => tpe.IsRight == false)
+                .ToArray();
+            TPELeft = AllTPERight[0];
+            
             m_freeLocomotionEnabled = !GameSettings.Instance.IsFreeLocomotionDisabled;             // player can turn off FreeLoco in GameSettings
             PlayerMovement.Instance.RotationEitherThumbstick = !m_freeLocomotionEnabled;
         }
@@ -161,7 +173,7 @@ namespace UltimateGloveBall.Arena.Player
         public void OnThrowRight(CallbackContext context)
         {
             if (!InputEnabled) return;
-
+            
             var glove = LocalPlayerEntities.Instance.RightGloveHand;
             var gloveArmature = LocalPlayerEntities.Instance.RightGloveArmature;
             if (context.phase is InputActionPhase.Performed)
@@ -170,6 +182,19 @@ namespace UltimateGloveBall.Arena.Player
                 OnRelease(glove, gloveArmature);
         }
 
+        private static void OnThrow(Glove glove, GloveArmatureNetworking gloveArmature)
+        {
+            if (glove)
+            {
+                glove.TriggerAction(false);
+            }
+
+            if (gloveArmature)
+            {
+                gloveArmature.Activated = true;
+            }
+        }
+        
         public void OnShieldLeft(CallbackContext context)
         {
             if (!InputEnabled) return;
@@ -204,18 +229,7 @@ namespace UltimateGloveBall.Arena.Player
             }
         }
 
-        private static void OnThrow(Glove glove, GloveArmatureNetworking gloveArmature)
-        {
-            if (glove)
-            {
-                glove.TriggerAction(false);
-            }
-
-            if (gloveArmature)
-            {
-                gloveArmature.Activated = true;
-            }
-        }
+      
         
         
         public void OnSettingsUpdated()

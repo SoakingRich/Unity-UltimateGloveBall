@@ -12,7 +12,9 @@ using UltimateGloveBall.Arena.Player.Respawning;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace UltimateGloveBall.Arena.Player
 {
@@ -56,18 +58,44 @@ namespace UltimateGloveBall.Arena.Player
 
         public Action<bool> OnInvulnerabilityStateUpdatedEvent;
 
+        
+        
+        
+        
         public DrawingGrid OwnedDrawingGrid;
+        public Action<PlayerControllerNetwork> OnCyclePlayerColor;
         
-        
-        public NetworkVariable<BlockamiData.ColorType> m_ColorType = new();
+        public NetworkVariable<int>  NetColorID = new();
+        public int ColorID => NetColorID.Value;
         public NetworkVariable<ulong> CurrentPlayerShot = new NetworkVariable<ulong>(writePerm: NetworkVariableWritePermission.Owner);
         
         public List<PlayerShotObject> AllPlayerShots = new List<PlayerShotObject>();
         
        // public NetworkVariable<PlayerShot> CurrentPlayerShot = new NetworkVariable<PlayerShot>();
-     
+       private BlockamiData BlockamiData;
+
+       
+       
+       
+       
+       
+       
+       
+       public void CyclePlayerColor()
+       {
+           OnCyclePlayerColor?.Invoke(this);
+        
+          NetColorID.Value = Random.Range(0, BlockamiData.MaxNormalColorID);
+       }
+       
+       
+       
+       
         public override void OnNetworkSpawn()             
         {
+            BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+            BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+            
             enabled = IsServer;           //    set enabled false if not server.   This allows us to disable Update()
                                               // 'enabled' belongs to 'Behavior' class (parent of monobehavior).
                                               
@@ -77,6 +105,10 @@ namespace UltimateGloveBall.Arena.Player
             if (IsOwner)                                                               
             {
                 LocalPlayerEntities.Instance.LocalPlayerController = this;                                   // register with LocalPlayerEntities if owner
+                var ovrManager = FindObjectOfType<OVRManager>();
+                var  clapDetect = ovrManager.GetComponentInChildren<ClapDetection>();
+              if(clapDetect) clapDetect.OnClapDetected += ClapDetectOnOnClapDetected;
+
             }
             else
             {
@@ -86,7 +118,12 @@ namespace UltimateGloveBall.Arena.Player
             IsInvulnerable.OnValueChanged += OnInvulnerabilityStateChanged;                                      // add rep notify func for IsInvulnerable 
             OnInvulnerabilityStateChanged(IsInvulnerable.Value, IsInvulnerable.Value);      // run rep notify func once on begin
         }
-        
+
+        private void ClapDetectOnOnClapDetected()
+        {
+          CyclePlayerColor();
+        }
+
 
         private void Update()
         {

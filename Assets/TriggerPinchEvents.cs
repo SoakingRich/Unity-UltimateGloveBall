@@ -2,9 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Blockami.Scripts;
+using Meta.Utilities;
+using Meta.XR.MultiplayerBlocks.Shared;
 using Oculus.Interaction.Input;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
+using Oculus.Avatar2;
+using UltimateGloveBall.Arena.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -12,6 +16,7 @@ using UnityEngine.InputSystem.Layouts;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
+
 
 public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events Per Hand/Controller
 {
@@ -25,6 +30,10 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
    [SerializeField] public bool IsRight = false;
    [SerializeField] public bool m_IsCurrentlyPressed;
    
+   public InputAction RightTriggerAction;
+   public InputAction LeftTriggerAction;
+   
+   
    
     public event Action<bool,OVRHand, Controller> TriggerPinchPressedEvent;   // pressed event
     public event Action<bool,OVRHand, Controller> TriggerPinchReleasedEvent;  // released event
@@ -34,13 +43,14 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
     
     private Pose currentPose;
     private HandJointId handJointId = HandJointId.HandIndex3; //  pointer index bone
-    
-    
-    
-    
-    
+
+
     void Start()
     {
+        
+        RightTriggerAction.Enable();
+        LeftTriggerAction.Enable();
+        
        // BlockamiData = Resources.Load<BlockamiData>("BlockamiData");
 
         
@@ -67,9 +77,7 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
             {
                 shot.FireShotServerRpc();
 
-                LocalPlayerEntities.Instance.LocalPlayerController.m_ColorType.Value =
-                    BlockamiData.m_ColorTypes
-                        [Random.Range(0, BlockamiData.m_ColorTypes.Count)]; // change to random color
+                LocalPlayerEntities.Instance.LocalPlayerController.CyclePlayerColor();
                 
                 foreach (var sz in LocalPlayerEntities.Instance.LocalPlayerController.OwnedDrawingGrid.AllSnapZones)
                 {
@@ -84,39 +92,103 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
     {
         
     }
-    
-    
-    
+
+
+
 
     void Update()
     {
+       
         var isCurrentlyPressed = false;
 
         if (OVRInput.activeControllerType != OVRInput.Controller.Hands)
         {
-            // /// SUPPORT CONTROLLERS AS WELL   OVRInput: Primary always refers to the left controller and Secondary always refers to the right controller  https://developers.meta.com/horizon/documentation/unity/unity-ovrinput/#unity-ovrinput-touch
-            //
-            // isCurrentlyPressed = IsRight
-            //     ? OVRInput.Get(OVRInput.Button.SecondaryIndexTrigger, OVRInput.Controller.RTouch)
-            //     : OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.LTouch);
-            //
-            // if (isCurrentlyPressed && !LastPressed) { TriggerPinchPressedEvent?.Invoke(IsRight,null,TrackingController); }
-            // else if (!isCurrentlyPressed && LastPressed) { TriggerPinchReleasedEvent?.Invoke(IsRight,null,TrackingController); }
-            //
-            // if (isCurrentlyPressed && LastPressed) { IsTriggerPinchingEvent?.Invoke(IsRight,null,TrackingController); }
-            //
-            // LastPressed = TrackingHand.IsPressed();
-        }
 
-        //////////////////// Track Pinching State
+            if (!LocalPlayerEntities.Instance.Avatar)
+            {
+
+                // var avat = FindObjectOfType<AvatarEntity>();
+                // transform.position = Meta.Multiplayer.Avatar.AvatarEntity  avat.GetJointTransform(CAPI.ovrAvatar2JointType.RightHandWrist).position;
+
+            }
+            else
+            {
+
+                transform.position = IsRight
+                    ? LocalPlayerEntities.Instance.Avatar.GetJointTransform(CAPI.ovrAvatar2JointType.RightHandWrist)
+                        .position
+                    : LocalPlayerEntities.Instance.Avatar.GetJointTransform(CAPI.ovrAvatar2JointType.LeftHandWrist)
+                        .position;
+
+            }
+
+
+
+            if (IsRight)
+            {
+
+                if (RightTriggerAction.phase == InputActionPhase.Performed)
+                {
+                    if (IsRight) TriggerPinchPressedEvent?.Invoke(true, TrackingHand, null);
+                }
+                else if (RightTriggerAction.phase == InputActionPhase.Canceled)
+                {
+                    if (IsRight) TriggerPinchReleasedEvent?.Invoke(true, TrackingHand, null);
+                }
+                else if (RightTriggerAction.ReadValue<float>() > 0)
+                {
+                    if (IsRight) IsTriggerPinchingEvent?.Invoke(true, TrackingHand, null);
+                }
+
+                isCurrentlyPressed = RightTriggerAction.ReadValue<float>() > 0;
+
+            }
+            else
+            {
+
+
+                if (LeftTriggerAction.phase == InputActionPhase.Performed)
+                {
+                    if (!IsRight) TriggerPinchPressedEvent?.Invoke(false, TrackingHand, null);
+                }
+                else if (LeftTriggerAction.phase == InputActionPhase.Canceled)
+                {
+                    if (!IsRight) TriggerPinchReleasedEvent?.Invoke(false, TrackingHand, null);
+                }
+                else if (LeftTriggerAction.ReadValue<float>() > 0)
+                {
+                    if (!IsRight) IsTriggerPinchingEvent?.Invoke(false, TrackingHand, null);
+                }
+
+                isCurrentlyPressed = LeftTriggerAction.ReadValue<float>() > 0;
+
+            }
+
+            if (isCurrentlyPressed && !LastPressed)
+            {
+                TriggerPinchPressedEvent?.Invoke(false, TrackingHand, null);
+            }
+            else if (!isCurrentlyPressed && LastPressed)
+            {
+                TriggerPinchReleasedEvent?.Invoke(false, TrackingHand, null);
+            }
+
+            LastPressed = isCurrentlyPressed;
+
+            // isCurrentlyPressed = (RightTriggerAction.ReadValue<float>() > 0 && IsRight) ||
+            //  LeftTriggerAction.ReadValue<float>() > 0 || LeftTriggerAction.ReadValue<float>() > 0;
+
+
+
+            //////////////////// Track Pinching State
 
 
             if (OVRInput.activeControllerType == OVRInput.Controller.Hands)
             {
-                
+
                 m_hand.GetJointPose(handJointId, out currentPose);
                 transform.position = currentPose.position;
-                
+
                 // if (!TrackingHand) return;
                 // if (!TrackingHand.IsTracked || TrackingHand.IsSystemGestureInProgress) return;
                 //
@@ -126,23 +198,36 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
                 //                         transform.rotation = currentPose.rotation;
                 //                         transform.parent = TrackingHand.transform;
                 //                     }
-                
-                isCurrentlyPressed = TrackingHand.IsPressed();           // returns GetFingerIsPinching(HandFinger.Index);
-                
-                if (isCurrentlyPressed && !LastPressed) { TriggerPinchPressedEvent?.Invoke(IsRight,TrackingHand,null); }
-                else if (!isCurrentlyPressed && LastPressed) { TriggerPinchReleasedEvent?.Invoke(IsRight,TrackingHand,null); }
-                
-                if (isCurrentlyPressed && LastPressed) { IsTriggerPinchingEvent?.Invoke(IsRight,TrackingHand,null); }
-                
+
+                isCurrentlyPressed = TrackingHand.IsPressed(); // returns GetFingerIsPinching(HandFinger.Index);
+
+                if (isCurrentlyPressed && !LastPressed)
+                {
+                    TriggerPinchPressedEvent?.Invoke(IsRight, TrackingHand, null);
+                }
+                else if (!isCurrentlyPressed && LastPressed)
+                {
+                    TriggerPinchReleasedEvent?.Invoke(IsRight, TrackingHand, null);
+                }
+
+                if (isCurrentlyPressed && LastPressed)
+                {
+                    IsTriggerPinchingEvent?.Invoke(IsRight, TrackingHand, null);
+                } // OnPinchStay method
+
                 LastPressed = TrackingHand.IsPressed();
 
             }
 
             m_IsCurrentlyPressed = isCurrentlyPressed;
 
+           
+        }
+        
+     
     }
-    
-    
-    
-  
+
+
+
+
 }

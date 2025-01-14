@@ -66,7 +66,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 254817013
+  GlobalObjectIdHash: 3937718838
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -115,4 +115,6 @@ MonoBehaviour:
   currentSceneCubeCount: 0
   currentSpawnRate: 0
   allSpawnZones: []
+  sceneCubePrefab: {fileID: 2477488121596093758, guid: 26d056c63a178d14299df789bceddacf, type: 3}
   PlayerShotPrefab: {fileID: 5034307167845157865, guid: b2495e65d8fca9c42b129aacf75cc768, type: 3}
+  HealthCubePrefab: {fileID: 3024358095063372945, guid: 2bf53dbce4471394dbd4af1ec4df1895, type: 3}

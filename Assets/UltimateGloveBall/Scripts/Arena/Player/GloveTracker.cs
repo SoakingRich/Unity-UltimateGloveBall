@@ -15,6 +15,8 @@ namespace UltimateGloveBall.Arena.Player
     {
         public Glove Glove;
         public GloveArmatureNetworking Armature;
+        
+        // glove tracker is added to gO representing an avatar amatrue wrist in PlayerGameObjects
 
         
         
@@ -34,14 +36,14 @@ namespace UltimateGloveBall.Arena.Player
             {
                 // This moves the armature and hand together
                 {
-                    var trans = transform;           
-                    var wristPosition = trans.position;
+                    var trans = transform;           // get the present gO transform IE wrist transform
+                    var wristPosition = trans.position;   // get pos, then rot
                     var wristRotation = trans.rotation;
 
-                    Glove.Move(wristPosition, wristRotation);            // move the glove to this position rotation
+                    Glove.Move(wristPosition, wristRotation);            // move the glove to this position rotation on the avatar wrist
 
-                    var armTrans = Armature.transform;           // move the Armature Transfrom by Ref ????
-                    armTrans.position = wristPosition; 
+                    var armTrans = Armature.transform;           // get the armature transform
+                    armTrans.position = wristPosition;          // do nothing with it???
                     armTrans.rotation = wristRotation;
                 }
             }
