@@ -61,6 +61,8 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
         TriggerPinchReleasedEvent += OnTriggerPinchReleasedEvent;        // internal binding
     }
 
+    
+    
     private void OnTriggerPinchReleasedEvent(bool arg1, OVRHand arg2, Controller arg3)
     {
         if(!LocalPlayerEntities.Instance.LocalPlayerController) return;
@@ -129,15 +131,15 @@ public class TriggerPinchEvents : MonoBehaviour       // trigger / pinch events 
 
                 if (RightTriggerAction.phase == InputActionPhase.Performed)
                 {
-                    if (IsRight) TriggerPinchPressedEvent?.Invoke(true, TrackingHand, null);
+                    if (IsRight) TriggerPinchPressedEvent?.Invoke(true, TrackingHand, null);        // Trigger was pressed this frame
                 }
                 else if (RightTriggerAction.phase == InputActionPhase.Canceled)
                 {
-                    if (IsRight) TriggerPinchReleasedEvent?.Invoke(true, TrackingHand, null);
+                    if (IsRight) TriggerPinchReleasedEvent?.Invoke(true, TrackingHand, null);       // Trigger was released this frame
                 }
                 else if (RightTriggerAction.ReadValue<float>() > 0)
                 {
-                    if (IsRight) IsTriggerPinchingEvent?.Invoke(true, TrackingHand, null);
+                    if (IsRight) IsTriggerPinchingEvent?.Invoke(true, TrackingHand, null);       // Trigger is still held this frame
                 }
 
                 isCurrentlyPressed = RightTriggerAction.ReadValue<float>() > 0;

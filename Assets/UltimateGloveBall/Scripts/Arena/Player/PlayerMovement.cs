@@ -2,6 +2,7 @@
 // Use of the material below is subject to the terms of the MIT License
 // https://github.com/oculus-samples/Unity-UltimateGloveBall/tree/main/Assets/UltimateGloveBall/LICENSE
 
+using System.Collections;
 using Meta.Multiplayer.Core;
 using Meta.Utilities;
 using UltimateGloveBall.App;
@@ -35,8 +36,13 @@ namespace UltimateGloveBall.Arena.Player
         private bool m_useLimits;
         private float[] m_limits;
 
+        private bool HasSnappedAvatarToPosition;
+        
+              
         private void Start()
         {
+
+            
 #if UNITY_EDITOR
             // In editor we set the camera to a certain height in case we don't get HMD inputs
             var localPos = m_head.localPosition;
@@ -58,9 +64,10 @@ namespace UltimateGloveBall.Arena.Player
             m_useLimits = false;
         }
 
-        public void SnapPositionToTransform(Transform trans)
+        public void SnapPositionToTransform(Transform trans)      // this gets used in PlayerStateNetwork,  to snap the local camera rig to avatar position.
         {
             SnapPosition(trans.position, trans.rotation);
+            HasSnappedAvatarToPosition = true;
         }
 
         public void SnapPosition(Vector3 destination, Quaternion rotation)
@@ -74,8 +81,42 @@ namespace UltimateGloveBall.Arena.Player
             thisTransform.rotation = rotation;
         }
 
+        
+        private Vector3 savedPosition;
+        private Quaternion savedRotation;
+
+        public IEnumerator TryTeleportTo()
+        {
+            float elapsedTime = 0f;
+            
+            while (!HasSnappedAvatarToPosition)
+            {
+                if (elapsedTime >= 5.0f)
+                {
+                    Debug.LogError("Failed to teleport: Avatar not available within timeout.");
+                    yield break; // Exit the coroutine if the timeout is reached
+                }
+
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            
+            TeleportTo(savedPosition, savedRotation);
+
+        }
+        
+        
         public void TeleportTo(Vector3 destination, Quaternion rotation)           // teleport player,  accounting for networking
         {
+            if(!HasSnappedAvatarToPosition)
+            {
+                Debug.Log("no avatar on teleport");
+                savedPosition = destination;
+                savedRotation = rotation;
+             StartCoroutine("TryTeleportTo");
+             return;
+            }
+            
             var netTransformComp = LocalPlayerEntities.Instance.Avatar.GetComponent<ClientNetworkTransform>();
             var thisTransform = transform;
             var curPosition = thisTransform.position;

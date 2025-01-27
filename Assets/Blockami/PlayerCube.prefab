@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3900760739662146579}
   - component: {fileID: 1025375926450041331}
   - component: {fileID: 490503990959102976}
+  - component: {fileID: -1989812674119276550}
   m_Layer: 0
   m_Name: PlayerCube
   m_TagString: PlayerCube
@@ -111,7 +112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2019278245
+  GlobalObjectIdHash: 2788813331
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -132,17 +133,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78fe63c75b956ee4393b866d79660da5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
-  _NetPCData:
-    m_InternalValue:
-      MyColorType:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        ID: 0
-      OwningPlayerId: 0
-      AIPlayerNum: 0
-  OwningPlayerShot: {fileID: 0}
   ShouldMove:
     m_InternalValue: 0
   OwningPlayerID:
     m_InternalValue: 0
+  _NetPCData:
+    m_InternalValue:
+      ColorID: 0
+      OwningPlayerId: 0
+      AIPlayerNum: 0
+  OwningPlayerShot: {fileID: 0}
   OwningGrid: {fileID: 0}
+  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
+--- !u!114 &-1989812674119276550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2869817041484581370}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91adb7df562198d48a5db74e4c1bd293, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

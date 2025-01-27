@@ -10,7 +10,7 @@ public class CB_HealthPickup : CubeBehavior
     
     void Update()
     {
-        contentObj.transform.localEulerAngles = new Vector3(contentObj.transform.localEulerAngles.x,contentObj.transform.localEulerAngles.y + Time.deltaTime * speed, contentObj.transform.localEulerAngles.z);
+      //  contentObj.transform.localEulerAngles = new Vector3(contentObj.transform.localEulerAngles.x,contentObj.transform.localEulerAngles.y + Time.deltaTime * speed, contentObj.transform.localEulerAngles.z);
     }
 
     public override void ScsOnSCDied(SceneCubeNetworking obj)

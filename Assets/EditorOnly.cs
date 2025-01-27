@@ -13,7 +13,7 @@ public class EditorOnly : MonoBehaviour
         }
         else
         {
-            Destroy(this);
+            Destroy(this);  // lol this is just destroying the script
         }
     }
 

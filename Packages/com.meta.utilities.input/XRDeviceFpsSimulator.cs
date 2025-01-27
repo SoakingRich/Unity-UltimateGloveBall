@@ -21,6 +21,8 @@ namespace Meta.Utilities.Input
 
         [SerializeField] private bool m_disableIfRealHmdConnected = true;
 
+        public float savedHandMovementZ;
+        
         [Header("Mouse Capture")]
         [SerializeField] private bool m_captureMouse = true;
         [SerializeField] private bool m_requireFocus = true;
@@ -58,7 +60,7 @@ namespace Meta.Utilities.Input
         [SerializeField] private Vector3 m_centerEyeStartPosition = Vector3.up;
         [SerializeField] private Vector3 m_leftControllerOffset = new(-0.25f, -0.15f, 0.65f);
         [SerializeField] private Vector3 m_leftControllerRotation = new(-30, 0, -60);
-        [SerializeField] private Vector3 m_rightControllerOffset = new(0.25f, -0.15f, 0.65f);
+        [SerializeField] public Vector3 m_rightControllerOffset = new(0.25f, -0.15f, 0.65f);
         [SerializeField] private Vector3 m_rightControllerRotation = new(-30, 0, 60);
 
         private Vector2 m_headRotator = Vector2.zero;
@@ -147,6 +149,9 @@ namespace Meta.Utilities.Input
 
         private void Update()
         {
+            
+            
+            
             if (m_captureMouse)
             {
                 var shouldCapture = !m_releaseMouseCaptureAction.action.IsPressed();
@@ -174,8 +179,9 @@ namespace Meta.Utilities.Input
 
             var handMovement = ReadAction<Vector2>(m_rightHandMovementAction);
             var handMovementZ = ReadAction<float>(m_rightHandMovementZAction);
+            handMovementZ += savedHandMovementZ;
             m_rightControllerOffset += handMovement.WithZ(handMovementZ);
-
+            
             UpdateControllerState(ref m_leftControllerState, m_leftControllerOffset, Quaternion.Euler(m_leftControllerRotation));
             UpdateControllerState(ref m_rightControllerState, m_rightControllerOffset, Quaternion.Euler(m_rightControllerRotation));
 

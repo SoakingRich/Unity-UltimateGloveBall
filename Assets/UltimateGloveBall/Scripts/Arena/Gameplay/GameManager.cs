@@ -28,16 +28,21 @@ namespace UltimateGloveBall.Arena.Gameplay
     /// </summary>
     public class GameManager : NetworkBehaviour
     {
-        public static GameManager _instance;    
+        
+        public static GameManager _instance { get; private set; }
 
-        public static GameManager Instance {          
-            get {
-                if (_instance == null) {
-                    _instance = new GameManager();
-                }
-                return _instance;
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject); // Prevent duplicate singletons
+                return;
             }
+
+            _instance = this;
+         //   DontDestroyOnLoad(gameObject); // Persist across scenes
         }
+    
         
         
         
@@ -152,7 +157,7 @@ namespace UltimateGloveBall.Arena.Gameplay
 #if UNITY_EDITOR
             if (AutoStartGameManager)
             {
-               Invoke("StartGame", 0.2f); 
+               Invoke("StartGame", 2.0f); 
             }
 #endif
         }
@@ -327,6 +332,11 @@ namespace UltimateGloveBall.Arena.Gameplay
             // Find the team with the least players
             NetworkedTeam.Team leastPopulatedTeam = teamCounts.OrderBy(kvp => kvp.Value).First().Key;
 
+            if (leastPopulatedTeam == NetworkedTeam.Team.TeamB)
+            {
+                Debug.Log("is choosing team B");
+            }
+                
             return leastPopulatedTeam;
         }
 
@@ -336,6 +346,13 @@ namespace UltimateGloveBall.Arena.Gameplay
         [ContextMenu("StartGame")]
         public void StartGame()             // called by unityEvent on the StartGameButton,   only Host/Server can start game 
         {
+            if (LocalPlayerEntities.Instance.Avatar == null)
+            {
+                Invoke("StartGame",0.5f);
+                Debug.Log("trying to start game without local avatar will cause teleport to fail");
+                return;
+            }
+            
             if (m_currentGamePhase.Value is GamePhase.PreGame or GamePhase.PostGame)          // only if we're in a compatible GamePhase
             {
                 m_gameState.Score.Reset();
@@ -586,18 +603,20 @@ namespace UltimateGloveBall.Arena.Gameplay
                 var avatar = playerObjects.Avatar;
                 if (avatar != null)
                 {
-                    var side = avatar.transform.position.z < 0                // assign sides based on Position,   are Player Teams flexible depending on what side Players have moved to??
-                        ? NetworkedTeam.Team.TeamA
-                        : NetworkedTeam.Team.TeamB;
-
-                    var color = side == NetworkedTeam.Team.TeamA ? TeamAColor : TeamBColor;
-
-                    foreach (var colorComp in playerObjects.ColoringComponents)   // class PlayerGameObjects keeps a list of ColoringComponent scripts to store team color
-                    {
-                        colorComp.TeamColor = color;
-                    }
-
-                    m_playersTeamSelection[clientId] = side;
+                    // dont change player teams for some reason
+                    
+                    // var side = avatar.transform.position.z < 0                // assign sides based on Position,   are Player Teams flexible depending on what side Players have moved to??
+                    //     ? NetworkedTeam.Team.TeamA
+                    //     : NetworkedTeam.Team.TeamB;
+                    //
+                    // var color = side == NetworkedTeam.Team.TeamA ? TeamAColor : TeamBColor;
+                    //
+                    // foreach (var colorComp in playerObjects.ColoringComponents)   // class PlayerGameObjects keeps a list of ColoringComponent scripts to store team color
+                    // {
+                    //     colorComp.TeamColor = color;
+                    // }
+                    //
+                    // m_playersTeamSelection[clientId] = side;
                 }
             }
         }
@@ -624,7 +643,6 @@ namespace UltimateGloveBall.Arena.Gameplay
                 }
             }
         }
-
         
 
         [ClientRpc]

@@ -63,6 +63,7 @@ namespace UltimateGloveBall.Arena.Player
         
         
         public DrawingGrid OwnedDrawingGrid;
+        
         public Action<PlayerControllerNetwork> OnCyclePlayerColor;
         
         public NetworkVariable<int>  NetColorID = new();

@@ -77,11 +77,13 @@ namespace UltimateGloveBall.Arena.Services
 
             GetSpawnData(ref playerData, playerPos, out var position, out var rotation,
                 out var team, // setup which team for the spawning player
-                out var color, out var spawnTeam); // setup spawning data based on gamePhase   
+                out var color, out var spawnTeam); // setup spawning data based on gamePhase
+                                                   // 
 
             var player = Instantiate(m_playerPrefab, position, rotation);
             player.SpawnAsPlayerObject(
                 clientId); // after spawning, Netcode designate it as a PlayerObject    ( this is kinda Possess event ? )
+            
             player.GetComponent<NetworkedTeam>().MyTeam = team;
 
             var leftArmatureNet =
@@ -131,65 +133,45 @@ namespace UltimateGloveBall.Arena.Services
             return player;
         }
 
-        public void AssignDrawingGrid(NetworkObject player) // assign the player to a DrawingGrid
+        public void AssignDrawingGrid(NetworkObject player) // assign the player to a DrawingGrid          // player is actually a PlayerControllerNetwork
         {
-            var PlayerData = ArenaSessionManager.Instance.GetPlayerData(player.OwnerClientId);
+            var PlayerData = ArenaSessionManager.Instance.GetPlayerData(player.OwnerClientId);     
             int teamIdx = (int)PlayerData.Value.SelectedTeam - 1;
             
             DrawingGrid playerGrid = null;
             DrawingGrid[] allDrawingGrids = FindObjectsOfType<DrawingGrid>();
             playerGrid = allDrawingGrids.FirstOrDefault(grid => grid.DrawingGridIndex == teamIdx);
             
-
-            
-            //
-            // if (allDrawingGrids.Length == 0) Debug.LogWarning("No DrawingGrid objects found in the scene.");
-            //
-            // // Get the player's position
-            // Vector3 playerPosition = player.transform.position;
-            //
-            // // Find the closest DrawingGrid
-            //
-            // float closestDistance = Mathf.Infinity;
-            //
-            // foreach (DrawingGrid grid in allDrawingGrids)
-            // {
-            //     float distance = Vector3.Distance(playerPosition, grid.transform.position);
-            //     if (distance < closestDistance)
-            //     {
-            //         closestDistance = distance;
-            //         playerGrid = grid;
-            //     }
-            // }
-
             if (playerGrid == null)
             {
                 Debug.LogWarning("No closest DrawingGrid found.");
                 return;
             }
 
-            playerGrid.OwningPlayer.Value = player.OwnerClientId;
-                // closestGrid.NetworkObject.SpawnWithOwnership(player.OwnerClientId); 
-                playerGrid.NetworkObject.ChangeOwnership(player.OwnerClientId);
-                
-                if (LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController)   // check that playercontroller exists
-                {
-                    LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController
-                        .OwnedDrawingGrid = playerGrid;
-                }
-                else
-                {
-                    Debug.Log($"no playercontrollernetwork for player???");
-                }
+            playerGrid.OwningPlayer.Value = player.OwnerClientId; 
+            playerGrid.NetworkObject.ChangeOwnership(player.OwnerClientId);
+            
+            if (LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController)   // check that playercontroller exists
+            {
+                LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController
+                    .OwnedDrawingGrid = playerGrid;
+            }
+            else
+            {
+                Debug.LogWarning($"no playercontrollernetwork for player???");
+            }
 
-                Debug.Log($"Assigned DrawingGrid at {playerGrid.transform.position} to player.");
-                
-                var clientRpcParams = new ClientRpcParams          // create ClientRPC Params so we can specify Targets for rpc as we only want to send Respawn RPC to one client only
-                {
-                    Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { player.OwnerClientId } }
-                };
-                GameManager gm = FindObjectOfType<GameManager>();
-                gm.OnRespawnClientRpc(playerGrid.transform.position, playerGrid.transform.rotation, gm.CurrentPhase, clientRpcParams);
+            Debug.Log($"Assigned DrawingGrid at {playerGrid.transform.position} to player.");
+            
+            var clientRpcParams = new ClientRpcParams          // create ClientRPC Params so we can specify Targets for rpc as we only want to send Respawn RPC to one client only
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { player.OwnerClientId } }
+            };
+            
+            GameManager gm = FindObjectOfType<GameManager>();
+            Vector3 pos = playerGrid.transform.position + playerGrid.transform.rotation * Vector3.forward * -1.0f;
+            pos.y = 0;
+            gm.OnRespawnClientRpc(pos, playerGrid.transform.rotation, gm.CurrentPhase, clientRpcParams);
             
                 
             
@@ -227,6 +209,8 @@ namespace UltimateGloveBall.Arena.Services
                 spawnTeam = GetTeam(playerData, currentPos);
             }
 
+            team = spawnTeam;
+            
             GetSpawnPositionForTeam(currentPhase, spawnTeam, ref playerData, out position,
                 out rotation); // get spawn position now that player has a team
 

@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
@@ -10,6 +11,7 @@ using UltimateGloveBall.Arena.Services;
 using UltimateGloveBall.Arena.VFX;
 using UltimateGloveBall.Networking.Pooling;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior but doesnt need it??
 {
@@ -33,8 +35,11 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
     [SerializeField] public int currentSceneCubeCount = 0;
     [SerializeField] public float currentSpawnRate;
     //[SerializeField] private Object sceneCubePrefab;
-    
 
+   // [Header("Actions")] public Action OnSCSDied;
+    [Header("Actions")] 
+    public Action<ulong> OnSCSDied;
+    
     [Header("World")] 
     [SerializeField] private SpawnZone[] allSpawnZones;
 
@@ -159,15 +164,18 @@ private IEnumerator SpawnSceneCubes()        // repeat state
                             int colorID;
                             colorID = BlockamiData.GetRandomColorID();
 
-                            bool HasHealthPickup = Random.Range(0.0f,1.0f) > 0.92f;
+                           // bool HasHealthPickup = Random.Range(0.0f,1.0f) > 0.92f;
+                           bool HasHealthPickup = false;
                             
-                            bool IsRainbow = Random.Range(0.0f,1.0f) > 0.92f;
+                          //  bool IsRainbow = Random.Range(0.0f,1.0f) > 0.92f;
+                          bool IsRainbow = false;
                             if (IsRainbow)
                             {
                                 colorID = 10;
                             }
                             
-                            bool IsEmoji = Random.Range(0.0f,1.0f) > 0.92f;;
+                           // bool IsEmoji = Random.Range(0.0f,1.0f) > 0.92f;;
+                            bool IsEmoji = false;
                             if (IsEmoji)
                             {
                                 colorID = 11;
@@ -193,7 +201,13 @@ private IEnumerator SpawnSceneCubes()        // repeat state
                             
                             
                             ////////////////////////////// SPAWN
+                            
                             var networkObject = m_cubePool.GetNetworkObject(selectedPrefab.gameObject, spawnPosition, Quaternion.identity);
+                            if (!networkObject)
+                            {
+                                Debug.Log("no network object for prefab in spawn manager ");
+                            }
+                            
                             if (!networkObject.IsSpawned)       // Spawning the ball is only required the first time it is fetched from the pool.
                                 networkObject.Spawn(); 
                             
@@ -206,9 +220,13 @@ private IEnumerator SpawnSceneCubes()        // repeat state
                             // for exotic cubes, any that have unique prefabs, can initialize variables according to prefab defaults instead of replicated vars   eg. HealthCubes
                             // exotic cubes with unique ColorIDs can still initialize themselves from that alone
                             scs.Initialize();
-                            
-                            if(!IsHealthCube) currentSceneCubeCount++;
-                            m_AllScs.Add(scs);
+
+                            if (!IsHealthCube)
+                            {
+                                currentSceneCubeCount++;
+                                m_AllScs.Add(scs);
+                            }
+
                             scs.SCDied += OnSceneCubeDied;
                         
              
@@ -228,6 +246,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
             TriggerFrenzyTime();
         }
         DeSpawnCube(destroyedCube);
+        OnSCSDied?.Invoke(destroyedCube.NetworkObjectId);
     }
     
     private void OnHealthCubeDied(SceneCubeNetworking destroyedCube)

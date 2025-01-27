@@ -114,9 +114,10 @@ namespace UltimateGloveBall.MainMenu
             IEnumerator Impl()
             {
                // yield return new WaitUntil(() => LocalPlayerEntities.Instance.GetPlayerObjects(NetworkManager.Singleton.LocalClientId).Avatar.IsSkeletonReady);
-                yield return new WaitUntil(() => NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject() != null);
+                yield return new WaitUntil(() => NetworkManager.Singleton.SpawnManager?.GetLocalPlayerObject() != null);
+                yield return new WaitForSeconds(2.0f);
 
-                FindObjectOfType<GameManager>().StartGame();
+               // FindObjectOfType<GameManager>().StartGame();
             }
             
         }

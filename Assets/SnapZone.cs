@@ -18,9 +18,6 @@ public class SnapZone : MonoBehaviour
   
   
   
-  
-  
-  
     private void Awake()
     {
         OwningGrid = UtilityLibrary.FindObjectInParents<DrawingGrid>(this.transform);
@@ -37,13 +34,12 @@ public class SnapZone : MonoBehaviour
         {
             Debug.Log("snapzone triggerStay colliding with " + other.name);
 
-            // Check if the other object has the "Player" tag
             if (other.gameObject.CompareTag("Player"))
             {
-                // Check if the player object has ownership
+               
                 if (OwningGrid.GetComponent<NetworkObject>().IsOwner)
                 {
-                    // Check if the object has the TriggerPinchEvents component
+                  
                     var TPE = other.GetComponent<TriggerPinchEvents>();
                     if (TPE != null)
                     {
@@ -51,11 +47,11 @@ public class SnapZone : MonoBehaviour
                         HighlightCube.enabled = true;          // show highlight cube
                         OwningGrid.PointerUI?.Move(this);
                         
-                        // Check if the button is pressed
+                      
                         if (TPE.m_IsCurrentlyPressed)
                         {
-                            // Check if we are not on cooldown
-                            if (!OnCooldown)
+                       
+                            if (!OnCooldown)     // why are there cooldowns?
                             {
                                 OnCooldown = true;
                                 TrySpawnCube(TPE.IsRight);
@@ -76,8 +72,7 @@ public class SnapZone : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (OnCooldown)                   // handle removing of cooldown
-        {
+      
             if (other.gameObject.CompareTag("Player"))
             {
                 if (OwningGrid.GetComponent<NetworkObject>().IsOwner)
@@ -91,7 +86,7 @@ public class SnapZone : MonoBehaviour
 
                 }
             }
-        }
+        
     }
 
 

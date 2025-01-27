@@ -42,7 +42,7 @@ namespace UltimateGloveBall.Arena.Player
 
         private LocalPlayerState LocalPlayerState => IsOwner ? LocalPlayerState.Instance : null;             // Clients will see this var null except on the playerstatenetwork of their own
 
-        
+        private PlayerControllerNetwork PCN;
         
         
         
@@ -60,8 +60,11 @@ namespace UltimateGloveBall.Arena.Player
 
             if (!LocalPlayerState) return;
 
-            // We snap local player rig to the spawned position of this player.
+            // We snap local player rig to the spawned position of this AvatarEntity.
             PlayerMovement.Instance.SnapPositionToTransform(transform);                      // snap CameraRig to position of this AvatarEntity
+
+            PCN = GetComponent<PlayerControllerNetwork>();
+            PlayerMovement.Instance.TeleportTo(PCN.OwnedDrawingGrid.transform.position,PCN.OwnedDrawingGrid.transform.rotation);   // Go to drawing grid location after snap is done
             
             LocalPlayerState.OnChange += UpdateData;                // OnChange only invokes on init of LocalPlayerState 
             LocalPlayerState.OnSpawnCatChange += OnSpawnCatChanged;
