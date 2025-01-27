@@ -215,13 +215,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97a96b63f7a70e644851f13c638b8cf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SCData:
-    m_InternalValue:
-      ContainsPickup: 0
-      IsHealthCube: 0
-      MyColorType:
-        color: {r: 0, g: 0, b: 0, a: 0}
-        ID: 0
+  NetColorID:
+    m_InternalValue: 0
+  NetIsHealthCube:
+    m_InternalValue: 0
+  m_SCData:
+    myColor: {r: 0, g: 0, b: 0, a: 0}
+    SceneCubePrefab: {fileID: 0}
+  BlockamiData: {fileID: 0}
   m_rigidbody: {fileID: 6889326301878998742}
   OwningDrawingGrid: {fileID: 0}
   m_fakeSoftCube: {fileID: 0}

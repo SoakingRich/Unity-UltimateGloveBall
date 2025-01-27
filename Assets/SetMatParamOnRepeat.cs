@@ -20,7 +20,6 @@ public class SetMatParamOnRepeat : MonoBehaviour
     {
      
         SetMaterial();
-        m_repeatRate = 3.0f;
 
         InvokeRepeating(nameof(SetMaterialParamToCurrentTime), 0.0f, m_repeatRate);
     }
@@ -32,28 +31,31 @@ public class SetMatParamOnRepeat : MonoBehaviour
 
     void Update()
     {
-       
-        
+        TryUpdateEditorShaderTime();
+    }
+
+    private void TryUpdateEditorShaderTime()
+    {
 #if UNITY_EDITOR
         if (propertyBlock == null) return;
         
-            var time = Application.isEditor ? (float)EditorApplication.timeSinceStartup : 0.0f;
-            propertyBlock.SetFloat("_FakeTime", time);
+        var time = Application.isEditor ? (float)EditorApplication.timeSinceStartup : 0.0f;
+        propertyBlock.SetFloat("_FakeTime", time);
             
-            Shader.SetGlobalFloat("_Time", time );
-            Shader.SetGlobalFloat("_FakeTime", time );
+        Shader.SetGlobalFloat("_Time", time );
+        Shader.SetGlobalFloat("_FakeTime", time );
             
-            Vector4 vTime = new Vector4( time / 20, time, time*2, time*3);
-            Shader.SetGlobalVector("_Time", vTime );
+        Vector4 vTime = new Vector4( time / 20, time, time*2, time*3);
+        Shader.SetGlobalVector("_Time", vTime );
         
             
 
-            // Ensure the material updates in the editor
-            if (targetRenderer.sharedMaterial != null)
-            {
-                  EditorUtility.SetDirty(targetRenderer.sharedMaterial);
-            }
-#endif
+        // Ensure the material updates in the editor
+        if (targetRenderer.sharedMaterial != null)
+        {
+            EditorUtility.SetDirty(targetRenderer.sharedMaterial);
+        }
+        #endif
     }
 
     private void InvokeMat()
@@ -64,6 +66,8 @@ public class SetMatParamOnRepeat : MonoBehaviour
         }
     }
 
+    
+    
     private void SetMaterial()
     {
         // Attempt to retrieve the material from a Particle System
@@ -96,7 +100,7 @@ public class SetMatParamOnRepeat : MonoBehaviour
 
     private void SetMaterialParamToCurrentTime()
     {
-#if UNITY_EDITOR
+
         if (targetRenderer == null)
         {
             Debug.LogWarning("Target renderer is null. Attempting to retrieve it again.");
@@ -118,9 +122,14 @@ public class SetMatParamOnRepeat : MonoBehaviour
         
         
         // Get the current time to set the material parameter
-        float currentTime = Application.isPlaying
-            ? Time.timeSinceLevelLoad
+        float currentTime = Time.timeSinceLevelLoad;
+        
+        
+#if UNITY_EDITOR
+         currentTime = Application.isPlaying
+            ? currentTime
             : (float)EditorApplication.timeSinceStartup;
+#endif
         
         // Get the current material properties into the property block
         targetRenderer.GetPropertyBlock(propertyBlock);
@@ -131,9 +140,6 @@ public class SetMatParamOnRepeat : MonoBehaviour
         // Apply the property block to the renderer
         targetRenderer.SetPropertyBlock(propertyBlock);
         
-#endif
-    
-
 
     }
 }

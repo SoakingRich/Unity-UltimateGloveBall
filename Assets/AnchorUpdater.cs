@@ -62,8 +62,20 @@ public class AnchorUpdater : MonoBehaviour
                 Debug.Log("locatable is missing");
             }
         }
-        
-        
+
+        void TryThis()
+        {
+            // var MRUKRoom = _mruk.GetCurrentRoom();
+            // var floorAnchor = MRUKRoom.FloorAnchor;
+            // transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
+            //
+            // _mruk.SceneLoadedEvent += () =>
+            // {
+            //     var MRUKRoom = _mruk.GetCurrentRoom();
+            //     var floorAnchor = MRUKRoom.FloorAnchor;
+            //     transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
+            // };
+        }
         
         
         

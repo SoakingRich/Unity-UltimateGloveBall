@@ -57,7 +57,7 @@ public class BlockamiParticleFloor : MonoBehaviour
        NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue((ulong)(int)id, out var Cube);
        if (!Cube) return;
        
-      SetMaterialParamToCurrentTime();
+   //   SetMaterialParamToCurrentTime();
        
     }
 

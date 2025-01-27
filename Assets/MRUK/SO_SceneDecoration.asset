@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efacc41b4d21cfa458fd5af8b13d5803, type: 3}
+  m_Name: SO_SceneDecoration
+  m_EditorClassIdentifier: 
+  Poolsize: 50
+  decorationPrefabs:
+  - {fileID: 919132149155446097, guid: ffac598faebb29e4ebf5890bf2df5c62, type: 3}
+  executeSceneLabels: 1
+  targets: -1
+  targetPhysicsLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  placement: 1
+  placementDirection: {x: 0, y: -1, z: 0}
+  selectBehind: 0
+  rayOffset: {x: 0, y: 0.1, z: 0}
+  spawnHierarchy: 2
+  distributionType: 0
+  gridDistribution:
+    spacingX: 0.5
+    spacingY: 0.5
+  simplexDistribution:
+    pointSamplingConfig:
+      pointsPerUnitX: 0
+      pointsPerUnitY: 0
+      noiseOffsetRadius: 0
+  staggeredConcentricDistribution:
+    stepSize: 0
+  randomDistribution:
+    numPerUnit: 10
+  masks: []
+  constraints: []
+  modifiers: []
+  discardParentScaling: 1
+  lifetime: 0
+  DrawDebugRaysAndImpactPoints: 0
