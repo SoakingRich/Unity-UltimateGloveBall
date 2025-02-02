@@ -20,9 +20,9 @@ MonoBehaviour:
     EdgeSoftenWidth: 1
     UIBlock3DCornerDivisions: 8
     UIBlock3DEdgeDivisions: 8
-    UIBlock2DLightingModels: 1
-    TextBlockLightingModels: 1
-    UIBlock3DLightingModels: 2
+    UIBlock2DLightingModels: 9
+    TextBlockLightingModels: 9
+    UIBlock3DLightingModels: 10
     ClickFrameDeltaThreshold: 1
   ButtonPrefab: {fileID: 2905764967384224460, guid: 33994460efecd9d4794903c0f8d9a630, type: 3}
   TogglePrefab: {fileID: 6516097741255810359, guid: c4c133e6e71b6cb4f8ff3326f1632fa0, type: 3}

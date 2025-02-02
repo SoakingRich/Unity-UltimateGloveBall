@@ -93,9 +93,10 @@ public class SnapZone : MonoBehaviour
     
     
     
-    void TrySpawnCube(bool isRight)
+    public void TrySpawnCube(bool isRight)
    {
-        SpawnManager.Instance.SpawnPlayerCubeServerRpc(transform.position,OwningGrid.NetworkObject.OwnerClientId, isRight);
+       HasCurrentlySpawnedCube = true;
+        SpawnManager.Instance.SpawnPlayerCubeServer(transform.position,OwningGrid.NetworkObject.OwnerClientId, isRight);
      
     }
 }

@@ -27,7 +27,7 @@ namespace UltimateGloveBall.App
 
         public IEnumerator Init()
         {
-            _ = RichPresence.GetDestinations().OnComplete(OnGetDestinations);       // do an ovrrequest for Get Destinations, bind OnGetDestinations to onComplete
+            _ = RichPresence.GetDestinations().OnComplete(OnGetDestinations);       // do an ovrrequest call to GetDestinations, and simultaneously bind OnGetDestinations to onComplete
             Debug.Log("wait for Destinations to be recieved");
             yield return new WaitUntil(() => m_destinationReceived);               // wait for a m_bool to be set true   in  OnGetDestinations
         }

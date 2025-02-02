@@ -9,6 +9,7 @@ using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Services;
 using UltimateGloveBall.Utils;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace UltimateGloveBall.Arena.Player
 {
@@ -216,6 +217,34 @@ namespace UltimateGloveBall.Arena.Player
                     FadeOutScreen();
                 }
             }       // seems to be some sort of AutoMoving,  rather than player input moving??
+
+
+            if (HasSnappedAvatarToPosition)
+            {
+                var ovrCam = FindObjectOfType<OVRCameraRig>();
+               
+                
+                if (ovrCam != null)
+                {
+                    if(ovrCam.transform.position.y != 1.18f)
+                    {
+                        ovrCam.transform.position = new Vector3(ovrCam.transform.position.x, 1.18f, ovrCam.transform.position.z);
+                    }
+                }
+                
+                if(!(XRSettings.enabled && XRSettings.isDeviceActive))
+                {
+                    var editorobj = GameObject.FindGameObjectWithTag("EditorLocation");
+
+                    if (editorobj)
+                    {
+                        ovrCam.transform.position = new Vector3(editorobj.transform.position.x, ovrCam.transform.position.y, editorobj.transform.position.z);
+                    }
+                }
+               
+                
+            }
+            
         }
 
         public void DoSnapTurn(bool toRight)

@@ -26,13 +26,15 @@ namespace Oculus.Interaction.MoveFast
         private List<MaterialPropertyBlockEditor> _materialPropertyBlockEditors;
         
         [FormerlySerializedAs("_isPlaying")] [SerializeField]
-        public bool ShouldTrackHandColor;
         
-        private Color _defaultColor;
+        public bool ShouldTrackHandColor = true;
+        
+        private Color _StartingColor;
 
         private OVRManager OVRManager;
         private List<SyntheticHand> AllSyntheticHands = new List<SyntheticHand>();
-        
+
+        public Color CurrentColor;
         
         
 
@@ -52,6 +54,7 @@ namespace Oculus.Interaction.MoveFast
 
             
             _materialPropertyBlockEditors = new List<MaterialPropertyBlockEditor>();
+            
             foreach (var syntheticHand in AllSyntheticHands)
             {
                 var editors = syntheticHand.GetComponentsInChildren<MaterialPropertyBlockEditor>();
@@ -59,7 +62,7 @@ namespace Oculus.Interaction.MoveFast
             }
 
             
-            _defaultColor = _materialPropertyBlockEditors[0].Renderers[0].sharedMaterial.GetColor(_propertyName);   
+            _StartingColor = _materialPropertyBlockEditors[0].Renderers[0].sharedMaterial.GetColor(_propertyName);   
             
             
             // get the value of a color param on current material of a renderer stored in _materialPropertyBlockEditors  (list of one)
@@ -68,20 +71,45 @@ namespace Oculus.Interaction.MoveFast
            // even though Color is not listed on block edtior in editor, we can use SetColor anyway through code
         }
 
-        private void Update() => UpdateActiveColor();
+        private void Update()
+        {
+            UpdateActiveColor();
+        }
 
+        
+        
+        
+        
         public void UpdateActiveColor()
         {
-            return;
-           var id =  NetworkManager.Singleton.LocalClientId;
-           var Col = BlockamiData.GetColorFromColorID(LocalPlayerEntities.Instance.GetPlayerObjects(id).PlayerController
-               .ColorID);
+            var Col = _StartingColor;
 
-           if (!ShouldTrackHandColor) Col = _defaultColor;
-         
-               for (int i = 0; i < _materialPropertyBlockEditors.Count; i++)
-                   _materialPropertyBlockEditors[i].MaterialPropertyBlock.SetColor(_propertyName, Col);
-           
+
+            
+            if (NetworkManager.Singleton != null)
+            {
+
+               
+                var id = NetworkManager.Singleton.LocalClientId;
+                var con = LocalPlayerEntities.Instance?.GetPlayerObjects(id)?
+                    .PlayerController;
+
+
+                if (con)
+                {
+                    Col = BlockamiData.GetColorFromColorID(con.ColorID);
+
+                }
+                else if (CurrentColor != _StartingColor)
+                {
+                    Col = CurrentColor;
+                }
+            }
+
+            if (!ShouldTrackHandColor) Col = _StartingColor;
+            for (int i = 0; i < _materialPropertyBlockEditors.Count; i++)
+             _materialPropertyBlockEditors[i].MaterialPropertyBlock.SetColor(_propertyName, Col);
+                       
         }
     }
     

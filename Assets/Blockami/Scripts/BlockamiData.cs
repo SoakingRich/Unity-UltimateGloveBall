@@ -24,6 +24,7 @@ namespace Blockami.Scripts
         [Header("PlayerCube")]
         public float PlayerCubeMoveSpeed = 0.1f;
         public float PlayerCubeShrinkRate = 0.0001f;
+        public bool ShootCubesOnPinchTriggerRelease = true;
         
         [Header("CubeTypes")]
         [SerializedDictionary("ID", "Data")]

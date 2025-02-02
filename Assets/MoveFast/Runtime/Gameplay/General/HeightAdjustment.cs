@@ -1,5 +1,6 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -19,14 +20,30 @@ namespace Oculus.Interaction.MoveFast
             yield return null;
             SetHeight();
         }
-
+        
         public void SetHeight()
         {
             var _currentHeight = _cameraRig.centerEyeAnchor.position.y - _cameraRig.transform.position.y;
             if (_currentHeight <= 1) { return; }
-
+        
             float diff = _idealHeight - _currentHeight;
             _cameraRig.transform.position = transform.position + Vector3.up * diff;
         }
+        
+        // private void Start()
+        // {
+        //     _cameraRig = FindObjectOfType<OVRCameraRig>();
+        // }
+        //
+        // private void Update()
+        // {
+        //     if (_cameraRig)
+        //     {
+        //         if(_cameraRig.transform.position.y != )
+        //     }
+        // }
     }
+    
+    
+    
 }

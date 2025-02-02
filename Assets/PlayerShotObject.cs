@@ -15,7 +15,8 @@ public class PlayerShotObject : NetworkBehaviour
     public NetworkVariable<float> TotalScore = new NetworkVariable<float>();
     public NetworkVariable<bool> IsRight = new NetworkVariable<bool>();
    // public NetworkVariable<bool> IsRight = new NetworkVariable<bool>(writePerm: NetworkVariableWritePermission.Owner);
-    
+
+   public bool HasFired;
     
     
     
@@ -57,6 +58,25 @@ public class PlayerShotObject : NetworkBehaviour
                   
             }
         }
-            
+
+        HasFired = true;
+
+    }
+    
+    
+    public void SetLifeTime(float Lifetime)
+    {
+       Invoke("DestroyPlayerShot", Lifetime);
+    }
+
+    void DestroyPlayerShot()
+    {
+        if (!HasFired)
+        {
+            FireShotServerRpc();
+        }
+        
+      //  GetNetworkObject(NetworkBehaviourId).Despawn(true);
+        
     }
 }

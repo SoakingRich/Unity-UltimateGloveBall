@@ -20,7 +20,7 @@ namespace Oculus.Interaction.MoveFast
         public IHand Hand;
 
         [SerializeField]
-        private Track _source;
+        public Track _source;
 
         [SerializeField]
         private float _dragDistance = 0;
@@ -35,6 +35,8 @@ namespace Oculus.Interaction.MoveFast
 
         private void Update()
         {
+            _offset = _source.GetOffset(transform);   // keep doing on update so i can adjust
+            
             Hand.GetJointPose(_source.joint, out var pose);
             if (Hand.Handedness == Handedness.Left)
             {
@@ -51,7 +53,7 @@ namespace Oculus.Interaction.MoveFast
         }
 
         [System.Serializable]
-        struct Track
+       public struct Track
         {
             public HandJointId joint;
             [Optional]

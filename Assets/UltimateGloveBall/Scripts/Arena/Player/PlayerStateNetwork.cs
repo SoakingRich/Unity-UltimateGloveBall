@@ -63,9 +63,9 @@ namespace UltimateGloveBall.Arena.Player
             // We snap local player rig to the spawned position of this AvatarEntity.
             PlayerMovement.Instance.SnapPositionToTransform(transform);                      // snap CameraRig to position of this AvatarEntity
 
-            PCN = GetComponent<PlayerControllerNetwork>();
-            PlayerMovement.Instance.TeleportTo(PCN.OwnedDrawingGrid.transform.position,PCN.OwnedDrawingGrid.transform.rotation);   // Go to drawing grid location after snap is done
-            
+            // PCN = GetComponent<PlayerControllerNetwork>();
+            // PlayerMovement.Instance.TeleportTo(PCN.OwnedDrawingGrid.transform.position,PCN.OwnedDrawingGrid.transform.rotation);   // Go to drawing grid location after snap is done
+            //
             LocalPlayerState.OnChange += UpdateData;                // OnChange only invokes on init of LocalPlayerState 
             LocalPlayerState.OnSpawnCatChange += OnSpawnCatChanged;
 

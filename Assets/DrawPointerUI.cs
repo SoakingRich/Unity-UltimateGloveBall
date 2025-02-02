@@ -9,6 +9,7 @@ using UnityEngine;
 
 public class DrawPointerUI : MonoBehaviour
 {
+    public DrawingGrid OwningDrawingGrid;
     private BlockamiData BlockamiData;
     private PlayerControllerNetwork pcn;
     private MaterialPropertyBlockEditor _materialPropertyBlockEditor;
@@ -42,7 +43,7 @@ public class DrawPointerUI : MonoBehaviour
     void Update()
     {
         if (!LocalPlayerEntities.Instance) return;
-        
+
         if (!pcn)
         {
             pcn = LocalPlayerEntities.Instance.LocalPlayerController;
@@ -53,17 +54,59 @@ public class DrawPointerUI : MonoBehaviour
 
 
 
-        if (pcn.OwnerClientId != NetworkManager.Singleton.LocalClientId)
+        if (pcn.OwnerClientId != NetworkManager.Singleton.LocalClientId ||
+            pcn.OwnedDrawingGrid != OwningDrawingGrid)
         {
             enabled = false;
+            return;
+        }
+        else
+        {
+            GameObject nearestObject = null;
+            float closestDistance = Mathf.Infinity;
+
+
+            var allTPE = FindObjectsOfType<TriggerPinchEvents>();
+            if (allTPE.Length < 1) { return; }
+
+            foreach (var tpe in allTPE)
+            {
+                float distance = Vector3.Distance(transform.position, tpe.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    nearestObject = tpe.gameObject;
+                }
+            }
+
+            if (nearestObject != null)
+            {
+                Plane drawingPlane = new Plane(OwningDrawingGrid.transform.rotation * Vector3.forward,
+                    OwningDrawingGrid.transform.position);
+
+                // Project the nearest object's position onto the plane
+                Vector3 projectedPosition = drawingPlane.ClosestPointOnPlane(nearestObject.transform.position);
+
+                // Set the new position
+                transform.position = projectedPosition;
+            }
+
         }
 
     }
 
-    
+
+
+
+
+
+
+
+
+
     public void Move(SnapZone s)
     {
-        transform.position = s.transform.position;
+      //  transform.position = s.transform.position;
     }
     
     

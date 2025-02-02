@@ -37,7 +37,7 @@ namespace Meta.Multiplayer.Core
         }
         
         
-        public ClientState CurrentClientState { get; private set; } = ClientState.Disconnected;
+        [SerializeField] public ClientState CurrentClientState { get; private set; } = ClientState.Disconnected;
         
 
         // We register this function so that we can call it internally when we receive the message
@@ -49,8 +49,8 @@ namespace Meta.Multiplayer.Core
 
         private int m_restoreClientRetries = 0;
 
-        public Action<ulong> OnClientConnectedCallback;
-        public Action<ulong> OnClientDisconnectedCallback;
+        public Action<ulong> OnClientConnectedCallback;                      // because this class is a IConnectionCallbacks && IInRoomCallbacks, we use m_photonRealtime.Client.AddCallbackTarget(this); to receive all these action calls
+        public Action<ulong> OnClientDisconnectedCallback;      // networkStateHandler will add funcs to these callbacks
         public Func<ulong> OnMasterClientSwitchedCallback;
         public Action OnHostLeftAndStartingMigration;
         public Action StartHostCallback;

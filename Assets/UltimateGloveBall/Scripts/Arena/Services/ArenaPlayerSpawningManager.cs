@@ -63,32 +63,28 @@ namespace UltimateGloveBall.Arena.Services
                 Vector3 playerPos) // main spawn player,  from OnHostStarted or OnClientConnected
         {
             if (isSpectator) return SpawnSpectator(clientId, playerId, playerPos);
-            //
-            // {
-            //     var spectator = SpawnSpectator(clientId, playerId, playerPos);
-            //     return spectator;
-            // }
-
-            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId,
-                new ArenaPlayerData(clientId,
-                    playerId)); // check if the player is reconnecting and other...     add a new ArenaPlayerData struct to ArenaSessionManager dictionary
-            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;
+            
+            ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId,              // let ArenaSessionManager add a new ArenaPlayerData to its dictionary 
+                new ArenaPlayerData(clientId,                                       // using ClientID (from network object), PlayerID (from OculusID),   it will decide if its a reconnection
+                    playerId));                    
+            
+            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;      // find the newly created ArenaPlayerData
 
 
-            GetSpawnData(ref playerData, playerPos, out var position, out var rotation,
+            GetSpawnData(ref playerData, playerPos, out var position, out var rotation,      // get spawn data for the player
                 out var team, // setup which team for the spawning player
                 out var color, out var spawnTeam); // setup spawning data based on gamePhase
-                                                   // 
+                                                    
 
-            var player = Instantiate(m_playerPrefab, position, rotation);
+            var player = Instantiate(m_playerPrefab, position, rotation);               // spawn the AvatarEntity
             player.SpawnAsPlayerObject(
-                clientId); // after spawning, Netcode designate it as a PlayerObject    ( this is kinda Possess event ? )
+                clientId);              // after spawning, Netcode designate it as a PlayerObject    
             
             player.GetComponent<NetworkedTeam>().MyTeam = team;
 
             var leftArmatureNet =
                 Instantiate(m_gloveArmaturePrefab, Vector3.down,
-                    Quaternion.identity); // spawn gloves/hands for player   LEFT
+                    Quaternion.identity);                                                       // spawn gloves/hands for player   LEFT
             var leftArmature = leftArmatureNet.GetComponent<GloveArmatureNetworking>();
             leftArmature.Side = Glove.GloveSide.Left;
             leftArmatureNet.GetComponent<TeamColoringNetComponent>().TeamColor =
@@ -124,19 +120,25 @@ namespace UltimateGloveBall.Arena.Services
 
             playerData.SelectedTeam = team;
             m_gameManager.UpdatePlayerTeam(clientId,
-                spawnTeam); // update the player team in the game manager - dictionary of ID to teams
+                spawnTeam); // update the player team in the game manager - dictionary of ClientID to teams
+            
             ArenaSessionManager.Instance.SetPlayerData(clientId,
-                playerData); // update the playerdata in the ArenaSession,   now we know the team (etc??)
+                playerData);                        // update the playerdata in the ArenaSession,   now we know the team and spawn point index (etc??)
 
             AssignDrawingGrid(player);
 
             return player;
         }
 
-        public void AssignDrawingGrid(NetworkObject player) // assign the player to a DrawingGrid          // player is actually a PlayerControllerNetwork
+        
+        
+        
+        
+        
+        public void AssignDrawingGrid(NetworkObject player) // assign the player to a DrawingGrid          // 'player' is actually a PlayerControllerNetwork gO
         {
             var PlayerData = ArenaSessionManager.Instance.GetPlayerData(player.OwnerClientId);     
-            int teamIdx = (int)PlayerData.Value.SelectedTeam - 1;
+            int teamIdx = (int)PlayerData.Value.SelectedTeam - 1;     // subtract 1 from team enum to get index for DrawingGrids
             
             DrawingGrid playerGrid = null;
             DrawingGrid[] allDrawingGrids = FindObjectsOfType<DrawingGrid>();
@@ -151,7 +153,8 @@ namespace UltimateGloveBall.Arena.Services
             playerGrid.OwningPlayer.Value = player.OwnerClientId; 
             playerGrid.NetworkObject.ChangeOwnership(player.OwnerClientId);
             
-            if (LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController)   // check that playercontroller exists
+            // "player" is already a PlayerController, i could just set the OwnedDrawingGrid there instead of the following  ????
+            if (LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController)   // try to find the PlayerControllerNetwork for the spawned player to set their OwnedDrawingGrid
             {
                 LocalPlayerEntities.Instance.GetPlayerObjects(player.OwnerClientId).PlayerController
                     .OwnedDrawingGrid = playerGrid;
@@ -180,6 +183,10 @@ namespace UltimateGloveBall.Arena.Services
         }
 
 
+        
+        
+        
+        
         private void GetSpawnData(ref ArenaPlayerData playerData, Vector3 currentPos,
             out Vector3 position, // setup where the joining player should spawn given the current game phase
             out Quaternion rotation, out NetworkedTeam.Team team, out TeamColor teamColor,
@@ -188,19 +195,20 @@ namespace UltimateGloveBall.Arena.Services
 
             var currentPhase = m_gameManager.CurrentPhase;
 
-            team = currentPhase switch // choose team based on game current phase
+            team = currentPhase switch // choose a team based on game current phase
             {
                 GameManager.GamePhase.InGame or GameManager.GamePhase.CountDown => GetTeam(playerData,
-                    currentPos), // if in game already, this might be a reconnection, playerdata might already have a team and position, use it
-                //respawning players also already have positions
+                    currentPos), // if in game already, this might be a reconnection, playerdata might already have a team, use it
+                // Position is relevant, because if player is reconnecting they'll be somewhere that isnt world zero ???
+           
 
                 GameManager.GamePhase.PostGame => GetTeam(playerData,
-                    currentPos), // if post game, same scanerio, use it
+                    currentPos), // if post game, same scenario, might be reconnection during post game, use it
 
                 GameManager.GamePhase.PreGame => NetworkedTeam.Team
-                    .NoTeam, // if pregame, treat as no team yet, go with least populated
+                    .NoTeam, // if pregame, treat as no team yet, go with least populated later
 
-                _ => NetworkedTeam.Team.NoTeam, // default case never happen
+                _ => NetworkedTeam.Team.NoTeam, // default case never happens ??
             };
 
             spawnTeam = team;
@@ -478,9 +486,12 @@ namespace UltimateGloveBall.Arena.Services
         private NetworkObject SpawnSpectator(ulong clientId, string playerId, Vector3 playerPos)           // spawn a player without Gloves
         {
             ArenaSessionManager.Instance.SetupPlayerData(clientId, playerId,
-                new ArenaPlayerData(clientId, playerId, true));
-            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;
+                new ArenaPlayerData(clientId, playerId, true));       // setup data in ArenaSessionManager for the spectator
+            
+            var playerData = ArenaSessionManager.Instance.GetPlayerData(playerId).Value;      // get the newly made data struct
+            
             Transform spawnPoint;
+            
             if (playerData.SelectedTeam == NetworkedTeam.Team.NoTeam)
             {
                 bool useA;

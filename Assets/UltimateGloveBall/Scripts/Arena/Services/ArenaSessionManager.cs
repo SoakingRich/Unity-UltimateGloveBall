@@ -24,7 +24,7 @@ namespace UltimateGloveBall.Arena.Services
         }
 
         
-        // why does this class not use Session prefab at all???
+        // why does this class not use Session prefab at all??? what is that for??
         
         
         
@@ -61,12 +61,21 @@ namespace UltimateGloveBall.Arena.Services
             m_playerDataDict[playerId] = playerData;
         }
 
+        
+        
+        
+        
+        
         public bool IsDuplicateConnection(string playerId)
         {
             return m_playerDataDict.ContainsKey(playerId) && m_playerDataDict[playerId].IsConnected;
         }
 
-        public string GetPlayerId(ulong clientId)             // get a playerID from a clientID,  ie Player 3
+        
+        
+        
+        
+        public string GetPlayerId(ulong clientId)             // get a playerID (oculusID) from a clientID,  
         {
             if (m_clientIdToPlayerId.TryGetValue(clientId, out var playerId))
             {
@@ -76,8 +85,12 @@ namespace UltimateGloveBall.Arena.Services
             Debug.Log($"No player Id mapped to client id: {clientId}");
             return null;
         }
-
-        public ArenaPlayerData? GetPlayerData(string playerId)
+        
+        
+        
+        
+        
+        public ArenaPlayerData? GetPlayerData(string playerId)       // get playerData from a PlayerID,  can be null instead of default
         {
             if (m_playerDataDict.TryGetValue(playerId, out var data))
             {
@@ -86,9 +99,14 @@ namespace UltimateGloveBall.Arena.Services
 
             Debug.Log($"No PlayerData found for player ID: {playerId}");
             return null;
-        }          // get ArenaPlayerData from either a playerID or ClientID (2 signatures)
+        }      
+        // get ArenaPlayerData from either a playerID or ClientID (2 signatures)
 
-        public ArenaPlayerData? GetPlayerData(ulong clientId)
+        
+        
+        
+        
+        public ArenaPlayerData? GetPlayerData(ulong clientId)     // get playerData from a clientID,  can be null instead of default
         {
             var playerId = GetPlayerId(clientId);
             if (playerId != null)
@@ -100,6 +118,8 @@ namespace UltimateGloveBall.Arena.Services
             return null;
         }
 
+        
+        
         public void SetPlayerData(ulong clientId, ArenaPlayerData playerData)        // set data directly from ArenaPlayerSpawningManager
         {
             if (m_clientIdToPlayerId.TryGetValue(clientId, out var playerId))
@@ -112,6 +132,8 @@ namespace UltimateGloveBall.Arena.Services
             }
         }
 
+        
+        
         public void DisconnectClient(ulong clientId)
         {
             if (m_clientIdToPlayerId.TryGetValue(clientId, out var playerId))

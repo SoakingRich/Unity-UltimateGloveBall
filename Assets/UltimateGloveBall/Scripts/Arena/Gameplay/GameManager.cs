@@ -464,6 +464,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             m_restartGameButtonContainer.SetActive(true);
             ((ArenaPlayerSpawningManager)SpawningManagerBase.Instance).ResetPostGameSpawnPoints();
             RespawnAllPlayers();                      // respawn all players, now that its postgame,  go to podium
+            SpawnManager.Instance.ClearAllCubes();
         }
 
 

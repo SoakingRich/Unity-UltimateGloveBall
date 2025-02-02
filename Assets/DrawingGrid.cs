@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using Unity.Netcode;
 using UnityEngine;
 
 public class DrawingGrid : NetworkBehaviour
 {
-    
-    [Header("Settings")]
+
+    [Header("Settings")] 
     public int DrawingGridIndex;
     public Vector3 MoveDirection = Vector3.forward;
     public bool OnlyShowFirstLayerSnapZones = true;
@@ -32,6 +33,8 @@ public class DrawingGrid : NetworkBehaviour
     
     private void Awake()
     {
+        if (PointerUI) PointerUI.OwningDrawingGrid = this;
+        
       MoveDirection = transform.forward;
         AllSnapZones = new List<SnapZone>(GetComponentsInChildren<SnapZone>());
         AllHealthCubeTransforms = new List<HealthCubeTransform>(GetComponentsInChildren<HealthCubeTransform>());

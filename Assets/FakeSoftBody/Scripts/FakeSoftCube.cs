@@ -32,8 +32,10 @@ public class FakeSoftCube : MonoBehaviour
     public Vector3 WorldDir;
 
     //Composition
-    //    * this is intended to have a large outer collider that is Trigger only,  and a small inner collider which is the actual collider which informs the rigidbody
+    //    * this object is intended to have a large outer collider on this GO that is Trigger only,  and a small inner collider which is the actual collider which informs the rigidbody
     //  Physics is constantly pushing object up when at rest??
+    
+    // Large outer collider is used here with OnTriggerStay and OnTriggerExit
 
 
     void Start()
@@ -49,8 +51,12 @@ public class FakeSoftCube : MonoBehaviour
         rb = GetComponent<Rigidbody>(); // this .cs should be on an object with a rigidbody, with a seperate object to affect the visual scale of
     }
 
+    
+    
     void TrackBlockamiData()
     {
+        if (!UnityEngine.Application.isEditor) return;
+        
         springStrength = BlockamiData.springStrength;
         springDamper = BlockamiData.springDamper;
         halfExtents = BlockamiData.halfExtents;
@@ -59,6 +65,10 @@ public class FakeSoftCube : MonoBehaviour
         m_timeBeforeDeactivate = BlockamiData.m_timeBeforeDeactivate;
     }
 
+    
+    
+    
+    
     private void Update() // update squashAmount if colliding
     {
         TrackBlockamiData();
@@ -100,6 +110,10 @@ public class FakeSoftCube : MonoBehaviour
         }
     }
 
+    
+    
+    
+    
     void AddPointSpring(Vector3 vertexPos)
     {
         if (deactivated)
@@ -145,7 +159,7 @@ public class FakeSoftCube : MonoBehaviour
 
     private void
         OnTriggerStay(
-            Collider other) // during trigger stay with the outer collider, record the closestpoint on the other collider to self
+            Collider other)             // during trigger stay with the outer collider, record the closestpoint on the other collider to self
     {
         if (deactivated) return;
 
@@ -163,23 +177,23 @@ public class FakeSoftCube : MonoBehaviour
         notColliding = true;
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, halfExtents.magnitude);
-        
-        if (Application.isPlaying)
-        {
-            Gizmos.color = Color.cyan;
-
-         
-                // foreach (var contactCol in ContactColliders)
-                // {
-                //     //  Gizmos.DrawSphere(contactCol.ClosestPoint(transform.position), 0.05f);
-                // }
-            
-        }
-    }
+    // private void OnDrawGizmos()
+    // {
+    //     Gizmos.color = Color.magenta;
+    //     Gizmos.DrawWireSphere(transform.position, halfExtents.magnitude);
+    //     
+    //     if (Application.isPlaying)
+    //     {
+    //         Gizmos.color = Color.cyan;
+    //
+    //      
+    //             // foreach (var contactCol in ContactColliders)
+    //             // {
+    //             //     //  Gizmos.DrawSphere(contactCol.ClosestPoint(transform.position), 0.05f);
+    //             // }
+    //         
+    //     }
+    // }
 }
 
 

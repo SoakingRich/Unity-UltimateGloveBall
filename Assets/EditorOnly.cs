@@ -5,21 +5,28 @@ using UnityEngine;
 public class EditorOnly : MonoBehaviour
 {
     // Start is called before the first frame update
-    void Start()
+
+    [SerializeField] public  bool Invert;
+    
+    void Awake()
     {
-        if (UnityEngine.Application.isEditor) // editor only
+        if (!Invert)
         {
-            
+            if (!UnityEngine.Application.isEditor)
+            {
+                Destroy(this.gameObject);
+            }
         }
         else
         {
-            Destroy(this);  // lol this is just destroying the script
+            if (UnityEngine.Application.isEditor)
+            {
+                Destroy(this.gameObject);
+            }
         }
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
+    
+    
+
 }

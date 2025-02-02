@@ -20,7 +20,7 @@ namespace UltimateGloveBall.Arena.Services
     /// This is necessary since the different entities are different networked object that can be loaded in any order
     /// and we need to setup the player only once all their entities are spawned and loaded.
     /// </summary>
-    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>     // collection of locally owned objects for the player
+    public class LocalPlayerEntities : Singleton<LocalPlayerEntities>     // collection of locally owned objects/entities for the player
     {
         public PlayerControllerNetwork LocalPlayerController;
         public GloveArmatureNetworking LeftGloveArmature;
@@ -31,7 +31,7 @@ namespace UltimateGloveBall.Arena.Services
 
         private readonly PlayerGameObjects m_localPlayerGameObjects = new();            // not a monobehavior
 
-        private readonly Dictionary<ulong, PlayerGameObjects> m_playerObjects = new();        //  a dictionary of ClientIDs to PlayerGameObjects,  PlayerControllerNetwork will populate this list with other players PlayerGameObjects
+        private readonly Dictionary<ulong, PlayerGameObjects> m_playerObjects = new();        //  a dictionary of ClientIDs to PlayerGameObjects structs,  PlayerControllerNetwork will populate this list with other players PlayerGameObjects structs
         
         public List<ulong> PlayerIds { get; } = new();
         
@@ -74,7 +74,7 @@ namespace UltimateGloveBall.Arena.Services
                 return;
             }
 
-            if (!PlayerIds.Contains(NetworkManager.Singleton.LocalClientId))         // playerID is a maintained list of all current players that everyone keeps track of independently
+            if (!PlayerIds.Contains(NetworkManager.Singleton.LocalClientId))         // playerID is a maintained list of all current players that everyone keeps track of independently (ie its not a networked variable)
             {
                 PlayerIds.Add(NetworkManager.Singleton.LocalClientId);
             }
@@ -87,7 +87,7 @@ namespace UltimateGloveBall.Arena.Services
             m_localPlayerGameObjects.RightGloveArmature = RightGloveArmature;
             m_localPlayerGameObjects.RightGloveHand = RightGloveHand;
             
-            m_localPlayerGameObjects.TryAttachObjects();                                   // actually do all the attaching,   not clear why this isnt done here on LocalPlayerEntities instead instead
+            m_localPlayerGameObjects.TryAttachObjects();                                   // actually do all the attaching,   not clear why this isnt done here on LocalPlayerEntities instead of in PlayerGameObjects
 
             LeftGloveHand.IsMovementEnabled += IsMovementEnabled;
             RightGloveHand.IsMovementEnabled += IsMovementEnabled;
@@ -95,17 +95,17 @@ namespace UltimateGloveBall.Arena.Services
             var apsm = FindObjectOfType<ArenaPlayerSpawningManager>();
             if (apsm != null) apsm.AssignDrawingGrid(Avatar.GetComponent<NetworkObject>());
             
-                                                                                       // We find all interactors to set on the gloves so we know if we hover on UI
+                                                                                       // We find all interactors and for all of them, set them as Glove's interactors
             var interactors = FindObjectsOfType<RayInteractor>();
             foreach (var interactor in interactors)
             {
                 if (interactor.GetComponent<ControllerRef>().Handedness == Handedness.Left)
                 {
-                    LeftGloveHand.SetRayInteractor(interactor);                                      // get the spawned Interactors and use them as OUR interactors
+                    LeftGloveHand.SetRayInteractor(interactor);                                      // gloves need refs to interactors so they can prevent throw/catch action while hovering ui
                 }
                 else
                 {
-                    RightGloveHand.SetRayInteractor(interactor);                   // func TriggerAction uses RayInteractor to perform ball throws
+                    RightGloveHand.SetRayInteractor(interactor);                  
                 }
             }
             

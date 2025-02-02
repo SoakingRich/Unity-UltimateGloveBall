@@ -1,0 +1,272 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_TestHands 1
+  m_Shader: {fileID: 4800000, guid: 5846e2bd06854a84aab748aae626c8f2, type: 3}
+  m_ValidKeywords:
+  - ENABLE_GHOST_EFFECT
+  - EYE_GLINTS_ON
+  - MATERIAL_MODE_TEXTURE
+  - SKIN_ON
+  m_InvalidKeywords:
+  - DEBUG_NONE
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - FresnelNoise:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Main_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Noise_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_042674b00a42463387f96f82c8bc2473:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_1236DA5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_3c2948df203a473a89d597cdb54f3606:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_5f0ef610875f4b0583ab1a1dbacf2d64:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_65E30A08:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_6c75b519e9864549b72cbaa4a06a0367:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_AttributeTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_BaseColorSampler:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_EmissiveSampler:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_MetallicRoughnessSampler:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_NormalSampler:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - u_OcclusionSampler:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - Debug: 0
+    - ENABLE_CUSTOM_EFFECT: 0
+    - ENABLE_GHOST_EFFECT: 1
+    - ENABLE_HAIR: 0
+    - ENABLE_RIM_LIGHT: 0
+    - EYE_GLINTS: 1
+    - Edge_Brightness: 4
+    - Edge_Width: 0.2
+    - Fresnel_Power: 0.4
+    - HAS_NORMAL_MAP: 0
+    - HitAmount_: 0.943
+    - INVERT: 0
+    - Material_Mode: 0
+    - Noise_Cutoff: 0.5
+    - Noise_Cutoff_Smoothness: 0.01
+    - Noise_Scale: 0.28
+    - Noise_Scroll_Speed: 0.4
+    - SKIN: 1
+    - Vector1_079c7df5b38047bcb00d99f028a34ae5: 18.84
+    - Vector1_0b553adaea104429b3111e493ddd5e13: 0
+    - Vector1_1594F0E3: 3.23
+    - Vector1_2195a2147afe4ef9ae20436230ef3841: 2
+    - Vector1_23ecb7c599d84e87b76ca1899743cd79: 13.08
+    - Vector1_25a9600ee5bd42f3b14a1d1c830d6a28: 0.01
+    - Vector1_2b2fc81fdd8740c68800ba01f66d642e: 0.1
+    - Vector1_3080e28090924b3eae216721cbb058ea: 0.01
+    - Vector1_40c08b593ef146c3b9befb1b83018a20: 1.5
+    - Vector1_651750c2cb8649b7a2ed093da3e3aa26: 0.8
+    - Vector1_6840080B: 10
+    - Vector1_73CEA698: 0
+    - Vector1_85284b34200a4b0aad5b8d8768b6e309: 0.1
+    - Vector1_8FC003C4: 0
+    - Vector1_94d7b70879634162ab8633d9bc454a13: 0.15
+    - Vector1_9889395: 10
+    - Vector1_B4A204D: 1.91
+    - Vector1_C44528E1: 15.93
+    - Vector1_D6768803: 1
+    - Vector1_DB8FA5C5: 0
+    - Vector1_DE026323: 0.464
+    - Vector1_bf831ef6285d4b6ea3ff3f89ac42cd4c: 2
+    - Vector1_c8aa5fc450544c499261ba88fd9a6c3d: 0.5
+    - _AlphaClipping: 0
+    - _AlphaClippingThreshold: 0
+    - _CausticsForce: 9.18
+    - _Cull: 2
+    - _CurvatureAnimationCoefficient: 10.06
+    - _DisAmount: -0.57
+    - _FillIntensity: 10
+    - _FillThinness: 7.78
+    - _GlowWeakness: 1
+    - _HITENABLED: 0
+    - _HitTime: 1
+    - _Metallic: 0.2
+    - _OcclusionStrength: 0
+    - _Opacity: 0.54
+    - _PulseIntensity: 0
+    - _PulseThinness: 7.74
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _RimStrength: 0.587
+    - _Smoothness: 0.43
+    - u_AmbientDiffuseFactor: 1
+    - u_BaseColorUVSet: 0
+    - u_EmissiveSet: 0
+    - u_Exposure: 1
+    - u_EyeGlintColorFactor: 0.5
+    - u_EyeGlintFactor: 2
+    - u_F0Factor: 1
+    - u_FacialHairAnisotropicIntensity: 0.5
+    - u_FacialHairColorRoughness: 0.4
+    - u_FacialHairDiffusedIntensity: 0.25
+    - u_FacialHairRoughness: 0.2
+    - u_FacialHairScatterIntensity: 1
+    - u_FacialHairSpecularColorIntensity: 0.2
+    - u_FacialHairSpecularColorOffset: 0.2
+    - u_FacialHairSpecularGlint: 0.1
+    - u_FacialHairSpecularNormalIntensity: 1
+    - u_FacialHairSpecularShiftIntensity: 0.2
+    - u_FacialHairSpecularWhiteIntensity: 0.2
+    - u_HairAnisotropicIntensity: 0.5
+    - u_HairColorRoughness: 0.4
+    - u_HairDiffusedIntensity: 0.25
+    - u_HairRoughness: 0.2
+    - u_HairScatterIntensity: 1
+    - u_HairSpecularColorIntensity: 0.2
+    - u_HairSpecularColorOffset: 0.2
+    - u_HairSpecularGlint: 0.1
+    - u_HairSpecularNormalIntensity: 1
+    - u_HairSpecularShiftIntensity: 0.2
+    - u_HairSpecularWhiteIntensity: 0.2
+    - u_MetallicFactor: 1
+    - u_MetallicRoughnessUVSet: 0
+    - u_NormalScale: 1
+    - u_NormalUVSet: 0
+    - u_OcclusionSet: 0
+    - u_OcclusionStrength: 1
+    - u_PropertyTexBias: 0
+    - u_RimLightBias: 0.5
+    - u_RimLightEndPosition: 0.5
+    - u_RimLightIntensity: 0.6
+    - u_RimLightStartPosition: 0.1
+    - u_RimLightTransition: 0.0000001
+    - u_RoughnessFactor: 1
+    - u_ThicknessFactor: 1
+    m_Colors:
+    - Caustics_Color: {r: 1, g: 1, b: 1, a: 1}
+    - Color_21C8C790: {r: 0.4056604, g: 0.40141606, b: 0.2009167, a: 1}
+    - Color_7f5000c83bc34fbb953b5f163dc88d46: {r: 1, g: 1, b: 1, a: 1}
+    - Color_CD9DA168: {r: 1, g: 1, b: 1, a: 1}
+    - Color_DA10CA39: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 1}
+    - Color_F0F0F5E7: {r: 0.509434, g: 0.060074754, b: 0.060074754, a: 1}
+    - Edge_Color: {r: 1, g: 0, b: 0.58320045, a: 1}
+    - Fresnel_Color: {r: 1, g: 1, b: 1, a: 1}
+    - Fresnel_Noise_Scale: {r: 2, g: 2, b: 0, a: 0}
+    - Fresnel_Noise_Speed: {r: 0, g: 0.2, b: 0, a: 0}
+    - Interior_Color: {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 1}
+    - Vector2_1AFF66C3: {r: 1, g: 1, b: 0, a: 0}
+    - Vector2_44c89301ef6e47f7aa9d053ddd978f16: {r: 1, g: 1, b: 0, a: 0}
+    - Vector2_5A0915D5: {r: 0, g: -0.2, b: 0, a: 0}
+    - Vector2_7EF1A563: {r: 1, g: 1, b: 0, a: 0}
+    - Vector2_FF6D2A34: {r: 0, g: -0.1, b: 0, a: 0}
+    - Vector3_5B14240: {r: 0, g: 0, b: 0, a: 0}
+    - _BaseColor: {r: 0, g: 0, b: 0, a: 0}
+    - _CausticsColor: {r: 0, g: 0, b: 0, a: 0}
+    - _Color: {r: 0.29019606, g: 0.59551615, b: 1, a: 0}
+    - _HitColor: {r: 1, g: 0.49147797, b: 0.12735847, a: 0}
+    - _HitPosition: {r: 0, g: 0, b: 0, a: 0}
+    - _RimColor: {r: 0.517647, g: 0.7960784, b: 1, a: 1}
+    - u_BaseColorFactor: {r: 1, g: 1, b: 1, a: 1}
+    - u_EmissiveFactor: {r: 1, g: 1, b: 1, a: 1}
+    - u_FacialHairSpecularColorFactor: {r: 1, g: 1, b: 1, a: 1}
+    - u_FacialHairSubsurfaceColor: {r: 1, g: 1, b: 1, a: 1}
+    - u_HairSpecularColorFactor: {r: 1, g: 1, b: 1, a: 1}
+    - u_HairSubsurfaceColor: {r: 1, g: 1, b: 1, a: 1}
+    - u_RimLightColor: {r: 1, g: 1, b: 1, a: 1}
+    - u_SkinORMFactor: {r: 1, g: 1, b: 1, a: 1}
+    - u_SubsurfaceColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &9170170251149402160
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 5

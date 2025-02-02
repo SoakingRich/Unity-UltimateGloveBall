@@ -1,10 +1,12 @@
 // Copyright (c) Meta Platforms, Inc. and affiliates.
 
+#if HAS_META_AVATARS
+
 using Oculus.Avatar2;
 
 namespace Meta.Utilities.Input
 {
-    public class XRInputControlDelegate : SampleInputControlDelegate
+    public class XRInputControlDelegate : OvrAvatarInputControlDelegate
     {
         private XRInputControlActions m_controlActions;
 
@@ -12,8 +14,8 @@ namespace Meta.Utilities.Input
 
         public override bool GetInputControlState(out OvrAvatarInputControlState inputControlState)
         {
-            if (OVRInput.GetConnectedControllers() != OVRInput.Controller.None)
-                return base.GetInputControlState(out inputControlState);
+            // if (OVRInput.GetConnectedControllers() != OVRInput.Controller.None)
+            //     return base.GetInputControlState(out inputControlState);
 
             inputControlState = default;
             UpdateControllerInput(ref inputControlState.leftControllerState, ref m_controlActions.LeftController);
@@ -62,3 +64,5 @@ namespace Meta.Utilities.Input
         }
     }
 }
+
+#endif

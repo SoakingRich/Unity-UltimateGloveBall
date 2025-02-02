@@ -39,7 +39,7 @@ public class MRControl : MonoBehaviour
             mruk.enabled = false;
             
             var effectmesh = FindObjectOfType<EffectMesh>();
-            effectmesh.enabled = false;
+            if(effectmesh) effectmesh.enabled = false;
 
         }
 

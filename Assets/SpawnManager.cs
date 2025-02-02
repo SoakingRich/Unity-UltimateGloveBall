@@ -15,8 +15,27 @@ using Random = UnityEngine.Random;
 
 public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior but doesnt need it??
 {
-    // Singleton instance
-    public static SpawnManager Instance { get; private set; }
+    private static SpawnManager _instance;
+
+    public static SpawnManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                // Try to find an existing instance in the scene
+                _instance = FindObjectOfType<SpawnManager>();
+
+                // If none exists, create a new GameObject with SpawnManager attached
+                if (_instance == null)
+                {
+                    GameObject obj = new GameObject("SpawnManager");
+                    _instance = obj.AddComponent<SpawnManager>();
+                }
+            }
+            return _instance;
+        }
+    }
     
     
     [Header("Editor")]
@@ -54,17 +73,24 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
     private Coroutine FrenzyTimerHandle;
 
 
+    
+    
     private void Awake()
     {
       
+            // Ensure only one instance exists
+            if (_instance == null)
+            {
+                _instance = this;
+            }
+            else if (_instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            DontDestroyOnLoad(gameObject); // Keep it across scene loads if necessary
         
-        if (Instance != null && Instance != this)
-        {
-            Debug.LogWarning("Multiple SpawnManager instances detected. Destroying the duplicate.");
-            Destroy(gameObject); // Destroy the duplicate instance
-            return;
-        }
-        Instance = this;
 
         
         allSpawnZones = FindObjectsOfType<SpawnZone>();
@@ -72,25 +98,12 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
         
     }
     
-    
-    
-    // override void  OnDestroy()                    // Optional: Clean up when this instance is destroyed
-    // {
-    //   //  base.OnDestroy();
-    //     
-    //     if (Instance == this)
-    //     {
-    //         Instance = null;
-    //     }
-    // }
+
     
    
     
     private void Start()
     {
-        
-       
-        
         if(BeginSpawnOnStart) StartSpawning();
     }
 
@@ -119,7 +132,7 @@ public void StartSpawning()
 
 
 
-private IEnumerator SpawnSceneCubes()        // repeat state
+private IEnumerator SpawnSceneCubes()
 {
     while (true)
     {
@@ -129,15 +142,23 @@ private IEnumerator SpawnSceneCubes()        // repeat state
         }
 
         float spawnRate = isFrenzyTime ? BlockamiData.FrenzySpawnRate : BlockamiData.DefaultSpawnRate;
-        
+
+        // Wait before spawning to control the spawn rate
         yield return new WaitForSeconds(1f / spawnRate);
 
-      
-        SpawnCubeServer();          // Spawn a random cube
-
-      
+        try
+        {
+            SpawnCubeServer(); // Spawn a random cube
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"SpawnSceneCubes encountered an error: {ex}");
+            // Optional: Delay before retrying to avoid excessive logging
+        }
+          
     }
 }
+
 
                     
                     private void SpawnCubeServer(Transform OverrideTransform = null, int OverrideColorID = -1, bool IsHealthCube = false)
@@ -243,7 +264,8 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     {
         if (destroyedCube.IsHealthCube)
         {
-            TriggerFrenzyTime();
+            OnHealthCubeDied(destroyedCube);
+           
         }
         DeSpawnCube(destroyedCube);
         OnSCSDied?.Invoke(destroyedCube.NetworkObjectId);
@@ -251,7 +273,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     
     private void OnHealthCubeDied(SceneCubeNetworking destroyedCube)
     {
-       
+        //TriggerFrenzyTime();
     }
     
     public void DeSpawnCube(SceneCubeNetworking Sc)      
@@ -271,7 +293,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     
     
     
-    public void ClearAllCubes()
+    public void ClearAllCubes()   // Destroy All Scene Cubes ,  DestroyAllSceneCubes
     {
         if (!IsServer) return;
         
@@ -335,11 +357,43 @@ private IEnumerator SpawnSceneCubes()        // repeat state
         return randomSpawnZone.transform.position;
     }
 
-   
 
-  
-   
+ 
+    public void RequestSpawnItemServer(string prefabName, Vector3 Position, Quaternion rotation, ulong clientId)
+    {
+        RequestSpawnItemServerRpc(prefabName, Position, rotation, clientId);
+    }
 
+
+
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestSpawnItemServerRpc(string prefabName, Vector3 Position, Quaternion rotation, ulong clientId)
+    {
+        // Ensure the server is the one handling the spawn
+        if (!IsServer) return;
+        
+        var NetPrefab = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs.FirstOrDefault(x => x.Prefab.name == prefabName);
+        if (NetPrefab == null)
+        {
+            Debug.LogError("NetworkObject not found for prefab: " + prefabName);
+            return;
+        }
+
+      
+            GameObject spawnedItem = Instantiate(NetPrefab.Prefab, Position, rotation);
+            NetworkObject networkObject = spawnedItem.GetComponent<NetworkObject>();
+            
+            if (networkObject != null)
+            {
+                networkObject.SpawnWithOwnership(clientId,true);  // Make sure the object is spawned and networked
+            }
+            else
+            {
+                Debug.LogError("Prefab does not contain a NetworkObject.");
+            }
+        
+       
+    }
 
 
 
@@ -348,6 +402,14 @@ private IEnumerator SpawnSceneCubes()        // repeat state
     /// </summary>
     /// <param name="Position"></param>
     /// <param name="clientId"></param>
+    ///
+
+    public void SpawnPlayerCubeServer(Vector3 Position, ulong clientId, bool IsRight, int AIPlayerNum = -1)
+    {
+        SpawnPlayerCubeServerRpc(Position, clientId, IsRight, AIPlayerNum);
+    }
+
+    /// 
 
     [ServerRpc(RequireOwnership = false)]
     public void SpawnPlayerCubeServerRpc(Vector3 Position, ulong clientId, bool IsRight, int AIPlayerNum = -1)
@@ -377,7 +439,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
 
         }
         
-        
+       
         /////////////////////// Get PlayerCubeData   for colorID, clientID, AIPlayerNum
         PlayerCubeData newCubeData = new PlayerCubeData
         {
@@ -385,9 +447,13 @@ private IEnumerator SpawnSceneCubes()        // repeat state
             ColorID = NewColorID, AIPlayerNum  = AIPlayerNum, OwningPlayerId = clientId
         };
 
+        var grid = LocalPlayerEntities.Instance.GetPlayerObjects(clientId).PlayerController.OwnedDrawingGrid;
+        Quaternion rot = grid == null ? Quaternion.identity : grid.transform.rotation;
+
+        
         /////////////////////// Get Prefab
         var selectedPrefab = BlockamiData.PlayerCubePrefab;
-        var networkObject = m_cubePool.GetNetworkObject(selectedPrefab.gameObject, Position, Quaternion.identity);
+        var networkObject = m_cubePool.GetNetworkObject(selectedPrefab.gameObject, Position, rot);
 
         if (!networkObject.IsSpawned) networkObject.Spawn();
 
@@ -423,6 +489,7 @@ private IEnumerator SpawnSceneCubes()        // repeat state
 
             if (shot)
             {
+               shot.SetLifeTime(10.0f);
                 
                 if (isAI)
                     aiController.CurrentPlayerShot.Value = pshot.NetworkObjectId;            // AIPlayer saves ulong of the Shot spawned for them

@@ -30,20 +30,20 @@ namespace UltimateGloveBall.Arena.Player
         
         
 
-        public void UpdateTracking()        // this script is on 
+        public void UpdateTracking()         
         {
             if (Glove && Armature)
             {
-                // This moves the armature and hand together
+                // This moves the armature and glove to same as the present gO (avatar wrist transform)
                 {
-                    var trans = transform;           // get the present gO transform IE wrist transform
-                    var wristPosition = trans.position;   // get pos, then rot
+                    var trans = transform;           // get the present gO transform component, IE wrist transform
+                    var wristPosition = trans.position;   // get present gO pos vector, then rot quat
                     var wristRotation = trans.rotation;
 
                     Glove.Move(wristPosition, wristRotation);            // move the glove to this position rotation on the avatar wrist
 
-                    var armTrans = Armature.transform;           // get the armature transform
-                    armTrans.position = wristPosition;          // do nothing with it???
+                    var armTrans = Armature.transform;           // get the armature transform component
+                    armTrans.position = wristPosition;          // set the transforms position and rotation directly to same as glove/wrist
                     armTrans.rotation = wristRotation;
                 }
             }

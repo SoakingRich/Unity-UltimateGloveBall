@@ -9,7 +9,7 @@ namespace Meta.Multiplayer.Core
     /// Keeps the state of the current network session, sharing the state from the server to the clients 
     /// Handles resolving the fallback host and voice room name.
     /// </summary>
-    public class NetworkSession : NetworkBehaviour                       // server spawns this object and replicates things to clients
+    public class NetworkSession : NetworkBehaviour                       // server spawns this object, exists for everyone, calls rpcs to others
     {
         public static ulong FallbackHostId { get; private set; } = ulong.MaxValue;
         public static string PhotonVoiceRoom { get; private set; } = "";
@@ -25,19 +25,21 @@ namespace Meta.Multiplayer.Core
             base.OnDestroy();
         }
 
+        
+        
         #region FallbackHost
-        public void DetermineFallbackHost(ulong clientId)
+        public void DetermineFallbackHost(ulong clientId)        // called on server only, when a new client connects
         {
                                                                                         // if the new client that joined has a smaller id, 
-                                                                                        // make them the new fallback host
+                                                                                        // make them the new fallback host ??? -   is set to ulong.MaxValue; whenever fallback host leaves
             if (clientId < FallbackHostId)
             {
                                                                                                             // broadcast to all clients
                 SetFallbackHostClientRpc(clientId);
             }
-                                                                                // this new client that joined didn't change the fallback host information.
-                                                                                // just send the current fallback host information to this new client.
-            else
+                                                                                
+            else// this new client that joined didn't change the fallback host information.
+                // just send the current fallback host information to this new client.
             {
                 // only broadcast to new client
                 var clientRpcParams = new ClientRpcParams
@@ -52,16 +54,20 @@ namespace Meta.Multiplayer.Core
             }
         }
 
-        public void RedetermineFallbackHost(ulong clientId)
+        
+        
+        
+        
+        public void RedetermineFallbackHost(ulong clientId)         // called on server only(??), when a client disconnects
         {
             // if true, not the fallback host that left
-            if (clientId != FallbackHostId) return;
+            if (clientId != FallbackHostId) return;            // if it wasnt the fallback host leaving, we dont care
 
             // reset fallback host id
             FallbackHostId = ulong.MaxValue;
 
             // if true, only original host is left
-            if (NetworkManager.Singleton.ConnectedClients.Count < 2) return;
+            if (NetworkManager.Singleton.ConnectedClients.Count < 2) return;       // if only the server player is left, we dont care
 
             // the fallbackhost left, pick another client to be the host
             foreach (var id in NetworkManager.Singleton.ConnectedClients.Keys)
@@ -78,6 +84,10 @@ namespace Meta.Multiplayer.Core
             SetFallbackHostClientRpc(FallbackHostId);
         }
 
+        
+        
+        
+        
         [ClientRpc]
         private void SetFallbackHostClientRpc(ulong fallbackHostId, ClientRpcParams clientRpcParams = default)
         {
@@ -105,12 +115,19 @@ namespace Meta.Multiplayer.Core
         }
         #endregion // FallbackHost
 
+        
+        
+        
+        
         #region PhotonVoiceRoom
 
         public void SetPhotonVoiceRoom(string voiceRoomName)
         {
             PhotonVoiceRoom = voiceRoomName;
         }
+        
+        
+        
 
         public void UpdatePhotonVoiceRoomToClient(ulong clientId)
         {
@@ -125,6 +142,9 @@ namespace Meta.Multiplayer.Core
             SetPhotonVoiceRoomClientRpc(PhotonVoiceRoom, clientRpcParams);
         }
 
+        
+        
+        
         [ClientRpc]
         private void SetPhotonVoiceRoomClientRpc(string photonVoiceRoom, ClientRpcParams clientRpcParams)
         {

@@ -32,53 +32,56 @@ namespace UltimateGloveBall.App
         public PlayerPresenceHandler PlayerPresenceHandler { get; private set; }
         public NetworkStateHandler NetworkStateHandler { get; private set; }
 
+        
+        
+        
+        
+        
         protected override void InternalAwake()
         {
             DontDestroyOnLoad(this);
         }
 
-        private void OnDestroy()
-        {
-            NetworkStateHandler?.Dispose();
-        }
-
+        
+        
+        
         private void Start()
         {
-            if (UnityEngine.Application.isEditor)   // editor only
+            if (UnityEngine.Application.isEditor)   // editor only method of setting which room to join
             {
                 if (NetworkSettings.Autostart)                // if Autostart is true, via the Editor GUI
                 {
                    LocalPlayerState.SetApplicationID(             
                         // this is the only call to SetApplicationID anywhere
-                        // we set ApplicationID to either Device UID or a RoomName denoted in network settings
-                            // this lets us join a room someone else is hosting in the editor if needed
+                        // we set ApplicationID to either Device UID or a RoomName denoted in editor network settings
+                            // this lets us join a custom room in the editor
                         NetworkSettings.UseDeviceRoom ? SystemInfo.deviceUniqueIdentifier : NetworkSettings.RoomName);
                 }
             }
 
-            _ = StartCoroutine(Init());
+            _ = StartCoroutine(Init());       // init the game
         }
 
         private IEnumerator Init()
         {
-            _ = InitializeOculusModules();                                          // Async Task
+            _ = InitializeOculusModules();                                          // set off an Async Task while we do work here
 
             // Initialize Player Presence
             Debug.Log("constructing PlayerPresenceHandler");
             PlayerPresenceHandler = new PlayerPresenceHandler();
             yield return PlayerPresenceHandler.Init();
 
-#if !UNITY_EDITOR && !UNITY_STANDALONE_WIN         // If Android, wait for LocalPlayerState to have been init in InitializeOculusModules
+#if !UNITY_EDITOR && !UNITY_STANDALONE_WIN         // If Android, wait for LocalPlayerState to have a loggedin username (last step in init of InitializeOculusModules)
              Debug.Log("waiting for LocalPlayerState to not be null");    
             yield return new WaitUntil(() => !string.IsNullOrWhiteSpace(LocalPlayerState.Username));
 #else
-            m_launchType = LaunchType.Normal;      // In Editor, we're always using a normal launch type,  not invite, coordinated or deeplink
+            m_launchType = LaunchType.Normal;      // In Editor, we're always using a normal launch type,  not any of invite, coordinated or deeplink
 #endif
             
             _ = BlockUserManager.Instance.Initialize();
+            
             NavigationController =
                 new NavigationController(this, NetworkLayer, LocalPlayerState, PlayerPresenceHandler);
-            
             
             NetworkStateHandler = new NetworkStateHandler(this, NetworkLayer, NavigationController, Voip,
                 LocalPlayerState, PlayerPresenceHandler, InstantiateSession);
@@ -94,36 +97,41 @@ namespace UltimateGloveBall.App
 
             
             
-            if (m_launchType == LaunchType.Normal)            // launch type is a enum defined by Oculus Platform
+            if (m_launchType == LaunchType.Normal)            // launch type is a enum defined by Oculus Platform,   could otherwise  Invite, Coordinated or Deeplink
             {
-                if (LocalPlayerState.HasCustomAppId)        // app id is really just GameInstanceID rather than actual appID ?? 
+                if (LocalPlayerState.HasCustomAppId)        // if LocalPlayerState has ApplicationID from the Editor CustomRoom field, use it to generate a group presence
                 {
-                    StartCoroutine(PlayerPresenceHandler.GenerateNewGroupPresence(               // if HasCustomAppId is true   (only when using editor???), our group presense is created as Arena-<applicationID>  where applicationID has been set custom
+                    StartCoroutine(PlayerPresenceHandler.GenerateNewGroupPresence(              
                         "Arena",
                         $"{LocalPlayerState.ApplicationID}"));
                 }
                 else
                 {
                     StartCoroutine(
-                        PlayerPresenceHandler.GenerateNewGroupPresence(
+                        PlayerPresenceHandler.GenerateNewGroupPresence(            // otherwise, generate a group presence for the MainMenu (even though it wont be joinable)
                             "MainMenu")
                     );
                 }
             }
 
-          //  wating for GroupPresence state to be null or something ??
+            
+          //  waiting for GroupPresence state to be null or not null or something ??
             yield return new WaitUntil(() => PlayerPresenceHandler.GroupPresenceState is { Destination: { } });
  
             NetworkLayer.Init(                                                          // init gets passed in LobbySessionID and Region from GroupPresenceState,  these WILL BE NULL, if no invite launch is being used
                 PlayerPresenceHandler.GroupPresenceState.LobbySessionID,
                 PlayerPresenceHandler.GetRegionFromDestination(PlayerPresenceHandler.GroupPresenceState.Destination));
         }
+        
+        
+        
+        
 
         private async Task InitializeOculusModules()    // this is an async task that can happen on other threads
         {
             try
             {
-                var coreInit = await Core.AsyncInitialize().Gen();    // oculus provides an async initialization method for Oculus platform  ( log in as oculus user / entitlement etc. )
+                var coreInit = await Core.AsyncInitialize().Gen();    // oculus provides an async task initialization method for Oculus platform which delivers back 'Messages' ( log in as oculus user / entitlement etc. )
                 if (coreInit.IsError)
                 {
                     LogError("Failed to initialize Oculus Platform SDK", coreInit.GetError());
@@ -141,10 +149,10 @@ namespace UltimateGloveBall.App
 
                 m_launchType = ApplicationLifecycle.GetLaunchDetails().LaunchType;   // either    Unknown, Normal, Invite, Coordinated or Deeplink
 
-                GroupPresence.SetJoinIntentReceivedNotificationCallback(OnJoinIntentReceived);     // this is an event you will get when OculusPlatform tells your app, the user wants to Join a group presence??
+                GroupPresence.SetJoinIntentReceivedNotificationCallback(OnJoinIntentReceived);     // this callback will call when OculusPlatform tells your app, the user wants to Join a group presence??
                 GroupPresence.SetInvitationsSentNotificationCallback(OnInvitationsSent);   // lets you bind a method that will happen when you send an invitation
 
-                var getLoggedInuser = await Users.GetLoggedInUser().Gen();
+                var getLoggedInuser = await Users.GetLoggedInUser().Gen();        // login the user
                 if (getLoggedInuser.IsError)
                 {
                     LogError("Cannot get user info", getLoggedInuser.GetError());
@@ -164,6 +172,9 @@ namespace UltimateGloveBall.App
             }
         }
 
+        
+        
+        
         private void OnJoinIntentReceived(Message<Oculus.Platform.Models.GroupPresenceJoinIntent> message)
         {
             // OnJoinIntentReceived is called when Player has selected to join a match via a Destination deeplink (thus we recieve a destination and all its data)
@@ -226,5 +237,12 @@ namespace UltimateGloveBall.App
         {
             return Instantiate(m_sessionPrefab);
         }
+        
+        
+        private void OnDestroy()
+        {
+            NetworkStateHandler?.Dispose();
+        }
+
     }
 }

@@ -26,18 +26,20 @@ namespace UltimateGloveBall.App
 
         private void Start()
         {
-            m_photonRealtimeTransport.GetHostRoomOptionsFunc = GetHostRoomOptions;    // GetHostRoomOptionsFunc is expected to return RoomOptions with 2 params
+            // here we customize the HostNewRoom function for our app
+            m_photonRealtimeTransport.GetHostRoomOptionsFunc = GetHostRoomOptions;    // GetHostRoomOptionsFunc is expected to return RoomOptions with 2 params,  
+            // here we customize join random room
             m_photonRealtimeTransport.GetRandomRoomParamsFunc = GetRandomRoomParams;   // GetRandomRoomParamsFunc is expected to return OpJoinRandomRoomParams with 1 param
         }
 
         private void OnDestroy()
         {
-            m_photonRealtimeTransport.GetHostRoomOptionsFunc = null;           // remove funcs
+            m_photonRealtimeTransport.GetHostRoomOptionsFunc = null;           // remove bounded functions
             m_photonRealtimeTransport.GetRandomRoomParamsFunc = null;
         }
 
-        // usePrivateRoom, maxPlayers are likely to be called with internally by NetworkManager ?? 
-        private RoomOptions GetHostRoomOptions(bool usePrivateRoom, byte maxPlayers)          // this looks more like a Setter than a getter... photon seems to use keywords set as Const at top "spec","ps","vis"
+        // usePrivateRoom, maxPlayers arguments are likely to be called with internally by NetworkManager ?? 
+        private RoomOptions GetHostRoomOptions(bool usePrivateRoom, byte maxPlayers)          // at top of script, we define keywords for room properties like Open_Room etc.  GetHostRoomOptions constructs itself here with our preferences
         {
             var roomOptions = new RoomOptions
             {
@@ -55,6 +57,7 @@ namespace UltimateGloveBall.App
             return roomOptions;
         }
 
+        // custom RandomRoom func implementation
         private OpJoinRandomRoomParams GetRandomRoomParams(byte maxPlayers)
         {
             var opJoinRandomRoomParams = new OpJoinRandomRoomParams();

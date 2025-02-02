@@ -9,6 +9,10 @@ TagManager:
   - SceneCube
   - PlayerCube
   - Staging
+  - HandMenuPalm
+  - HandLauncherPivot
+  - PopUpMenuAnchor
+  - EditorLocation
   layers:
   - Default
   - TransparentFX

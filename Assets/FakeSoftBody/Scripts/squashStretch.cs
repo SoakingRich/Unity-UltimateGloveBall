@@ -4,6 +4,15 @@ using System.Collections.Generic;
 using Blockami.Scripts;
 using UnityEngine;
 
+
+
+
+// this visual gO is constantly scaling
+
+
+
+
+
 public class squashStretch : MonoBehaviour
 {
     [SerializeField] public BlockamiData BlockamiData;   
@@ -15,6 +24,13 @@ public class squashStretch : MonoBehaviour
 
     public bool Ignore;
 
+    
+    
+    
+    
+    
+    
+    
     void Start()
     {
         box = GetComponent<BoxCollider>();

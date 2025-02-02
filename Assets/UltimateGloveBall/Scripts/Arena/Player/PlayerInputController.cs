@@ -89,6 +89,7 @@ namespace UltimateGloveBall.Arena.Player
                 if (direction != Vector2.zero)
                 {
                     var dir = new Vector3(direction.x, 0, direction.y);
+                 //   var dir = new Vector3(direction.x*-1.0f, 0, direction.y*-1.0f);   // reverse movement for mixed reality
                     PlayerMovement.Instance.WalkInDirectionRelToForward(dir);    // tell playermovement to move
                     if (!m_wasMoving)
                     {

@@ -9,7 +9,15 @@ using UnityEngine;
 
 public class Missile : NetworkBehaviour
 {
+    [Header("Settings")]
+    [SerializeField] private float speed;
     [SerializeField] public BlockamiData BlockamiData;
+    [SerializeField] private Vector3 dirToMove;
+    
+    [Header("State")]
+    public SnapZone TriggeringSnapzone;
+    [SerializeField] public bool ShouldMove { get => m_netShouldMove.Value; set => m_netShouldMove.Value = value; }
+    [SerializeField] public  DrawingGrid OwningDrawingGrid;
     
     [Header("NetworkGrabbable")]
     public Grabbable m_grabbable;
@@ -18,21 +26,11 @@ public class Missile : NetworkBehaviour
 
     [Header("Internal")]
     [SerializeField] private Rigidbody rb;
+    public RigidbodyKinematicLocker m_rigidbodyKinematicLocker;
     
-    [Header("Settings")]
-    [SerializeField] private float speed;
     
-    [Header("MissileState")]
-    public SnapZone TriggeringSnapzone;
-    [SerializeField] public bool ShouldMove { get => m_netShouldMove.Value; set => m_netShouldMove.Value = value; }
-
-  
-    [SerializeField] private Vector3 dirToMove;
-    [SerializeField] public  DrawingGrid OwningDrawingGrid;
-
     [Header("NetworkVariables")] 
     public NetworkVariable<bool> m_netShouldMove;
-    //private NetworkVariable<ulong> m_owner = new(ulong.MaxValue); 
     
 
    
@@ -40,13 +38,14 @@ public class Missile : NetworkBehaviour
     private void OnEnable()
     {
         rb = GetComponent<Rigidbody>();
+        m_rigidbodyKinematicLocker = GetComponent<RigidbodyKinematicLocker>();
       
         m_grabbable = GetComponentInChildren<Grabbable>();
         
         m_touchHandGrabInteractable = GetComponentInChildren<TouchHandGrabInteractable>();
         m_grabInteractable = GetComponentInChildren<GrabInteractable>();
 
-        m_grabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;
+        m_grabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;         // same func for both
         m_touchHandGrabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;
         
         m_netShouldMove.OnValueChanged += m_netShouldMoveChanged;
@@ -58,9 +57,15 @@ public class Missile : NetworkBehaviour
         m_touchHandGrabInteractable.WhenStateChanged -= GrabInteractableOnWhenStateChanged;
     }
 
-    
-   
-    
+    private void Update()
+    {
+        if (m_rigidbodyKinematicLocker && !m_rigidbodyKinematicLocker.IsLocked)
+        {
+            m_rigidbodyKinematicLocker.LockKinematic();
+        }
+    }
+
+
     public override void OnNetworkSpawn()
     {
         var id = NetworkObject.OwnerClientId;
@@ -105,9 +110,20 @@ public class Missile : NetworkBehaviour
             OnMissileReleased();
         }
     }
+    
+    
 
     void OnMissileReleased()
     {
+        // _ = StartCoroutine(Impl());
+        //
+        // IEnumerator Impl()
+        // {
+        //     yield return new WaitUntil(() => m_grabbable.IsGrabbed == false);
+        //
+        //
+        //     StartVoip();
+        // } 
        
         Vector3 missilePosition = transform.position;
         
@@ -123,9 +139,11 @@ public class Missile : NetworkBehaviour
         if (nearestSnapzone != null)
         {
             TriggeringSnapzone = nearestSnapzone;
-            // Any additional logic you want to execute when a snapzone is triggered
-            transform.position = TriggeringSnapzone.transform.position;
+            
+            transform.position = TriggeringSnapzone.transform.position;   // doesnt work grabbable dictates a release position rotation ???
             transform.rotation = TriggeringSnapzone.transform.rotation;
+            rb.MovePosition(TriggeringSnapzone.transform.position);
+            rb.MoveRotation(TriggeringSnapzone.transform.rotation);
             ShouldMove = true;
             FireMissileClient();
         }

@@ -31,15 +31,26 @@ public class AnchorUpdater : MonoBehaviour
     private void UpdateAnchors()
     {
         var MRUKRoom = _mruk.GetCurrentRoom();
-        
+        if (!MRUKRoom) return;
+
         foreach (var anch in MRUKRoom.Anchors)
         {
             var ovranch = anch.Anchor;
-            
-            if (ovranch.TryGetComponent(out OVRLocatable locatable) && locatable.IsEnabled)
+
+            if (!(ovranch.TryGetComponent(out OVRLocatable locatable) && locatable.IsEnabled))
             {
-                if (locatable.IsEnabled)
+                Debug.Log("locatable is missing");
+            }
+            else
+            {
+                if (!locatable.IsEnabled)
                 {
+                    Debug.Log("locatable is not enabled");
+                }
+                else
+                {
+
+                    
                     if (locatable.TryGetSceneAnchorPose(out var pose))
                     {
                         var position = pose.ComputeWorldPosition(_cameraRig.trackingSpace);
@@ -52,34 +63,32 @@ public class AnchorUpdater : MonoBehaviour
                         }
                     }
                 }
-                else
-                {
-                    Debug.Log("locatable is not enabled");
-                }
-            }
-            else
-            {
-                Debug.Log("locatable is missing");
-            }
-        }
 
-        void TryThis()
-        {
-            // var MRUKRoom = _mruk.GetCurrentRoom();
-            // var floorAnchor = MRUKRoom.FloorAnchor;
-            // transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
-            //
-            // _mruk.SceneLoadedEvent += () =>
-            // {
-            //     var MRUKRoom = _mruk.GetCurrentRoom();
-            //     var floorAnchor = MRUKRoom.FloorAnchor;
-            //     transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
-            // };
+            }
         }
+    }
+
+
+
+    
+
+    void TryThis()
+    {
+        // var MRUKRoom = _mruk.GetCurrentRoom();
+        // var floorAnchor = MRUKRoom.FloorAnchor;
+        // transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
+        //
+        // _mruk.SceneLoadedEvent += () =>
+        // {
+        //     var MRUKRoom = _mruk.GetCurrentRoom();
+        //     var floorAnchor = MRUKRoom.FloorAnchor;
+        //     transform.position = floorAnchor.transform.position + Vector3.up * 0.5f;
+        // };
+    }
         
         
         
         
       
     }
-}
+
