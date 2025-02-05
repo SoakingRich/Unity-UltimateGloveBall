@@ -8,11 +8,15 @@ public class HealthCubeTransform : MonoBehaviour
     
     [Header("Settings")]
     public int HealthCubeIndex = 0;
-   // [Header("State")]
+    [SerializeField] GameObject ShineUIObject;
+    
+    //[Header("State")]
     public bool HasHealthCube => OwningHealthCube != null;
+    
     [Header("Internal")]
     public SceneCubeNetworking OwningHealthCube;
     public DrawingGrid OwningDrawingGrid;
+   
     
     public  Action<HealthCubeTransform> OnHealthCubeDied;
     
@@ -61,8 +65,18 @@ public class HealthCubeTransform : MonoBehaviour
         scs.SCDied += OnSceneCubeDied;
         
     }
-    
-    
+
+    public void  SetShineUIActive(bool Enable, Vector3 newPosition = default)
+    {
+        ShineUIObject.SetActive(Enable);
+        
+        if (Enable)         // change the Y of the object
+        {
+            Vector3 newPos = ShineUIObject.transform.position;
+            newPos.y = newPosition.y;
+            ShineUIObject.transform.position = newPos;
+        }
+    }
     
     
     private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)

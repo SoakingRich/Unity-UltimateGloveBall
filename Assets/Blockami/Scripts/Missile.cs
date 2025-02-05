@@ -65,6 +65,8 @@ public class Missile : NetworkBehaviour
         }
     }
 
+    
+    
 
     public override void OnNetworkSpawn()
     {
@@ -83,6 +85,8 @@ public class Missile : NetworkBehaviour
        
        
     }
+    
+    
     
 
     public override void OnNetworkDespawn()
@@ -115,15 +119,12 @@ public class Missile : NetworkBehaviour
 
     void OnMissileReleased()
     {
-        // _ = StartCoroutine(Impl());
-        //
-        // IEnumerator Impl()
-        // {
-        //     yield return new WaitUntil(() => m_grabbable.IsGrabbed == false);
-        //
-        //
-        //     StartVoip();
-        // } 
+        _ = StartCoroutine(Impl());
+        
+        IEnumerator Impl()
+        {
+            yield return new WaitUntil(() => m_grabbable.SelectingPointsCount == 0);
+        } 
        
         Vector3 missilePosition = transform.position;
         

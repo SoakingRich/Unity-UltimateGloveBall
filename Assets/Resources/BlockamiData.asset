@@ -19,6 +19,7 @@ MonoBehaviour:
   FrenzyTimeDuration: 3.5
   PlayerCubeMoveSpeed: 3
   PlayerCubeShrinkRate: 0.001
+  ShootCubesOnPinchTriggerRelease: 1
   AllCubeTypes:
     _serializedList:
     - Key: 0
@@ -53,7 +54,7 @@ MonoBehaviour:
       Value:
         myColor: {r: 0, g: 0, b: 0, a: 0}
         SceneCubePrefab: {fileID: 6446614617884292056, guid: 57e7b5ff342974d409ea65cc4acefd81, type: 3}
-  MaxNormalColorID: 6
+  MaxNormalColorID: 3
   MoveTowardsMax: 0.05
   halfExtents: {x: 0.2, y: 0.01, z: 0.2}
   springDamper: 0.9

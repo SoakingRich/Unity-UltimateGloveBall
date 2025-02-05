@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Player_Respawn
-  m_Shader: {fileID: -6465566751694194690, guid: da40cca8f8a47304ca5f50f24a0ff0f7, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: a1a31e5c371e99746b8dc7883f0536d0, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -20,6 +20,14 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Main_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Noise_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - Texture2D_12A70E72:
         m_Texture: {fileID: 2800000, guid: e17abe66c495e0d489f521c8a525a85e, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -87,10 +95,17 @@ Material:
     m_Ints: []
     m_Floats:
     - BOOLEAN_5A79FB9C: 0
-    - Vector1_1D84F9A2: 0.123
+    - Edge_Brightness: 4
+    - Edge_Width: 0.2
+    - INVERT: 0
+    - Noise_Cutoff: 0.5
+    - Noise_Cutoff_Smoothness: 0.01
+    - Noise_Scale: 1
+    - Noise_Scroll_Speed: 0.4
+    - Vector1_1D84F9A2: 0.131
     - Vector1_31CDA308: 0.599
     - Vector1_588C7CCF: 0.274
-    - Vector1_6A1B8813: 1
+    - Vector1_6A1B8813: 0.102
     - Vector1_8500AF78: 2.83
     - Vector1_8DAC8216: 10
     - Vector1_994C6DF6: 0
@@ -127,6 +142,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - Color_ED0EAD33: {r: 0, g: 1, b: 1, a: 1}
+    - Edge_Color: {r: 1, g: 0, b: 0.58320045, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

@@ -74,6 +74,7 @@ GameObject:
   - component: {fileID: 4808127382146737399}
   - component: {fileID: 4808127382146737392}
   - component: {fileID: 4808127382146737393}
+  - component: {fileID: 2052647332448939658}
   m_Layer: 0
   m_Name: DrawingGridPrefab
   m_TagString: Untagged
@@ -144,6 +145,18 @@ MonoBehaviour:
   AllSnapZones: []
   PointerUI: {fileID: 8170103952660153886}
   AllHealthCubeTransforms: []
+--- !u!114 &2052647332448939658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4808127382146737396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 522951bfa8305c34cafe21af3cf77378, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7482132790357905395
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,6 +539,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f1e16b0e5f6f8a47bd3c45693933ae7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OwningDrawingGrid: {fileID: 0}
 --- !u!114 &2723031090073185293
 MonoBehaviour:
   m_ObjectHideFlags: 0

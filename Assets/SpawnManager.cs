@@ -107,10 +107,8 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
         if(BeginSpawnOnStart) StartSpawning();
     }
 
-                      
- 
     
-
+    [ContextMenu("StartSpawning")]
 public void StartSpawning()
 {
     if (SpawnTimerHandle != null)
@@ -120,7 +118,7 @@ public void StartSpawning()
     
     if (!isPaused && !isSpawning) 
     {
-        if (NetworkManager.Singleton == null || IsServer)
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.LocalClientId == 0)
         {
 
             isSpawning = true;
@@ -260,7 +258,7 @@ private IEnumerator SpawnSceneCubes()
     
     
     
-    private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)
+    private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)     // KillSceneCubeServerRpc
     {
         if (destroyedCube.IsHealthCube)
         {
@@ -447,7 +445,8 @@ private IEnumerator SpawnSceneCubes()
             ColorID = NewColorID, AIPlayerNum  = AIPlayerNum, OwningPlayerId = clientId
         };
 
-        var grid = LocalPlayerEntities.Instance.GetPlayerObjects(clientId).PlayerController.OwnedDrawingGrid;
+        var grid = isAI ? aiController.OwningDrawingGrid : LocalPlayerEntities.Instance.GetPlayerObjects(clientId).PlayerController.OwnedDrawingGrid;
+        
         Quaternion rot = grid == null ? Quaternion.identity : grid.transform.rotation;
 
         

@@ -17,6 +17,7 @@ public class DrawingGrid : NetworkBehaviour
     
     [Header("State")]
     public NetworkVariable<ulong> OwningPlayer;
+    public bool _IsLocal;
     
     [Header("Internal")]
     public List<SnapZone> AllSnapZones = new List<SnapZone>();
@@ -52,6 +53,9 @@ public class DrawingGrid : NetworkBehaviour
         }
     }
 
+    
+    
+    
     public void Update()
     {
         m_AIPlayer.gameObject.SetActive(AIPlayerIsActive);
@@ -59,9 +63,69 @@ public class DrawingGrid : NetworkBehaviour
         m_AIPlayer.AIPlayerIsActive = AIPlayerIsActive;
     }
 
+
+    
+    
+    
+    public void UpdateAllShineUI()
+    {
+       
+
+        
+        
+        foreach (var hct in AllHealthCubeTransforms)
+        {
+            hct.SetShineUIActive(false);    // assume false to begin with
+            
+            if (!IsOwner) return;
+            
+            for (int i = 0; i < 2; i++)        // line trace at 2 heights going down
+            {
+                
+                Ray ray;
+                Vector3 rayOrigin = hct.transform.position - new Vector3(0, 0.1818183f * i, 0);    // lower the trace by i amount
+                Vector3 rayDirection = hct.transform.forward;
+                float rayDistance = 100.0f;
+                
+                
+                ray = new Ray(hct.transform.position, rayDirection * rayDistance);
+
+                int SceneCubeLayerMask = 1 << LayerMask.NameToLayer("Hitable");
+
+                RaycastHit hitInfo;
+
+                if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, SceneCubeLayerMask))
+                {
+                    GameObject hitObject = hitInfo.collider.gameObject;
+                    var scs = hitObject.GetComponent<SceneCubeNetworking>();
+
+                    if (!scs)
+                    {
+
+                        Debug.Log("Hit something on the SceneCube layer! not a scene cube " + hitObject.name);
+                    }
+                    else
+                    {
+                        if (scs.IsHealthCube)
+                        {
+                            hct.SetShineUIActive(true,rayOrigin);
+
+                            break;
+                        }
+                    }
+                }
+            }
+            
+
+        }
+    }
+    
+    
     public override void OnNetworkSpawn()
     {
         OwningPlayer.OnValueChanged += OnOwningPlayerChanged;
+        
+       
     }
 
     
@@ -71,12 +135,9 @@ public class DrawingGrid : NetworkBehaviour
     {
        
     }
+    
+    
+    
+    
 
-    // [ServerRpc]
-    // public void RequestSpawnPlayerCubeServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
-    // { 
-    //    var newObject = NetworkObject.InstantiateAndSpawn(NetworkManager.Singleton, OwningPlayer.Value, false, false, false, transform.position, transform.rotation);
-    //     var clientId = rpcParams.Receive.SenderClientId;
-    //     newObject.GetComponent<NetworkObject>().ChangeOwnership(clientId);
-    // }
 }

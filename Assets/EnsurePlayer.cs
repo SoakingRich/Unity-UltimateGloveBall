@@ -1,10 +1,30 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UltimateGloveBall.Arena.Services;
+using Unity.Netcode;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class EnsurePlayer : MonoBehaviour
 {
     [SerializeField] public Object playerPrefab;
+    [SerializeField] public Object NetworkManagerPrefab;
+    [SerializeField] public Object LocalPlayerEntitiesPrefab;
+
+
+    private void Awake()
+    {
+        if (NetworkManager.Singleton == null)
+        {
+            GameObject player = Instantiate(NetworkManagerPrefab) as GameObject;
+        }
+        
+        if(LocalPlayerEntities.Instance == null)
+        {
+            GameObject player = Instantiate(LocalPlayerEntitiesPrefab) as GameObject;
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -23,11 +43,9 @@ public class EnsurePlayer : MonoBehaviour
                 Debug.Log("MR LOG - force spawning a player");
             }
         }
+
+      
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+   
 }

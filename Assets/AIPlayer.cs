@@ -78,7 +78,7 @@ public class AIPlayer : NetworkBehaviour
     {
         BlockamiData = Resources.Load<BlockamiData>("BlockamiData");
         
-        Application.runInBackground = true;
+        Application.runInBackground = true;   // ??? what
     }
 
     

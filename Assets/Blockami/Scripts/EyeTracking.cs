@@ -143,6 +143,7 @@ public class EyeTracking : MonoBehaviour
         
         
             if( MeshRenderer!= null) MeshRenderer.transform.position = hitObject.transform.position;
+            
             if(hitObject!=null) DoTraceFromTracedSceneCube(hitObject);
         
         }

@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using Meta.XR.MRUtilityKit;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class MRControl : MonoBehaviour
 {
 
-    [SerializeField] bool HideAllMR;
+    [SerializeField] bool HideAllMRIfEditor;
     
     
     private void Awake()
@@ -32,7 +33,7 @@ public class MRControl : MonoBehaviour
         
 #if UNITY_EDITOR
 
-        if (HideAllMR)
+        if (HideAllMRIfEditor)
         {
 
             var mruk = FindObjectOfType<MRUK>();

@@ -139,7 +139,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
     private void FireCurrentShot()
     {
-        if (!LocalPlayerEntities.Instance.LocalPlayerController) return;
+        if (!LocalPlayerEntities.Instance?.LocalPlayerController) return;
         var shotUlong = LocalPlayerEntities.Instance.LocalPlayerController.CurrentPlayerShot.Value;
         NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue((ulong)(int)shotUlong, out var
             netObj);
