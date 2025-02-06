@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Blockami.Scripts;
 using UnityEngine;
-
-
+using UnityEngine.Serialization;
 
 
 // this visual gO is constantly scaling
@@ -15,14 +14,15 @@ using UnityEngine;
 
 public class squashStretch : MonoBehaviour
 {
-    [SerializeField] public BlockamiData BlockamiData;   
-    
-    public float squashAmount;
-    public float speed = 1.0f;
-    public bool deactivated;
-    public BoxCollider box;
+    [SerializeField] public BlockamiData BlockamiData;
 
-    public bool Ignore;
+    public FakeSoftCube parent;
+    [FormerlySerializedAs("squashAmount")] public float squashAmountTarget;
+    public float speed = 1.0f;
+    public BoxCollider InnerBox;
+
+    public bool Ignore => parent.Ignore;
+    public bool deactivated => parent.deactivated;
 
     
     
@@ -33,7 +33,8 @@ public class squashStretch : MonoBehaviour
     
     void Start()
     {
-        box = GetComponent<BoxCollider>();
+        parent = transform.parent.GetComponent<FakeSoftCube>();
+        InnerBox = GetComponent<BoxCollider>();
     }
     
     void TrackBlockamiData()
@@ -48,17 +49,23 @@ public class squashStretch : MonoBehaviour
         
         if (Ignore)
         {
-            enabled = false;
+            InnerBox.size = Vector3.one;
+            return;
         }
         
-        var desiredScale =  new Vector3(1-squashAmount, 1 + squashAmount, 1- squashAmount);
+       
+        
+        var desiredScale =  deactivated ? Vector3.one :  new Vector3(1-squashAmountTarget, 1 + squashAmountTarget, 1- squashAmountTarget);
+        
         transform.localScale = Vector3.Slerp(transform.localScale,desiredScale, Time.deltaTime * speed);   // the object to have its Scale transformed
      //   transform.localScale = new Vector3(1-squashAmount, 1 + squashAmount, 1- squashAmount);   // the object to have its Scale transformed
      transform.rotation = Quaternion.Euler(0.0f,transform.rotation.y,0.0f);
 
      if (deactivated)
      {
-         box.size = Vector3.Slerp(box.size, Vector3.one, Time.deltaTime * speed);
+         InnerBox.size = Vector3.Slerp(InnerBox.size, Vector3.one, Time.deltaTime * speed);
+         return;
      }
+    
     }
 }

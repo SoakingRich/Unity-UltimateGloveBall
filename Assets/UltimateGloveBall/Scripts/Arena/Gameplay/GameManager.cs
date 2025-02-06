@@ -346,7 +346,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         [ContextMenu("StartGame")]
         public void StartGame()             // called by unityEvent on the StartGameButton,   only Host/Server can start game 
         {
-            if (LocalPlayerEntities.Instance.Avatar == null)
+            if (LocalPlayerEntities.Instance.Avatar == null && NetworkManager.Singleton.NetworkConfig.NetworkTransport.name != "DummyNetworkManager(Clone)")
             {
                 Invoke("StartGame",0.5f);
                 Debug.Log("trying to start game without local avatar will cause teleport to fail");
@@ -392,7 +392,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             SpawnManager.Instance.ClearAllCubes();
             SpawnManager.Instance.TriggerFrenzyTime();
 
-            SpawnManager.Instance.ResetAllPlayerHealthCubes();
+            SpawnManager.Instance.ResetAllHealthCubes();
 
 
 

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Blockami.Scripts;
@@ -7,29 +8,34 @@ using UnityEngine.Serialization;
 
 public class FakeSoftCube : MonoBehaviour
 {
+    
+    [Header("Settings")]
     [SerializeField] public BlockamiData BlockamiData;
-
     public bool Ignore;
-
     public float springStrength;
     public float springDamper;
-    public Vector3 halfExtents;
+    public Vector3 halfExtentsOverlapTest;
     public float MoveTowardsMax = 0.005f;
     public float m_timeBeforeEnsureDeactivate = 3.0f;
     public float m_timeBeforeDeactivate = 1.0f;
+    public bool LimitToOnceBounce;
+    public float ForceClampMax = 100.0f;
+    public float ForceClampMin = 0.0f;
 
-    float squashAmount;
-    Rigidbody rb;
+    [Header("State")]
+    public bool deactivated;
+    float squashAmountTarget;
+    bool notColliding;
     private Vector3 closestPointFromCentre, normalDir;
     private Collider[] ContactColliders;
-    bool notColliding;
-
-    public bool LimitToOnceBounce;
-    public bool deactivated;
-
+    Rigidbody rb;
     public squashStretch squashStretchObjectVisual;
-
     public Vector3 WorldDir;
+
+
+
+
+
 
     //Composition
     //    * this object is intended to have a large outer collider on this GO that is Trigger only,  and a small inner collider which is the actual collider which informs the rigidbody
@@ -38,17 +44,22 @@ public class FakeSoftCube : MonoBehaviour
     // Large outer collider is used here with OnTriggerStay and OnTriggerExit
 
 
+    private void OnEnable()
+    {
+        TrackBlockamiData();
+    }
+
+
     void Start()
     {
         if (Ignore)
         {
             enabled = false;
-            squashStretchObjectVisual.enabled = false;
         }
 
         notColliding = true;
-        squashAmount = 0;
-        rb = GetComponent<Rigidbody>(); // this .cs should be on an object with a rigidbody, with a seperate object to affect the visual scale of
+        squashAmountTarget = 0;
+        rb = GetComponent<Rigidbody>();         // this .cs should be on an object with a rigidbody, with a seperate object to affect the visual scale of
     }
 
     
@@ -59,7 +70,7 @@ public class FakeSoftCube : MonoBehaviour
         
         springStrength = BlockamiData.springStrength;
         springDamper = BlockamiData.springDamper;
-        halfExtents = BlockamiData.halfExtents;
+        halfExtentsOverlapTest = BlockamiData.halfExtents;
         MoveTowardsMax = BlockamiData.MoveTowardsMax;
         m_timeBeforeEnsureDeactivate = BlockamiData.m_timeBeforeEnsureDeactivate;
         m_timeBeforeDeactivate = BlockamiData.m_timeBeforeDeactivate;
@@ -73,26 +84,31 @@ public class FakeSoftCube : MonoBehaviour
     {
         TrackBlockamiData();
 
-        if (notColliding)
+        if (notColliding)  // // if not colling, move squashAmountTarget toward zero 
         {
-            squashAmount = Mathf.MoveTowards(squashAmount, 0, MoveTowardsMax); // move squashAmount toward zero 
+            squashAmountTarget = Mathf.MoveTowards(squashAmountTarget, 0, MoveTowardsMax); 
         }
-        else
+        else           // Calculate squashAmount based on the distance between the object and the closest current collision point with other objects
+                            // The closer this object is to the collision location, the higher the squashAmount (up to 1)
+                            // during collision, physics will push this object away from collision
         {
-            float desired = (Vector3.Distance(transform.position, closestPointFromCentre) /
-                             (halfExtents.magnitude / 2.0f));
+            float desiredSquashAmount = (Vector3.Distance(transform.position, closestPointFromCentre) /
+                             (halfExtentsOverlapTest.magnitude / 2.0f));
+            
             //  squashAmount = 1 - Mathf.MoveTowards(squashAmount, desired, MoveTowardsMax);   
-            squashAmount = 1 - (Vector3.Distance(transform.position, closestPointFromCentre) /
-                                (halfExtents.magnitude / 2.0f));
+            
+            squashAmountTarget = 1 - (Vector3.Distance(transform.position, closestPointFromCentre) /       // one minus it
+                                (halfExtentsOverlapTest.magnitude / 2.0f));
+            
+            Mathf.Clamp(squashAmountTarget, -0.5f, 0.5f);
+            
             // Calculate squashAmount based on the distance between the object and the closest collision point
             // The closer the object is to the collision location, the higher the squashAmount (up to 1)
         }
 
-        squashStretchObjectVisual.squashAmount = -squashAmount;
+        squashStretchObjectVisual.squashAmountTarget = -squashAmountTarget;    // is diff from on this script
         squashStretchObjectVisual.transform.up = normalDir;
 
-
-        squashStretchObjectVisual.deactivated = deactivated;
 
     }
 
@@ -102,11 +118,14 @@ public class FakeSoftCube : MonoBehaviour
     void FixedUpdate() // do testing for overlap with surrounding objects        // move away from collisions
     {
         ContactColliders =
-            Physics.OverlapBox(transform.position, halfExtents,
-                transform.rotation); // doing sphereoverlap explicitly, needs to be box   
+            Physics.OverlapBox(transform.position, halfExtentsOverlapTest,
+                transform.rotation);  
+        
         foreach (var contactCol in ContactColliders)
         {
-            AddPointSpring(contactCol.ClosestPoint(transform.position));
+            Vector3 closest = contactCol.ClosestPoint(transform.position);
+          //  if(Vector3.Dot((closest-transform.position).normalized,Vector3.up) < 0.0f) 
+            {AddPointSpring(closest);}
         }
     }
 
@@ -124,7 +143,7 @@ public class FakeSoftCube : MonoBehaviour
 
         RaycastHit VetexHit = new RaycastHit();
         Vector3 vertexDir = transform.position - vertexPos;
-        float vertexMaxDistance = halfExtents.magnitude;
+        float vertexMaxDistance = halfExtentsOverlapTest.magnitude;
 
         Vector3 VertexWorldVel = rb.GetPointVelocity(transform.position);
         WorldDir = VertexWorldVel.normalized;
@@ -132,6 +151,7 @@ public class FakeSoftCube : MonoBehaviour
         float offset = vertexMaxDistance - 0.1f - VetexHit.distance;
         float vel = Vector3.Dot(vertexDir, VertexWorldVel);
         float force = (offset * springStrength) - (vel * springDamper);
+        Mathf.Clamp(force, ForceClampMin, ForceClampMax);
         rb.AddForceAtPosition(vertexDir.normalized * force, vertexPos);
 
         if (LimitToOnceBounce)
@@ -173,7 +193,7 @@ public class FakeSoftCube : MonoBehaviour
         OnTriggerExit(
             Collider other) // when we stop colliding with others (due to spring)  set squashAmount to -0.1 and lerp towards 0 again
     {
-        squashAmount = -0.1f; // why 0.1 ??  spring effect?
+        squashAmountTarget = -0.1f; // why 0.1 ??  spring effect?
         notColliding = true;
     }
 

@@ -538,7 +538,9 @@ private IEnumerator SpawnSceneCubes()
     
     
     
-    public void ResetAllPlayerHealthCubes()
+   
+    [ContextMenu("ResetAllHealthCubes")]
+    public void ResetAllHealthCubes()
     {
         
         List<DrawingGrid> AllDrawingGrids = FindObjectsOfType<DrawingGrid>().ToList();
@@ -560,6 +562,11 @@ private IEnumerator SpawnSceneCubes()
                 }
                
                 int colorID = idx;
+                
+                //colorID = Mathf.CeilToInt(((float)idx)/2.0f);    // make color IDs between 0 and 2
+               // colorID = Mathf.CeilToInt((  (float)idx)+1.0f/2.0f)  ;    // make color IDs between 0 and 2
+                colorID = idx / 2;
+                
                 Transform spawnTransform = hct.transform;
                 SpawnCubeServer(spawnTransform, colorID, true);
                    
