@@ -29,6 +29,12 @@ namespace Oculus.Interaction.AvatarIntegration
 
         private bool _setupBodyTracking = false;
 
+        
+        
+        
+        
+        
+        
         protected void Awake()
         {
             Hmd = _hmd as IHmd;

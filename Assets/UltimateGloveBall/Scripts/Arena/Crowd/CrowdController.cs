@@ -100,6 +100,11 @@ namespace UltimateGloveBall.Arena.Crowd
             // Nothing   
         }
 
+        public void OnPhaseTimeCounter(double timeCounter)
+        {
+            //nothing
+        }
+        
         public void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB)     // when colors for both teams have been set to a new pair
         {
             SetAttachmentColor(teamColorA, teamColorB);    // attachment refers to hats/jerseys/baloons?

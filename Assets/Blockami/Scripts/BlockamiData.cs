@@ -12,6 +12,31 @@ namespace Blockami.Scripts
     [CreateAssetMenu(fileName = "BlockamiData", menuName = "ScriptableObjects/BlockamiData", order = 1)]
     public class BlockamiData : ScriptableObject
     {
+        private static BlockamiData _instance;
+
+        public static BlockamiData Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    // Load from Resources
+                  //  _instance = Resources.Load<BlockamiData>("GameData");
+                    BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+                    _instance = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+                    
+                    // Create a runtime instance if it's null (optional fallback)
+                    if (_instance == null)
+                    {
+                        _instance = CreateInstance<BlockamiData>();
+                    }
+                }
+                return _instance;
+            }
+        }
+        
+        
+        
         [Header("Prefabs")]
         public NetworkObject PlayerCubePrefab;
         
@@ -19,12 +44,14 @@ namespace Blockami.Scripts
         public float DefaultSpawnRate = 1.0f;
         public float FrenzySpawnRate = 0.5f;
         public int MaxCubes = 100;
-        public float FrenzyTimeDuration = 7.0f; 
+        public float FrenzyTimeDuration = 7.0f;
+        public bool CycleColorsOnDraw = true;
         
         [Header("PlayerCube")]
         public float PlayerCubeMoveSpeed = 0.1f;
         public float PlayerCubeShrinkRate = 0.0001f;
         public bool ShootCubesOnPinchTriggerRelease = true;
+        public bool LetIncorrectPlayerCubesBounceBack = false;
         
         [Header("CubeTypes")]
         [SerializedDictionary("ID", "Data")]
@@ -43,7 +70,9 @@ namespace Blockami.Scripts
         
         
         private Vector3 OriginalScale;
-        
+
+        [Header("Debug")]
+        public static bool LockPlayerLocationToEditorObj = false;
       
 
 

@@ -10,21 +10,33 @@ using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Quaternion = System.Numerics.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
 public class PlayerCubeScript : NetworkBehaviour
 {
     public NetworkVariable<bool> ShouldMove;
+    public NetworkVariable<bool> IsAI;
     public NetworkVariable<ulong> OwningPlayerID;
     public NetworkVariable<PlayerCubeData> _NetPCData;
     public int ColorID => _NetPCData.Value.ColorID;
+
+    // [Header("Settings")]
+    [SerializeField] private bool LetIncorrectPlayerCubesBounceBack => BlockamiData.LetIncorrectPlayerCubesBounceBack;
     
     [Header("State")]
     bool m_CubeisDead = false;
     public PlayerShotObject OwningPlayerShot;
     public DrawingGrid OwningGrid;
+
     
+    private Vector3 DirToMove
+    {
+        get => net_DirToMov.Value; // Get the value from the NetworkVariable
+        set => net_DirToMov.Value = value; // Set the value to the NetworkVariable
+    }
     [Header("Internal")]
+    public NetworkVariable<Vector3> net_DirToMov;
     [SerializeField] public BlockamiData BlockamiData;   
     public event System.Action<PlayerCubeScript> PCDied;
     private Material m_CubeMaterial;
@@ -32,6 +44,11 @@ public class PlayerCubeScript : NetworkBehaviour
     private Renderer Rend;
     private SceneCubeNetworking ScsToDestroy;
     private Vector3 OriginalScale;
+    public Rigidbody rb;
+    public float LastReverseTime = -999.0f;
+    
+    
+    
     
     
     
@@ -44,6 +61,7 @@ public class PlayerCubeScript : NetworkBehaviour
         _NetPCData.OnValueChanged += OnPCDataChanged;
         ShouldMove.OnValueChanged += OnShouldMoveChanged;
         Rend = GetComponent<Renderer>();
+        rb = GetComponent<Rigidbody>();
     }
 
 
@@ -54,6 +72,7 @@ public class PlayerCubeScript : NetworkBehaviour
     
     public void Initialize( )         // on rep change of     PCData.OnValueChanged
     {
+      
         Rend.enabled = true;
         transform.localScale = OriginalScale;
         m_CubeisDead = false;
@@ -68,6 +87,7 @@ public class PlayerCubeScript : NetworkBehaviour
            if (grid.OwnerClientId  == _NetPCData.Value.OwningPlayerId)
            {
                OwningGrid = grid;
+               DirToMove = OwningGrid.MoveDirection;
                break;
            }
        }
@@ -80,6 +100,7 @@ public class PlayerCubeScript : NetworkBehaviour
            if (ai)
            {
                OwningGrid = ai.OwningDrawingGrid;
+               DirToMove = OwningGrid.MoveDirection;
            }
        }
 
@@ -125,10 +146,12 @@ public class PlayerCubeScript : NetworkBehaviour
     [ServerRpc]
     public void LaunchCubeServerRPC()
     {
+        DirToMove = OwningGrid.MoveDirection;
         ShouldMove.Value = true;
     }
 
 
+    //void FixedUpdate()
     void Update()
     {
         if (!OwningGrid) return;
@@ -137,8 +160,13 @@ public class PlayerCubeScript : NetworkBehaviour
         {
             if (NetworkObject.IsSpawned)
             {
-                transform.position += OwningGrid.MoveDirection * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
+                
+                transform.position += DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
                 transform.localScale *= (1 - BlockamiData.PlayerCubeShrinkRate);
+
+              //   rb.MovePosition(rb.position + DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime);
+              // //rb.position += DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
+              // rb.transform.localScale *= (1 - BlockamiData.PlayerCubeShrinkRate);
             }
         }
     }
@@ -146,38 +174,85 @@ public class PlayerCubeScript : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (OwningPlayerShot == null)
-        {
-            Debug.Log("OwningPlayerShot is null");
-        }
+        // if (OwningPlayerShot == null)
+        // {
+        //     Debug.Log("OwningPlayerShot is null");
+        // }
         
         var scs = other.GetComponent<SceneCubeNetworking>();
-        if (!scs) return;
-        
-        Rend.enabled = false;
-        
-        if (ShouldPlayerCubeDestroySceneCube(this,scs))
+        if (scs)     
         {
-            DestroySceneCubeAfterDelay(scs);
-            KillPlayerCubeServerRpc();
-        }
-        else
-        {
-            foreach (var i in OwningPlayerShot.AllPcs.Value.ToList())
-            {
-                var netPc = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(i);
-                var pc = netPc ? netPc.gameObject.GetComponent<PlayerCubeScript>() : null;
-                pc?.KillPlayerCubeServerRpc();
-            }
 
+        
+
+            if (PlayerCubeMatchesSceneCubeColorID(this, scs))   // SUCCESS SHOT
+            {
+                Rend.enabled = false;
+                DestroySceneCubeAfterDelay(scs);
+                KillPlayerCubeServerRpc();
+            }
+            else        // FAIL SHOT
+            {
+                if (LetIncorrectPlayerCubesBounceBack)
+                {
+                    ReverseDirection();
+                }
+
+
+                foreach (var i in OwningPlayerShot.AllPcs.Value.ToList())
+                {
+                    var netPc = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(i);
+                    var pc = netPc ? netPc.gameObject.GetComponent<PlayerCubeScript>() : null;
+                    if (pc != null )
+                    {
+                        if (LetIncorrectPlayerCubesBounceBack && pc == this)
+                        {
+                            
+                        }
+                        else
+                        {
+                            pc?.KillPlayerCubeServerRpc();
+                        }
+                    }
+                }
+
+
+
+
+            }
         }
         
-        
+        var pcs = other.GetComponent<PlayerCubeScript>();
+        if (pcs)
+        {
+            if (pcs.ColorID == ColorID || ColorID == 10)
+            {
+                pcs.KillPlayerCubeServerRpc();    // let PlayerCubes destroy other playercubes of matching colors, but not ruin 'Shots'
+                SpawnManager.Instance.PlayHitVFXClientRpc(transform.position, transform.forward);
+            }
+        }
+
+
     }
 
-    bool ShouldPlayerCubeDestroySceneCube(PlayerCubeScript pc, SceneCubeNetworking scs)
+    public void ReverseDirection()
+    {
+        if (Time.time - LastReverseTime > 2.0f)
+        {
+            DirToMove *= -1;
+            LastReverseTime = Time.time;
+        }
+    }
+
+
+    bool PlayerCubeMatchesSceneCubeColorID(PlayerCubeScript pc, SceneCubeNetworking scs)
     {
         if (scs.ColorID == pc._NetPCData.Value.ColorID)
+        {
+            return true;
+        }
+        
+        if (scs.ColorID == 10)
         {
             return true;
         }
@@ -187,18 +262,26 @@ public class PlayerCubeScript : NetworkBehaviour
 
     void DestroySceneCubeAfterDelay(SceneCubeNetworking scs)
     {
+
         if (IsServer || IsHost)
         {
+            if (scs.IsHealthCube)       // dont destroy health cubes, just do the consequence
+            {
+                scs.HealthCubeHit();
+                return;
+            }
+            
             ScsToDestroy = scs;
-            Invoke("DestroySceneCube", 0.1f);
+            Invoke("DestroySceneCubeByPlayerCube", 0.1f);
         }
     }
 
-    void DestroySceneCube()
+    void DestroySceneCubeByPlayerCube()
     {
         if (ScsToDestroy == null || !ScsToDestroy.IsSpawned) return;
-        
-        ScsToDestroy.KillSceneCubeServerRpc();
+
+        ulong id = IsAI.Value ? default : OwnerClientId;
+        ScsToDestroy.KillSceneCubeServerRpc(id);
         
     }
     

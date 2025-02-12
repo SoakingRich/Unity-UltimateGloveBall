@@ -1,10 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Blockami.Scripts;
 using Oculus.Interaction;
 using UltimateGloveBall.Arena.Player;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
+using UnityEditor.UIElements;
 using UnityEngine;
 
 public class DrawPointerUI : MonoBehaviour
@@ -12,16 +15,35 @@ public class DrawPointerUI : MonoBehaviour
     public DrawingGrid OwningDrawingGrid;
     private BlockamiData BlockamiData;
     private PlayerControllerNetwork pcn;
-    private MaterialPropertyBlockEditor _materialPropertyBlockEditor;
+    public MaterialPropertyBlockEditor _materialPropertyBlockEditor;
     private Renderer rend;
+    public float LerpSpeed = 10.0f;
+    
+    private Vector3 LerpTargetPositoon;
     // private static readonly int s_interiorColor = Shader.PropertyToID("InteriorColor");
     // private static readonly int s_fresnelColor = Shader.PropertyToID("FresnelColor");
     
     private static readonly int s_interiorColor = Shader.PropertyToID("Color_DA10CA39");
     private static readonly int s_fresnelColor = Shader.PropertyToID("Color_CD9DA168");
 
+
+    private TriggerPinchEvents[] allTPE;
+
+    private void Awake()
+    {
+        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        BlockamiData = BlockamiData.Instance;
+    }
+
     void Start()
     {
+        
+        
+        /// SETUP MATERIAL FOR LINE RENDERER
+   
+        
+        
         _materialPropertyBlockEditor = GetComponent<MaterialPropertyBlockEditor>();
         rend = GetComponent<Renderer>();
         
@@ -38,6 +60,9 @@ public class DrawPointerUI : MonoBehaviour
     }
 
 
+    
+    
+    
 
 
     void Update()
@@ -47,26 +72,28 @@ public class DrawPointerUI : MonoBehaviour
         if (!pcn)
         {
             pcn = LocalPlayerEntities.Instance.LocalPlayerController;
-            //  pcn.OnCyclePlayerColor += OnCyclePlayerColor;
+             if(pcn) pcn.OnCyclePlayerColor += OnCyclePlayerColor;
             return;
         }
-
-
-
-
+        
         if (pcn.OwnerClientId != NetworkManager.Singleton.LocalClientId ||
             pcn.OwnedDrawingGrid != OwningDrawingGrid)
         {
-            enabled = false;
+           // enabled = false;
+           rend.enabled = false;
             return;
         }
-        else
-        {
+        
+        rend.enabled = true;
+        
+        if(allTPE == null) { 
+            allTPE = FindObjectsOfType<TriggerPinchEvents>();
+            return;
+        }
+       
             GameObject nearestObject = null;
             float closestDistance = Mathf.Infinity;
-
-
-            var allTPE = FindObjectsOfType<TriggerPinchEvents>();
+            
             if (allTPE.Length < 1) { return; }
 
             foreach (var tpe in allTPE)
@@ -79,23 +106,31 @@ public class DrawPointerUI : MonoBehaviour
                 }
             }
 
-            if (nearestObject != null)
-            {
-                Plane drawingPlane = new Plane(OwningDrawingGrid.transform.rotation * Vector3.forward,
-                    OwningDrawingGrid.transform.position);
+            if (nearestObject == null) return;
 
-                // Project the nearest object's position onto the plane
-                Vector3 projectedPosition = drawingPlane.ClosestPointOnPlane(nearestObject.transform.position);
+            var allSnaps = OwningDrawingGrid.AllSnapZones;
+            var nearestSnapzone = UtilityLibrary.GetNearestObjectFromList(allSnaps, nearestObject.transform.position);
+            LerpTargetPositoon = nearestSnapzone.gameObject.transform.position;
+            
+                // Plane drawingPlane = new Plane(OwningDrawingGrid.transform.rotation * Vector3.forward,
+                //     OwningDrawingGrid.transform.position);
+                //
+                // // Project the nearest object's position onto the plane
+                // Vector3 projectedPosition = drawingPlane.ClosestPointOnPlane(nearestObject.transform.position);
 
-                // Set the new position
-                transform.position = projectedPosition;
-            }
+             //   transform.position = projectedPosition;
+            //    LerpTargetPositoon = projectedPosition;
 
-        }
+                LerpPosition();
+
 
     }
 
 
+    void LerpPosition()
+    {
+        transform.position = Vector3.Lerp(transform.position, LerpTargetPositoon, Time.deltaTime * LerpSpeed);
+    }
 
 
 
@@ -106,7 +141,8 @@ public class DrawPointerUI : MonoBehaviour
 
     public void Move(SnapZone s)
     {
-      //  transform.position = s.transform.position;
+    //    transform.position = s.transform.position;
+    LerpTargetPositoon = s.transform.position;
     }
     
     
@@ -114,6 +150,8 @@ public class DrawPointerUI : MonoBehaviour
     
     private void OnCyclePlayerColor(PlayerControllerNetwork obj)
     {
+       
+        
         if (obj == null) return;
       
     

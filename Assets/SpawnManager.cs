@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockami.Scripts;
 using Meta.Utilities;
+using UltimateGloveBall.Arena.Gameplay;
 using UltimateGloveBall.Arena.Player;
 using UltimateGloveBall.Arena.Services;
 using UltimateGloveBall.Arena.VFX;
@@ -13,7 +14,7 @@ using UltimateGloveBall.Networking.Pooling;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
-public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior but doesnt need it??
+public class SpawnManager : NetworkBehaviour, IGamePhaseListener   // used to be a NetworkBehavior but doesnt need it??
 {
     private static SpawnManager _instance;
 
@@ -29,8 +30,7 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
                 // If none exists, create a new GameObject with SpawnManager attached
                 if (_instance == null)
                 {
-                    GameObject obj = new GameObject("SpawnManager");
-                    _instance = obj.AddComponent<SpawnManager>();
+             
                 }
             }
             return _instance;
@@ -48,12 +48,14 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
     [SerializeField] public NetworkObjectPool m_cubePool;
 
     [Header("State")]
-    [SerializeField] public bool isPaused = false;
+
     [SerializeField] public bool isSpawning = false;
     [SerializeField] public bool isFrenzyTime = false;
     [SerializeField] public int currentSceneCubeCount = 0;
     [SerializeField] public float currentSpawnRate;
     //[SerializeField] private Object sceneCubePrefab;
+    public Action OnTimeThresholdPassed;
+    private bool TimeThresholdCalled = false;
 
    // [Header("Actions")] public Action OnSCSDied;
     [Header("Actions")] 
@@ -68,12 +70,14 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
     public NetworkObject sceneCubePrefab;
     public NetworkObject PlayerShotPrefab;
     public NetworkObject HealthCubePrefab;
+    [SerializeField] private NetworkObject RainbowCubePrefab;
+    [SerializeField] private NetworkObject DownCubePrefab;
     [SerializeField] private NetworkObject HealthCubePickupPrefab;
+    [SerializeField] private NetworkObject MissilePickupPrefab;
     private Coroutine SpawnTimerHandle;
-    private Coroutine FrenzyTimerHandle;
-
-
-    
+    private Coroutine frenzyCoroutine;
+    public GameManager m_gameManager => GameManager.Instance;
+    public GameManager.GamePhase _gamePhase => m_gameManager.CurrentPhase;
     
     private void Awake()
     {
@@ -96,14 +100,57 @@ public class SpawnManager : NetworkBehaviour    // used to be a NetworkBehavior 
         allSpawnZones = FindObjectsOfType<SpawnZone>();
         currentSpawnRate = BlockamiData.DefaultSpawnRate;
         
+       
+        
     }
     
+    
 
+    private void OnDestroy()
+    {
+        m_gameManager.UnregisterPhaseListener(this);
+    }
+
+    public void OnPhaseChanged(GameManager.GamePhase phase)
+    {
+        switch (phase)
+        {
+           case GameManager.GamePhase.PostGame: 
+               StopSpawning();
+               break;
+           case GameManager.GamePhase.InGame:
+               TimeThresholdCalled = false;
+               StartSpawning();
+               break;
+        }
+    }
+
+    public void OnPhaseTimeUpdate(double timeLeft)
+    {
+        // nothing
+    }
+
+    
+    
+    public void OnPhaseTimeCounter(double timeCounter)
+    {
+        if (timeCounter >= 5.0f & !TimeThresholdCalled)
+        {
+            OnTimeThresholdPassed?.Invoke();
+            TimeThresholdCalled = true;
+        }
+    }
+
+    public void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB)
+    {
+        // nothing
+    }
     
    
     
     private void Start()
     {
+        m_gameManager.RegisterPhaseListener(this);
         if(BeginSpawnOnStart) StartSpawning();
     }
 
@@ -116,16 +163,26 @@ public void StartSpawning()
         StopCoroutine(SpawnTimerHandle);
     }
     
-    if (!isPaused && !isSpawning) 
-    {
+ 
         if (NetworkManager.Singleton == null || NetworkManager.Singleton.LocalClientId == 0)
         {
 
             isSpawning = true;
             SpawnTimerHandle = StartCoroutine(SpawnSceneCubes());
+            
         }
-    }
+    
 }
+
+    public void StopSpawning()
+    {
+        if (SpawnTimerHandle != null)
+        {
+            StopCoroutine(SpawnTimerHandle);
+        }
+
+        isSpawning = false;
+    }
 
 
 
@@ -134,9 +191,9 @@ private IEnumerator SpawnSceneCubes()
 {
     while (true)
     {
-        if (isPaused || currentSceneCubeCount > BlockamiData.MaxCubes)
+        if (currentSceneCubeCount > BlockamiData.MaxCubes)
         {
-            yield break;
+            yield return null;
         }
 
         float spawnRate = isFrenzyTime ? BlockamiData.FrenzySpawnRate : BlockamiData.DefaultSpawnRate;
@@ -144,17 +201,30 @@ private IEnumerator SpawnSceneCubes()
         // Wait before spawning to control the spawn rate
         yield return new WaitForSeconds(1f / spawnRate);
 
-        try
+        if (m_cubePool.IsSpawned)
         {
-            SpawnCubeServer(); // Spawn a random cube
+
+
+
+            try
+            {
+                SpawnCubeServer(); // Spawn a random cube
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SpawnSceneCubes encountered an error: {ex}");
+                // Optional: Delay before retrying to avoid excessive logging
+            }
         }
-        catch (Exception ex)
+        else
         {
-            Debug.LogError($"SpawnSceneCubes encountered an error: {ex}");
-            // Optional: Delay before retrying to avoid excessive logging
+            Debug.LogError("cube pool not network spawned");
+            m_cubePool.NetworkObject.Spawn();
         }
-          
+
     }
+    
+    Debug.Log("SpawnManager Has Stopped Spawning");
 }
 
 
@@ -169,6 +239,9 @@ private IEnumerator SpawnSceneCubes()
                             return;
                             
                         }
+
+
+                        if (allSpawnZones.Length <= 0) return;
                         
                         ////////////////////////////// Get Position  
                         var spawnPosition = GetRandomSpawnPosition();        // Spawn SceneCube at a random spawn zone in the sky
@@ -176,48 +249,69 @@ private IEnumerator SpawnSceneCubes()
                         {
                             spawnPosition = OverrideTransform.position;     // health cubes specify location explicitly
                         }
+
+                        NetworkObject overrideprefab = null;
                         
-                        
+                        //CHANCES OF
                         
                         ////////////////////////////// Get Color ID
                             int colorID;
                             colorID = BlockamiData.GetRandomColorID();
+                            if(OverrideColorID > -1) colorID = OverrideColorID;
 
-                           // bool HasHealthPickup = Random.Range(0.0f,1.0f) > 0.92f;
-                           bool HasHealthPickup = false;
-                            
-                          //  bool IsRainbow = Random.Range(0.0f,1.0f) > 0.92f;
-                          bool IsRainbow = false;
-                            if (IsRainbow)
-                            {
-                                colorID = 10;
-                            }
-                            
-                           // bool IsEmoji = Random.Range(0.0f,1.0f) > 0.92f;;
-                            bool IsEmoji = false;
-                            if (IsEmoji)
-                            {
-                                colorID = 11;
-                            }
-                            
-                            // decide if also has HealthPickup
-                            // decide if is Rainbow
-                            // decide if Emoji
-                                // mutate ColorID if so
-                                
-                            if (OverrideColorID > -1)
-                            {
-                                colorID = OverrideColorID;        // health cubes specify their colorID explicitly
-                            }
-                            
-                            ////////////////////////////// Get Prefab accounting for Exotic Type
-                            SceneCubeData scd = BlockamiData.GetSceneCubeDataFromID(colorID);            // ATM the only reason for SceneCubeData is for clients to retrieve Color from ID
-                            var selectedPrefab = scd.SceneCubePrefab;           // retrieve a prefab associated with colorIds SceneCubeData type
+                         bool HasHealthPickup = false;
+                         bool IsRainbow = false;
+                         bool IsDownCube = false;
+                         bool HasMissilePickup = false;
+
+                         if (!IsHealthCube)
+                         {
+                             float rand = Random.Range(0.0f, 1.0f);
+
+                             if (rand > 0.98f)
+                             {
+                                 HasHealthPickup = true;  // Highest rarity
+                             }
+                             else if (rand > 0.93f)
+                             {
+                                 IsRainbow = true;
+                                 colorID = 10;
+                             }
+                             else if (rand > 0.88f) 
+                             {
+                                 if (CheckForDownCubeSpawn(spawnPosition))
+                                 {
+                                     IsDownCube = true;
+                                     colorID = 11;
+                                 }
+                             }
+                             else if (rand > 0.84f)
+                             {
+                                 HasMissilePickup = true;
+                             }
+                         }
+
+
+
+
+                         ////////////////////////////// Get Prefab accounting for Exotic Type
+                            SceneCubeData scd = BlockamiData.GetSceneCubeDataFromID(colorID);            // ATM the only reason for SceneCubeData to exist is for clients to retrieve Color from ID
+                           var selectedPrefab = scd.SceneCubePrefab;           // retrieve a prefab associated with colorIds SceneCubeData type
                             
                             if (IsHealthCube) selectedPrefab = HealthCubePrefab;   // healthcube prefab is not determined By ID
                             if (HasHealthPickup) selectedPrefab = HealthCubePickupPrefab;  // healthcubepickup prefab is not determined By ID
+                            if(IsRainbow) selectedPrefab = RainbowCubePrefab;
+                            if(IsDownCube) selectedPrefab = DownCubePrefab;
+                            if(HasMissilePickup) selectedPrefab = MissilePickupPrefab;
                             
+
                             
+                            if(selectedPrefab == null)
+                            {
+                                Debug.LogError("No prefab found for colorID: " + colorID);
+                                Debug.Break();
+                                return;
+                            }
                             
                             ////////////////////////////// SPAWN
                             
@@ -227,7 +321,7 @@ private IEnumerator SpawnSceneCubes()
                                 Debug.Log("no network object for prefab in spawn manager ");
                             }
                             
-                            if (!networkObject.IsSpawned)       // Spawning the ball is only required the first time it is fetched from the pool.
+                            if (!networkObject.IsSpawned)       // Spawning is only required the first time it is fetched from the pool.
                                 networkObject.Spawn(); 
                             
                             
@@ -235,8 +329,9 @@ private IEnumerator SpawnSceneCubes()
                             var go = networkObject.gameObject;
                             SceneCubeNetworking scs = go.GetComponent<SceneCubeNetworking>();
                             scs.NetIsHealthCube.Value = IsHealthCube;
-                            scs.NetColorID.Value = colorID;                          // assign the ID so clients can initialize     
-                            // for exotic cubes, any that have unique prefabs, can initialize variables according to prefab defaults instead of replicated vars   eg. HealthCubes
+                            scs.NetColorID.Value = colorID;                          // assign the ID so clients can initialize a color ID, if cube uses it
+                            
+                            // for exotic cubes, theyre traits will be evident to clients already via what prefab was used to spawn
                             // exotic cubes with unique ColorIDs can still initialize themselves from that alone
                             scs.Initialize();
 
@@ -252,27 +347,44 @@ private IEnumerator SpawnSceneCubes()
                         
                     }
 
-                  
+                    private static bool CheckForDownCubeSpawn(Vector3 spawnPosition)
+                    {
+                        Ray ray;
+                        Vector3 rayOrigin = spawnPosition;
+                        Vector3 rayDirection = Vector3.down;
+                        float rayDistance = 100.0f;
+                
+                
+                        ray = new Ray(rayOrigin, rayDirection * rayDistance);
+                        int SceneCubeLayerMask = 1 << LayerMask.NameToLayer("Hitable");
 
-   
-    
-    
-    
-    private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)     // KillSceneCubeServerRpc
+                        RaycastHit hitInfo;
+
+                        if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, SceneCubeLayerMask))
+                        {
+                            GameObject hitObject = hitInfo.collider.gameObject;
+                            var scs = hitObject.GetComponent<SceneCubeNetworking>();
+
+                           return scs != null;      // ray hit scene cube, or something else
+                        }
+                        
+                        return false;   // ray hit nothing
+                    }
+                    
+
+
+private void OnSceneCubeDied(SceneCubeNetworking destroyedCube)     // KillSceneCubeServerRpc
     {
-        if (destroyedCube.IsHealthCube)
-        {
-            OnHealthCubeDied(destroyedCube);
-           
-        }
         DeSpawnCube(destroyedCube);
         OnSCSDied?.Invoke(destroyedCube.NetworkObjectId);
     }
     
-    private void OnHealthCubeDied(SceneCubeNetworking destroyedCube)
-    {
-        //TriggerFrenzyTime();
-    }
+    // public void OnHealthCubeHit(SceneCubeNetworking destroyedCube)
+    // {
+    //     //TriggerFrenzyTime();
+    //     destroyedCube.m_healthCubeTransform.OnHealthCubeHit?.Invoke( destroyedCube.m_healthCubeTransform);
+    //
+    // }
     
     public void DeSpawnCube(SceneCubeNetworking Sc)      
     {
@@ -304,21 +416,8 @@ private IEnumerator SpawnSceneCubes()
     }
     
     
-     
-    public void PauseSpawning()
-    {
-        isPaused = true;
-        StopAllCoroutines();
-        isSpawning = false;
-    }
-    
-    
-    
-    public void ResumeSpawning()
-    {
-        isPaused = false;
-        StartSpawning();
-    }
+   
+  
     
     
     
@@ -333,18 +432,21 @@ private IEnumerator SpawnSceneCubes()
 
     
     
-    
-    [ContextMenu("TriggerFrenzyTime")]
-    public void TriggerFrenzyTime()
+
+    public void TriggerFrenzyTime(bool Enable)
     {
-        isFrenzyTime = true;
-        
-        // retriggerable delay
-        {
-            CancelInvoke("TriggerFrenzyTime");
-            Invoke("TriggerFrenzyTime", BlockamiData.FrenzyTimeDuration);
-        }
-        
+        isFrenzyTime = Enable;
+
+        if (frenzyCoroutine != null)
+            StopCoroutine(frenzyCoroutine);
+    
+        frenzyCoroutine = StartCoroutine(FrenzyTimeRoutine());
+    }
+
+    private IEnumerator FrenzyTimeRoutine()
+    {
+        yield return new WaitForSeconds(BlockamiData.FrenzyTimeDuration);
+        TriggerFrenzyTime(false);
     }
     
     
@@ -367,7 +469,7 @@ private IEnumerator SpawnSceneCubes()
     [ServerRpc(RequireOwnership = false)]
     public void RequestSpawnItemServerRpc(string prefabName, Vector3 Position, Quaternion rotation, ulong clientId)
     {
-        // Ensure the server is the one handling the spawn
+    
         if (!IsServer) return;
         
         var NetPrefab = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs.FirstOrDefault(x => x.Prefab.name == prefabName);
@@ -459,6 +561,7 @@ private IEnumerator SpawnSceneCubes()
         /////////////////////// Intialize
         var go = networkObject.gameObject;
         var pcs = go.GetComponent<PlayerCubeScript>();
+        pcs.IsAI.Value = isAI;
         pcs._NetPCData.Value = newCubeData;
         pcs.Initialize();
         m_AllPcs.Add(pcs);
@@ -543,6 +646,8 @@ private IEnumerator SpawnSceneCubes()
     public void ResetAllHealthCubes()
     {
         
+        var cubesToDestroy = new List<SceneCubeNetworking>();
+        
         List<DrawingGrid> AllDrawingGrids = FindObjectsOfType<DrawingGrid>().ToList();
 
         foreach (var dg in AllDrawingGrids)
@@ -558,7 +663,8 @@ private IEnumerator SpawnSceneCubes()
 
                 if (hct.HasHealthCube)
                 {
-                    hct.OwningHealthCube.KillSceneCubeServerRpc();
+                 //   hct.OwningHealthCube.KillSceneCubeServerRpc();
+                 cubesToDestroy.Add(hct.OwningHealthCube);
                 }
                
                 int colorID = idx;
@@ -569,12 +675,21 @@ private IEnumerator SpawnSceneCubes()
                 
                 Transform spawnTransform = hct.transform;
                 SpawnCubeServer(spawnTransform, colorID, true);
+                
+                hct._HealthPillar.ResetPillar();
                    
                 
             }
         }
         
-        TriggerFrenzyTime();
+        TriggerFrenzyTime(true);
+        
+        // Destroy after iteration
+        foreach (var cube in cubesToDestroy)
+        {
+            cube.KillSceneCubeServerRpc();
+        }
+    
     }
 
 

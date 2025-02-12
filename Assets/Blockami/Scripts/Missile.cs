@@ -4,11 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockami.Scripts;
 using Oculus.Interaction;
+using Oculus.Interaction.HandGrab;
+using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
 
 public class Missile : NetworkBehaviour
 {
+    [Header("NetworkVariables")] 
+    public NetworkVariable<bool> m_netShouldMove;
+    [SerializeField] public bool ShouldMove { get => m_netShouldMove.Value; set => m_netShouldMove.Value = value; }
+    
     [Header("Settings")]
     [SerializeField] private float speed;
     [SerializeField] public BlockamiData BlockamiData;
@@ -16,23 +22,28 @@ public class Missile : NetworkBehaviour
     
     [Header("State")]
     public SnapZone TriggeringSnapzone;
-    [SerializeField] public bool ShouldMove { get => m_netShouldMove.Value; set => m_netShouldMove.Value = value; }
     [SerializeField] public  DrawingGrid OwningDrawingGrid;
     
     [Header("NetworkGrabbable")]
     public Grabbable m_grabbable;
     public GrabInteractable m_grabInteractable;
     public TouchHandGrabInteractable m_touchHandGrabInteractable;
+    public HandGrabInteractable m_handgrabInteractable;
+    public SnapInteractor m_SnapInteractor;
 
     [Header("Internal")]
     [SerializeField] private Rigidbody rb;
     public RigidbodyKinematicLocker m_rigidbodyKinematicLocker;
-    
-    
-    [Header("NetworkVariables")] 
-    public NetworkVariable<bool> m_netShouldMove;
-    
+    public bool HasSnapped = false;
 
+
+
+    void Start()
+    {
+        var allGrids = FindObjectsOfType<DrawingGrid>();
+        OwningDrawingGrid = (DrawingGrid)UtilityLibrary.GetNearestObject(allGrids, transform.position);
+        dirToMove = OwningDrawingGrid.MoveDirection;
+    }
    
 
     private void OnEnable()
@@ -44,45 +55,58 @@ public class Missile : NetworkBehaviour
         
         m_touchHandGrabInteractable = GetComponentInChildren<TouchHandGrabInteractable>();
         m_grabInteractable = GetComponentInChildren<GrabInteractable>();
+        m_handgrabInteractable = GetComponentInChildren<HandGrabInteractable>();
+        m_SnapInteractor = GetComponentInChildren<SnapInteractor>();
 
         m_grabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;         // same func for both
         m_touchHandGrabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;
+        m_handgrabInteractable.WhenStateChanged += GrabInteractableOnWhenStateChanged;
+        m_SnapInteractor.WhenStateChanged += SnapInteractorStateChanged;
+      
+       
         
         m_netShouldMove.OnValueChanged += m_netShouldMoveChanged;
     }
-
+    
     private void OnDisable()
     {
-        m_grabInteractable.WhenStateChanged -= GrabInteractableOnWhenStateChanged;
+        m_grabInteractable.WhenStateChanged -= GrabInteractableOnWhenStateChanged;         // same func for both
         m_touchHandGrabInteractable.WhenStateChanged -= GrabInteractableOnWhenStateChanged;
+        m_handgrabInteractable.WhenStateChanged -= GrabInteractableOnWhenStateChanged;
+        m_SnapInteractor.WhenStateChanged -= SnapInteractorStateChanged;
+        
+        m_netShouldMove.OnValueChanged -= m_netShouldMoveChanged;
     }
 
-    private void Update()
+    private void SnapInteractorStateChanged(InteractorStateChangeArgs obj)
     {
-        if (m_rigidbodyKinematicLocker && !m_rigidbodyKinematicLocker.IsLocked)
+        //Debug.Log($"Missile Snap State changed from {obj.PreviousState} to {obj.NewState}");
+        
+        if  ((obj.NewState == InteractorState.Select  && 
+             obj.PreviousState == InteractorState.Hover ))       // when missile interactor 'Selects' Grid as interactable
         {
-            m_rigidbodyKinematicLocker.LockKinematic();
+       //     m_SnapInteractor.Interactable.WhenSelectingInteractorRemoved.Action += someevent;
+         //   m_SnapInteractor.Interactable.WhenSelectingInteractorViewRemoved += someevent;
+            OnMissileReleased();
+         
         }
     }
 
-    
-    
+    private void someevent(IInteractorView obj)
+    {
+       Debug.Log("snap interactable WhenSelectingInteractorViewRemoved");
+      // OnMissileReleased();
+    }
+
 
     public override void OnNetworkSpawn()
     {
         var id = NetworkObject.OwnerClientId;
-       
-       var grids = FindObjectsOfType<DrawingGrid>();        // get drawing grid
-       foreach (var grid in grids)
-       {
-           if (grid.OwnerClientId  == id)
-           {
-               OwningDrawingGrid = grid;
-               dirToMove = OwningDrawingGrid.MoveDirection;
-           }
-       }
-       
-       
+
+        var grid = LocalPlayerEntities.Instance.GetPlayerObjects(id).PlayerController.OwnedDrawingGrid;
+            
+        OwningDrawingGrid = grid;
+        dirToMove = OwningDrawingGrid.MoveDirection;
        
     }
     
@@ -100,61 +124,63 @@ public class Missile : NetworkBehaviour
  
     private void GrabInteractableOnWhenStateChanged(InteractableStateChangeArgs obj)
     {
-        if (obj.NewState == InteractableState.Select && 
-            (obj.PreviousState == InteractableState.Hover || obj.PreviousState == InteractableState.Normal))
-        {
-            // new grab
-        }
-        
-        if  ((obj.NewState == InteractableState.Hover || obj.NewState == InteractableState.Normal) && 
-             obj.PreviousState == InteractableState.Select )
-        {
-            // new release
-
-            OnMissileReleased();
-        }
+        // if (obj.NewState == InteractableState.Select && 
+        //     (obj.PreviousState == InteractableState.Hover || obj.PreviousState == InteractableState.Normal))
+        // {
+        //     // new grab
+        // }
+        //
+        // if  ((obj.NewState == InteractableState.Hover || obj.NewState == InteractableState.Normal) && 
+        //      obj.PreviousState == InteractableState.Select )
+        // {
+        //     // new release
+        //
+        //    // if(m_SnapInteractor.Interactable.())
+        //     //OnMissileReleased();
+        // }
     }
     
     
 
-    void OnMissileReleased()
+    void OnMissileReleased()       // on release
     {
-        _ = StartCoroutine(Impl());
+        ShouldMove = true;
+    }
+
+    public void SnapToZone()
+    {
+        if (HasSnapped) return;
         
-        IEnumerator Impl()
-        {
-            yield return new WaitUntil(() => m_grabbable.SelectingPointsCount == 0);
-        } 
-       
         Vector3 missilePosition = transform.position;
         
         Vector3 planeOrigin = OwningDrawingGrid.transform.position; 
         Vector3 planeNormal = OwningDrawingGrid.transform.forward; 
         
         Vector3 projectedPoint = missilePosition - Vector3.Dot(missilePosition - planeOrigin, planeNormal) * planeNormal;
-
+        
+        dirToMove = OwningDrawingGrid.MoveDirection;
         SnapZone nearestSnapzone = OwningDrawingGrid.AllSnapZones
             .OrderBy(snapzone => Vector3.Distance(projectedPoint, snapzone.transform.position))
             .FirstOrDefault();
         
-        if (nearestSnapzone != null)
-        {
-            TriggeringSnapzone = nearestSnapzone;
+        if (nearestSnapzone == null) return;
+        
+        TriggeringSnapzone = nearestSnapzone;
             
-            transform.position = TriggeringSnapzone.transform.position;   // doesnt work grabbable dictates a release position rotation ???
-            transform.rotation = TriggeringSnapzone.transform.rotation;
-            rb.MovePosition(TriggeringSnapzone.transform.position);
-            rb.MoveRotation(TriggeringSnapzone.transform.rotation);
-            ShouldMove = true;
-            FireMissileClient();
-        }
+        transform.position = TriggeringSnapzone.transform.position;   // doesnt work grabbable dictates a release position rotation ???
+        transform.rotation = TriggeringSnapzone.transform.rotation;
+        rb.MovePosition(TriggeringSnapzone.transform.position);
+        rb.MoveRotation(TriggeringSnapzone.transform.rotation);
+
+        HasSnapped = true;
     }
 
     private void m_netShouldMoveChanged(bool previousvalue, bool newvalue)
     {
         if (ShouldMove)
         {
-            FireMissileClient();
+            
+          //  FireMissileClient();
         }
     }
     
@@ -164,16 +190,36 @@ public class Missile : NetworkBehaviour
     {
         if (ShouldMove)
         {
+            m_grabbable.enabled = false;
+            if (rb.IsLocked())
+            {
+            rb.UnlockKinematic();
+                
+            }
+            SnapToZone();
+            rb.velocity = Vector3.zero;
             rb.position += dirToMove * speed;
-            transform.localScale *= 0.993f;
+            rb.rotation = OwningDrawingGrid.transform.rotation;
+            
+            rb.rotation = Quaternion.LookRotation(OwningDrawingGrid.transform.up*-1f, OwningDrawingGrid.transform.forward);
+
+            //    transform.localScale *= 0.993f;
+        }
+        else
+        {
+            if (!rb.IsLocked())
+            {
+                rb.LockKinematic();
+                
+            }
         }
 
     }
 
-    public  void FireMissileClient()
-    {
-       // play particles
-    }
+    // public  void FireMissileClient()
+    // {
+    //    // play particles
+    // }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -183,8 +229,19 @@ public class Missile : NetworkBehaviour
            if (scs)
            {
                if (scs == null || !scs.IsSpawned) return;
-        
+
+               if (scs.IsHealthCube)       // dont destroy health cubes, just do the consequence
+               {
+                   scs.HealthCubeHit();
+                   NetworkObject.Despawn();
+               }
+               else
+               {
+                   
                scs.KillSceneCubeServerRpc();
+               }
+               
+              
            }
         }
     }

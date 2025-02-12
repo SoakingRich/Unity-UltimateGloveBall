@@ -24,10 +24,11 @@ public class AIPlayer : NetworkBehaviour
         get => AIPlayerNum.Value;
         set => AIPlayerNum.Value = value;
     }
+    public bool DebugShowLines;
   // public int AIPlayerNum;
 
-    [Header("State")] 
-    public bool AIPlayerIsActive;
+   [Header("State")] 
+    public bool m_AIPlayerIsActive;
     public int CurrentColorID;
     public bool ClearedToShoot = true;
     public bool DrawSingleRunning;
@@ -79,6 +80,9 @@ public class AIPlayer : NetworkBehaviour
         BlockamiData = Resources.Load<BlockamiData>("BlockamiData");
         
         Application.runInBackground = true;   // ??? what
+        
+        ShootingIsPaused = true;
+     //   ShootingIsPaused = false;
     }
 
     
@@ -87,10 +91,15 @@ public class AIPlayer : NetworkBehaviour
     {
         NetLastGoodDrawLocation.OnValueChanged += OnLastGoodDrawLocationChanged;
         AIAvatar = GetComponentInChildren<AIAvatarBlockami>();
+        SpawnManager.Instance.OnTimeThresholdPassed += OnTimeThresholdPassed;
+        
     }
     
     
-    
+    private void OnTimeThresholdPassed()
+    {
+        ShootingIsPaused = false;
+    }
 
 
 
@@ -100,6 +109,7 @@ public class AIPlayer : NetworkBehaviour
     private void OnDisable()
     {
         NetLastGoodDrawLocation.OnValueChanged -= OnLastGoodDrawLocationChanged; 
+        SpawnManager.Instance.OnTimeThresholdPassed -= OnTimeThresholdPassed;
     }
 
     
@@ -202,7 +212,7 @@ public class AIPlayer : NetworkBehaviour
 
     
         
-        if (AIPlayerIsActive == false || ShootingIsPaused) yield break; // if Ai Is not active or is paused stop
+        if (m_AIPlayerIsActive == false || ShootingIsPaused) yield break; // if Ai Is not active or is paused stop
 
         
         if (CurrentPlayerShotObject)
@@ -258,8 +268,8 @@ public class AIPlayer : NetworkBehaviour
 
 
             ColorMatchFound = false;
-            CurrentColorID =
-                UnityEngine.Random.Range(0, 6);             // Change AI color for next find attempt,   only when no color match for this random snapzone, which is often
+            CurrentColorID = 
+                UnityEngine.Random.Range(0, BlockamiData.MaxNormalColorID);             // Change AI color for next find attempt,   only when no color match for this random snapzone, which is often
             
             // if (CurrentColorID == 6) CurrentColorID = 12;
             CancelInvoke("NewShot");
@@ -324,7 +334,7 @@ public class AIPlayer : NetworkBehaviour
 
             if (test.HasCurrentlySpawnedCube == true)
             {
-                Debug.Log("alreadyhasSceneCube"); // continuing testing directions
+       //         Debug.Log("alreadyhasSceneCube"); // continuing testing directions
                 continue; // snapzone has already spawned}
             }
 
@@ -392,7 +402,7 @@ public class AIPlayer : NetworkBehaviour
 
     public SceneCubeNetworking FindSceneCubeHit(SnapZone testingSnapZone)           // find a scene cube infront of the testing Snapzone
     {
-        if (AIPlayerIsActive)
+        if (m_AIPlayerIsActive)
         {
             int sceneCubeLayer = LayerMask.NameToLayer("Hitable");
             int sceneCubeMask = 1 << sceneCubeLayer;
@@ -428,8 +438,11 @@ public class AIPlayer : NetworkBehaviour
             }
             else
             {
-           //     Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.m_ColorTypes[CurrentColorID].color,1.0f,false);
 
+                if (DebugShowLines)
+                {
+                         Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.GetColorFromColorID(CurrentColorID),1.0f,false);
+                }
                 // Debug.Log("AI Ray Hit nothing");
 
                 return null;
@@ -444,7 +457,7 @@ public class AIPlayer : NetworkBehaviour
 
     public bool TestForColorMatch(SceneCubeNetworking s)
     {
-        if (s.ColorID == CurrentColorID)
+        if (s.ColorID == CurrentColorID || s.ColorID == 10)
         {
             ColorMatchFound = true; // set tracker bool to true  // doesnt this break the while loop???
             return true;
@@ -515,7 +528,7 @@ public class AIPlayer : NetworkBehaviour
     public void TurnOffInstead()
     {
         //   Debug.Log("SHOTTING UNPAUSED");
-        AIPlayerIsActive = false;
+        m_AIPlayerIsActive = false;
         // // myAvatar.ikActive = true;
         // myAvatar.ShouldLerpIKOn = true;
         // ShootingIsPaused = true;

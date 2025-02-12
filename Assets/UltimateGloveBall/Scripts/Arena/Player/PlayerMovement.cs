@@ -3,8 +3,10 @@
 // https://github.com/oculus-samples/Unity-UltimateGloveBall/tree/main/Assets/UltimateGloveBall/LICENSE
 
 using System.Collections;
+using Blockami.Scripts;
 using Meta.Multiplayer.Core;
 using Meta.Utilities;
+using Oculus.Interaction.MoveFast;
 using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Services;
 using UltimateGloveBall.Utils;
@@ -45,9 +47,9 @@ namespace UltimateGloveBall.Arena.Player
 
             
 #if UNITY_EDITOR
-            // In editor we set the camera to a certain height in case we don't get HMD inputs
-            var localPos = m_head.localPosition;
-            m_head.localPosition = localPos.SetY(m_inEditorHeadHeight);
+            // // In editor we set the camera to a certain height in case we don't get HMD inputs
+            // var localPos = m_head.localPosition;
+            // m_head.localPosition = localPos.SetY(m_inEditorHeadHeight);
 #endif
         }
 
@@ -132,6 +134,10 @@ namespace UltimateGloveBall.Arena.Player
             netTransformComp.Teleport(destination, rotation, Vector3.one);
             m_isMoving = false;
             FadeOutScreen();
+            
+            var HeightAdjust = FindObjectOfType<HeightAdjustment>();
+            if(HeightAdjust) HeightAdjust.SetHeight();
+                
         }
 
         public void MoveTo(Vector3 destination)
@@ -204,6 +210,10 @@ namespace UltimateGloveBall.Arena.Player
             }
         }
 
+        
+        
+        
+        
         private void Update()
         {
             if (m_isMoving)
@@ -218,32 +228,40 @@ namespace UltimateGloveBall.Arena.Player
                 }
             }       // seems to be some sort of AutoMoving,  rather than player input moving??
 
+#if UNITY_EDITOR
 
-            if (HasSnappedAvatarToPosition)
-            {
-                var ovrCam = FindObjectOfType<OVRCameraRig>();
-               
-                
-                if (ovrCam != null)
+           
+
+                var editorobj = GameObject.FindGameObjectWithTag("EditorLocation");
+
+                if (editorobj)
                 {
-                    if(ovrCam.transform.position.y != 1.18f)
+                    var ovrCam = FindObjectOfType<OVRCameraRig>();
+
+
+                    if (ovrCam != null)
                     {
-                        ovrCam.transform.position = new Vector3(ovrCam.transform.position.x, 1.18f, ovrCam.transform.position.z);
+                        ovrCam.transform.SetPositionAndRotation(editorobj.transform.position,
+                            editorobj.transform.rotation);
+
+                        // if (ovrCam.transform.position.y != 1.18f)
+                        // {
+                        //     ovrCam.transform.position = new Vector3(ovrCam.transform.position.x, 1.18f,
+                        //         ovrCam.transform.position.z);
+                        // }
+                    }
+
+                    if (!(XRSettings.enabled && XRSettings.isDeviceActive))
+                    {
+                        ovrCam.transform.position = new Vector3(
+                            editorobj.transform.position.x,
+                            ovrCam.transform.position.y,
+                            editorobj.transform.position.z);
                     }
                 }
-                
-                if(!(XRSettings.enabled && XRSettings.isDeviceActive))
-                {
-                    var editorobj = GameObject.FindGameObjectWithTag("EditorLocation");
+            
 
-                    if (editorobj)
-                    {
-                        ovrCam.transform.position = new Vector3(editorobj.transform.position.x, ovrCam.transform.position.y, editorobj.transform.position.z);
-                    }
-                }
-               
-                
-            }
+#endif
             
         }
 

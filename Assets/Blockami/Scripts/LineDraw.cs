@@ -6,27 +6,40 @@ public struct LineDrawer
 {
     private LineRenderer lineRenderer;
     public float lineSize;
+    public GameObject lineObj;
 
     public LineDrawer(float lineSize = 0.01f)
     {
-        GameObject lineObj = new GameObject("LineObj");
+        lineObj = new GameObject("LineObj");
         lineRenderer = lineObj.AddComponent<LineRenderer>();
         //Particles/Additive
         lineRenderer.material = new Material(Shader.Find("Hidden/Internal-Colored"));
 
         this.lineSize = lineSize;
+        
+        lineObj.gameObject.SetActive(false);
     }
 
     private void init(float lineSize = 0.2f)
     {
         if (lineRenderer == null)
         {
-            GameObject lineObj = new GameObject("LineObj");
+            lineObj = new GameObject("LineObj");
             lineRenderer = lineObj.AddComponent<LineRenderer>();
             //Particles/Additive
             lineRenderer.material = new Material(Shader.Find("Hidden/Internal-Colored"));
 
             this.lineSize = lineSize;
+        }
+
+        lineObj.gameObject.SetActive(false);
+    }
+
+    private void Start()
+    {
+        if (lineObj)
+        {
+            lineObj.gameObject.SetActive(false);
         }
     }
 
@@ -37,6 +50,8 @@ public struct LineDrawer
         {
             init(0.2f);
         }
+        
+        lineObj.gameObject.SetActive(true);
 
         //Set color
         lineRenderer.startColor = color;

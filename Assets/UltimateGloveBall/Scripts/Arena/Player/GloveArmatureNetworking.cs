@@ -140,8 +140,8 @@ namespace UltimateGloveBall.Arena.Player
 
         private void OnSideChanged(Glove.GloveSide previousvalue, Glove.GloveSide newvalue)
         {
-            // Orient armature properly related to the wrist
-            ApplyRotationAndScale(newvalue, true);
+            // // Orient armature properly related to the wrist
+            // ApplyRotationAndScale(newvalue, true);
         }
 
         // This will orient armature based on the wrist side

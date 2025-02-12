@@ -198,21 +198,21 @@ namespace UltimateGloveBall.Arena.Player
         
         public void OnShieldLeft(CallbackContext context)
         {
-            if (!InputEnabled) return;
-
-            OnShield(Glove.GloveSide.Left, context.phase is InputActionPhase.Performed);
+            // if (!InputEnabled) return;
+            //
+            // OnShield(Glove.GloveSide.Left, context.phase is InputActionPhase.Performed);
         }
 
         public void OnShieldRight(CallbackContext context)
         {
-            if (!InputEnabled) return;
-
-            OnShield(Glove.GloveSide.Right, context.phase is InputActionPhase.Performed);
+            // if (!InputEnabled) return;
+            //
+            // OnShield(Glove.GloveSide.Right, context.phase is InputActionPhase.Performed);
         }
 
         
         
-        private static void OnShield(Glove.GloveSide side, bool state)
+        public  void OnShield(Glove.GloveSide side, bool state)
         {
             var playerController = LocalPlayerEntities.Instance.LocalPlayerController;
             if (state)

@@ -198,7 +198,7 @@ MonoBehaviour:
   m_clapMinDist: 0.08
   handJointId: 1
   fuzzyborder: 0.03
-  DoRainbow: 1
+  DoRainbow: 0
   DebugDist: 0
 --- !u!1 &613780874
 GameObject:
@@ -8991,7 +8991,7 @@ GameObject:
   - component: {fileID: 1867836816432235113}
   - component: {fileID: 1867836816432235119}
   m_Layer: 0
-  m_Name: '[BuildingBlock] Left Ray'
+  m_Name: Left Ray
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16629,7 +16629,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandType: 1
-  _pointerPoseRoot: {fileID: 4978910432355512015}
+  _pointerPoseRoot: {fileID: 0}
   m_showState: 0
   RayHelper: {fileID: 0}
 --- !u!114 &6971121778812853129
@@ -16819,7 +16819,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandType: 0
-  _pointerPoseRoot: {fileID: 4978910432355512015}
+  _pointerPoseRoot: {fileID: 0}
   m_showState: 0
   RayHelper: {fileID: 0}
 --- !u!114 &6969202484685318305
@@ -18176,7 +18176,7 @@ MonoBehaviour:
   punchCooldown: 3
   camHandAlignmentDotCheck: 0.75
   DebugSpeed: 0
-  IsRight: 0
+  IsRight: 1
   _eyeTracking: {fileID: 0}
   lastPunchTime: 0
   canPunch: 1
@@ -18936,7 +18936,7 @@ MonoBehaviour:
   requestScenePermissionOnStartup: 1
   requestRecordAudioPermissionOnStartup: 1
   _localDimming: 0
-  _trackingOriginType: 0
+  _trackingOriginType: 1
   usePositionTracking: 1
   useRotationTracking: 1
   useIPDInPositionTracking: 1
@@ -23277,6 +23277,8 @@ GameObject:
   - component: {fileID: 5947713275472193442}
   - component: {fileID: 1537460504}
   - component: {fileID: 7011670372496385689}
+  - component: {fileID: 460099185}
+  - component: {fileID: 460099186}
   m_Layer: 0
   m_Name: IsBlocking
   m_TagString: Untagged
@@ -23346,6 +23348,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _activeState: {fileID: 5947713275472193442}
+--- !u!114 &460099185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7683488600870506607}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c87f31b5a3d83419be9dc078bfa0f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &460099186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7683488600870506607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 194b7d1054b8fa64b9bdcea46d06c3a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _activeState: {fileID: 5947713275472193442}
+  _includeChildrenAsDependents: 0
+  _gameObjects: []
+  _monoBehaviours:
+  - {fileID: 460099185}
 --- !u!1 &7686242046676186812
 GameObject:
   m_ObjectHideFlags: 0
@@ -26797,6 +26828,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
+      propertyPath: _activeState
+      value: 
+      objectReference: {fileID: 5947713275472193442}
     - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
       propertyPath: palmTransform
       value: 

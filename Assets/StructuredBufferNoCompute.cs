@@ -46,7 +46,7 @@ public class StructuredBufferNoCompute : MonoBehaviour
         if (!_objectsToTrack.Contains(newObj))
         {
             _objectsToTrack.Add(newObj);
-            Debug.Log($"Added new tracked object: {newObj.name}");
+         //  Debug.Log($"Added new tracked object: {newObj.name}");
             InitiateBuffer(); // Reinitialize buffer with the updated list
         }
     }
@@ -56,7 +56,7 @@ public class StructuredBufferNoCompute : MonoBehaviour
         if (_objectsToTrack.Contains(obj))
         {
             _objectsToTrack.Remove(obj);
-            Debug.Log($"Removed tracked object: {obj.name}");
+         //   Debug.Log($"Removed tracked object: {obj.name}");
             InitiateBuffer(); // Reinitialize buffer with the updated list
         }
     }

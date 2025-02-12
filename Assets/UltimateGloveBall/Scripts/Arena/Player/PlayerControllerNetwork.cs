@@ -25,7 +25,8 @@ namespace UltimateGloveBall.Arena.Player
     public class PlayerControllerNetwork : NetworkBehaviour                  // Handle gameplay input functions
     {                                                                        
 
-    private const float SHIELD_USAGE_RATE = 20f;    
+  //  private const float SHIELD_USAGE_RATE = 20f;    
+    private const float SHIELD_USAGE_RATE = 0.0f;    
         private const float SHIELD_CHARGE_RATE = 32f;
         private const float SHIELD_MAX_CHARGE = 100f;
         private const float SHIELD_RESET_TIME = 0.5f;
@@ -82,11 +83,19 @@ namespace UltimateGloveBall.Arena.Player
        
        
        
-       public void CyclePlayerColor()
+       public void CyclePlayerColor()       // shouldnt this be a server RPC
        {
-           OnCyclePlayerColor?.Invoke(this);
-        
-          NetColorID.Value = Random.Range(0, BlockamiData.MaxNormalColorID);
+           if (!BlockamiData.Instance.CycleColorsOnDraw) return;
+           
+          int newColorID;
+          do
+          {
+              newColorID = Random.Range(0, BlockamiData.MaxNormalColorID);
+          } while (newColorID == NetColorID.Value);
+
+          NetColorID.Value = newColorID;
+          
+          OnCyclePlayerColor?.Invoke(this);
        }
        
        
@@ -133,47 +142,47 @@ namespace UltimateGloveBall.Arena.Player
                 return;
             }
 
-            // if (m_shieldActivated)   // while Shield is on
-            // {
-            //     m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;     // server handles decrease of shieldCharge for all clients
-            //     if (m_shieldCharge.Value <= 0)                      // if shield is out of charge, stop it
-            //     {
-            //         m_shieldCharge.Value = 0;
-            //         StopShield(m_shieldSide);
-            //         m_shieldInResetMode.Value = true;
-            //         m_shieldDisabled.Value = true;
-            //         ArmatureLeft.DisableShield();
-            //         ArmatureRight.DisableShield();
-            //     }
-            //
-            //     ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-            //     ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
-            // }
-            // else if (m_shieldInResetMode.Value)          // handle if shield is in Cooldown (ResetMode), count time til it should not be. during reset it wont be recharging yet
-            // {
-            //     m_shieldOffTimer.Value += Time.deltaTime;
-            //     if (m_shieldOffTimer.Value >= SHIELD_RESET_TIME)
-            //     {
-            //         m_shieldOffTimer.Value = 0;
-            //         m_shieldInResetMode.Value = false;
-            //     }
-            // }
-            // else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)        // handle shield recharging
-            // {
-            //     m_shieldCharge.Value += SHIELD_CHARGE_RATE * Time.deltaTime;
-            //     if (m_shieldCharge.Value >= SHIELD_MAX_CHARGE)
-            //     {
-            //         m_shieldCharge.Value = SHIELD_MAX_CHARGE;     // when shield reaches full charge, enable it to be used again
-            //         if (m_shieldDisabled.Value)
-            //         {
-            //             m_shieldDisabled.Value = false;
-            //             ArmatureLeft.EnableShield();            // these funcs are just Setters for a networked variable elsewhere
-            //             ArmatureRight.EnableShield();
-            //         }
-            //     }
-            //     ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-            //     ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
-            // }
+            if (m_shieldActivated)   // while Shield is on
+            {
+                m_shieldCharge.Value -= SHIELD_USAGE_RATE * Time.deltaTime;     // server handles decrease of shieldCharge for all clients
+                if (m_shieldCharge.Value <= 0)                      // if shield is out of charge, stop it
+                {
+                    m_shieldCharge.Value = 0;
+                    StopShield(m_shieldSide);
+                    m_shieldInResetMode.Value = true;
+                    m_shieldDisabled.Value = true;
+                    ArmatureLeft.DisableShield();
+                    ArmatureRight.DisableShield();
+                }
+            
+                ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+                ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+            }
+            else if (m_shieldInResetMode.Value)          // handle if shield is in Cooldown (ResetMode), count time til it should not be. during reset it wont be recharging yet
+            {
+                m_shieldOffTimer.Value += Time.deltaTime;
+                if (m_shieldOffTimer.Value >= SHIELD_RESET_TIME)
+                {
+                    m_shieldOffTimer.Value = 0;
+                    m_shieldInResetMode.Value = false;
+                }
+            }
+            else if (m_shieldCharge.Value < SHIELD_MAX_CHARGE)        // handle shield recharging
+            {
+                m_shieldCharge.Value += SHIELD_CHARGE_RATE * Time.deltaTime;
+                if (m_shieldCharge.Value >= SHIELD_MAX_CHARGE)
+                {
+                    m_shieldCharge.Value = SHIELD_MAX_CHARGE;     // when shield reaches full charge, enable it to be used again
+                    if (m_shieldDisabled.Value)
+                    {
+                        m_shieldDisabled.Value = false;
+                        ArmatureLeft.EnableShield();            // these funcs are just Setters for a networked variable elsewhere
+                        ArmatureRight.EnableShield();
+                    }
+                }
+                ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+                ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+            }
         }
         
         
@@ -246,21 +255,21 @@ namespace UltimateGloveBall.Arena.Player
 
         public void TriggerShield(Glove.GloveSide side)           // clients check if shield is disabled, if not, trigger shield via RPC to server - called from PlayerInputController
         {
-            // if (m_shieldDisabled.Value)   // check if shield is disabled (out of charge)
-            // {
-            //     if (side == Glove.GloveSide.Right)
-            //     {
-            //         ArmatureRight.OnShieldNotAvailable();    
-            //     }
-            //     else
-            //     {
-            //         ArmatureLeft.OnShieldNotAvailable();
-            //     }
-            // }
-            // else
-            // {
-            //     TriggerShieldServerRPC(side);    //server trigger shield
-            // }
+            if (m_shieldDisabled.Value)   // check if shield is disabled (out of charge)
+            {
+                if (side == Glove.GloveSide.Right)
+                {
+                    ArmatureRight.OnShieldNotAvailable();    
+                }
+                else
+                {
+                    ArmatureLeft.OnShieldNotAvailable();
+                }
+            }
+            else
+            {
+                TriggerShieldServerRPC(side);    //server trigger shield
+            }
         }
 
     
@@ -268,81 +277,95 @@ namespace UltimateGloveBall.Arena.Player
         [ServerRpc]
         public void TriggerShieldServerRPC(Glove.GloveSide side)
         {
-            // if (m_shieldActivated)
-            // {
-            //     if (m_shieldSide == side)
-            //     {
-            //         return;
-            //     }
-            //                                                          // We are switching sides, deactivate current side first
-            //     {
-            //         if (m_shieldSide == Glove.GloveSide.Right)
-            //         {
-            //             ArmatureRight.DeactivateShield();
-            //         }
-            //         else
-            //         {
-            //             ArmatureLeft.DeactivateShield();
-            //         }
-            //     }
-            // }
-            //
-            // m_shieldActivated = true;
-            // m_shieldSide = side;
-            //
-            // if (m_shieldSide == Glove.GloveSide.Right)
-            // {
-            //     ArmatureRight.ActivateShield();
-            // }
-            // else
-            // {
-            //     ArmatureLeft.ActivateShield();
-            // }
+            if (m_shieldActivated)
+            {
+                if (m_shieldSide == side)
+                {
+                    return;
+                }
+                                                                     // We are switching sides, deactivate current side first
+                {
+                    if (m_shieldSide == Glove.GloveSide.Right)
+                    {
+                        ArmatureRight.DeactivateShield();
+                    }
+                    else
+                    {
+                        ArmatureLeft.DeactivateShield();
+                    }
+                }
+            }
+            
+            m_shieldActivated = true;
+            m_shieldSide = side;
+            
+            if (m_shieldSide == Glove.GloveSide.Right)
+            {
+                ArmatureRight.ActivateShield();
+            }
+            else
+            {
+                ArmatureLeft.ActivateShield();
+            }
         }
 
        
-        public void OnShieldHit(Glove.GloveSide side)      // called by OnTriggerEnter (probably from Ball), ONLY server detects hits
+        public void OnShieldHit(Glove.GloveSide side)      // called by OnTriggerEnter (on shield), ONLY server detects hits
         {
-            // m_shieldCharge.Value = 0;
-            // StopShield(side);
-            // m_shieldInResetMode.Value = true;
-            // m_shieldDisabled.Value = true;
-            // ArmatureLeft.DisableShield();
-            // ArmatureRight.DisableShield();
-            // ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
-            // ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
+          
+
+         float current = m_shieldCharge.Value;
+         current -= 0.2f;
+         Mathf.Clamp(current, 0, 1);
+         m_shieldCharge.Value = current;
+         if (current <= 0)
+         {
+             m_shieldCharge.Value = 0;
+              StopShield(side);
+              m_shieldInResetMode.Value = true;
+              m_shieldDisabled.Value = true;
+              ArmatureLeft.DisableShield();
+              ArmatureRight.DisableShield();
+         }
+         else
+         {
+           
+         }
+         
+            ArmatureLeft.ShieldChargeLevel = m_shieldCharge.Value;
+            ArmatureRight.ShieldChargeLevel = m_shieldCharge.Value;
         }
         
         
         private void StopShield(Glove.GloveSide side)
         {
-            // if (!IsServer)
-            // {
-            //     return;
-            // }
-            //
-            // if (!m_shieldActivated || side != m_shieldSide)
-            // {
-            //     return;
-            // }
-            //
-            // m_shieldActivated = false;
-            //
-            // if (m_shieldSide == Glove.GloveSide.Right)
-            // {
-            //     ArmatureRight.DeactivateShield();
-            // }
-            // else
-            // {
-            //     ArmatureLeft.DeactivateShield();
-            // }
+            if (!IsServer)
+            {
+                return;
+            }
+            
+            if (!m_shieldActivated || side != m_shieldSide)
+            {
+                return;
+            }
+            
+            m_shieldActivated = false;
+            
+            if (m_shieldSide == Glove.GloveSide.Right)
+            {
+                ArmatureRight.DeactivateShield();
+            }
+            else
+            {
+                ArmatureLeft.DeactivateShield();
+            }
         }
 
         
         [ServerRpc]
         public void StopShieldServerRPC(Glove.GloveSide side)
         {
-            // StopShield(side);
+             StopShield(side);
         }
 
     }

@@ -11,13 +11,13 @@ GameObject:
   - component: {fileID: 1794898070160805455}
   - component: {fileID: 7111719852992858089}
   - component: {fileID: 5407020727958951477}
-  m_Layer: 12
+  m_Layer: 0
   m_Name: Shield
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1794898070160805455
 Transform:
   m_ObjectHideFlags: 0
@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 1346680607619014593}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6120030445087461379}
   - {fileID: 1612382587085437608}
@@ -78,7 +78,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6120030445087461379}
   - component: {fileID: 2516588627896389643}
-  m_Layer: 11
+  m_Layer: 0
   m_Name: FireTrigger
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -179,7 +179,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f5f2ce5876816714c98f727e28461c11, type: 3}
       propertyPath: m_Layer
-      value: 12
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f5f2ce5876816714c98f727e28461c11, type: 3}

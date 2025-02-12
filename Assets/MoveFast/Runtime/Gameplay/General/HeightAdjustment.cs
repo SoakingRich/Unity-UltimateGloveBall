@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Oculus.Interaction.MoveFast
 {
@@ -19,15 +20,38 @@ namespace Oculus.Interaction.MoveFast
             yield return null; //takes 2 frame for the camera to get its position
             yield return null;
             SetHeight();
+            
+          
         }
-        
+
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
+        {
+            SetHeight();
+        }
+
+        [ContextMenu("SetHeight")]
         public void SetHeight()
         {
-            var _currentHeight = _cameraRig.centerEyeAnchor.position.y - _cameraRig.transform.position.y;
-            if (_currentHeight <= 1) { return; }
-        
-            float diff = _idealHeight - _currentHeight;
-            _cameraRig.transform.position = transform.position + Vector3.up * diff;
+          //   var _currentHeight = _cameraRig.centerEyeAnchor.position.y - _cameraRig.transform.position.y;
+          // //  if (_currentHeight <= 1) { return; }
+          //
+          //   float diff = _idealHeight - _currentHeight;
+          //   _cameraRig.transform.position = transform.position + Vector3.up * diff;
+          //   
+             Debug.Log("Blockami Log - SetHeight by HeightAdjustment");
+
+          var diff = _idealHeight - _cameraRig.centerEyeAnchor.position.y;
+          _cameraRig.transform.position = _cameraRig.transform.position + Vector3.up * diff;
         }
         
         // private void Start()

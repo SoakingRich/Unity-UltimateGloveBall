@@ -194,7 +194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3996707531
+  GlobalObjectIdHash: 2181075330
   InScenePlacedSourceGlobalObjectIdHash: 3996707531
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -222,9 +222,11 @@ MonoBehaviour:
   m_SCData:
     myColor: {r: 0, g: 0, b: 0, a: 0}
     SceneCubePrefab: {fileID: 0}
+  m_healthCubeTransform: {fileID: 0}
   BlockamiData: {fileID: 0}
   m_rigidbody: {fileID: 6889326301878998742}
   OwningDrawingGrid: {fileID: 0}
+  Visual: {fileID: 2559613152820054632}
   m_fakeSoftCube: {fileID: 0}
   m_squashStretch: {fileID: 0}
 --- !u!114 &1648493115
@@ -240,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
-  Ignore: 0
+  Ignore: 1
   springStrength: 12500
   springDamper: 0.1
   halfExtentsOverlapTest: {x: 0, y: 0, z: 0}
@@ -253,6 +255,7 @@ MonoBehaviour:
   deactivated: 0
   squashStretchObjectVisual: {fileID: 39917396127141082}
   WorldDir: {x: 0, y: 0, z: 0}
+  triggerBox: {fileID: 0}
 --- !u!114 &3885140608952599378
 MonoBehaviour:
   m_ObjectHideFlags: 0

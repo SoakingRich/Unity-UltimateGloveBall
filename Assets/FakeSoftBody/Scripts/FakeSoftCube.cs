@@ -5,6 +5,7 @@ using System.Linq;
 using Blockami.Scripts;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UIElements;
 
 public class FakeSoftCube : MonoBehaviour
 {
@@ -27,11 +28,13 @@ public class FakeSoftCube : MonoBehaviour
     float squashAmountTarget;
     bool notColliding;
     private Vector3 closestPointFromCentre, normalDir;
-    private Collider[] ContactColliders;
+    private BoxCollider[] ContactColliders;
     Rigidbody rb;
     public squashStretch squashStretchObjectVisual;
     public Vector3 WorldDir;
 
+    [Header("Internal")]
+    public BoxCollider triggerBox;
 
 
 
@@ -52,8 +55,11 @@ public class FakeSoftCube : MonoBehaviour
 
     void Start()
     {
+        triggerBox = GetComponent<BoxCollider>();
+        
         if (Ignore)
         {
+          //  triggerBox.enabled = false;
             enabled = false;
         }
 
@@ -117,16 +123,28 @@ public class FakeSoftCube : MonoBehaviour
 
     void FixedUpdate() // do testing for overlap with surrounding objects        // move away from collisions
     {
-        ContactColliders =
-            Physics.OverlapBox(transform.position, halfExtentsOverlapTest,
-                transform.rotation);  
+        if (!(Time.time % 1f <= 0.02f)) return;    // optimization ??
         
-        foreach (var contactCol in ContactColliders)
-        {
-            Vector3 closest = contactCol.ClosestPoint(transform.position);
-          //  if(Vector3.Dot((closest-transform.position).normalized,Vector3.up) < 0.0f) 
-            {AddPointSpring(closest);}
-        }
+      
+            Collider[] colliders = Physics.OverlapBox(transform.position, halfExtentsOverlapTest, transform.rotation);
+
+            BoxCollider[] boxColliders = colliders
+                .Where(collider => collider is BoxCollider)
+                .Cast<BoxCollider>()
+                .ToArray();
+
+            ContactColliders = boxColliders;
+
+
+            foreach (var contactCol in ContactColliders)
+            {
+                Vector3 closest = contactCol.ClosestPoint(transform.position);
+                //  if(Vector3.Dot((closest-transform.position).normalized,Vector3.up) < 0.0f) 
+                {
+                    AddPointSpring(closest);
+                }
+            }
+        
     }
 
     
@@ -141,14 +159,14 @@ public class FakeSoftCube : MonoBehaviour
             return;
         }
 
-        RaycastHit VetexHit = new RaycastHit();
+        RaycastHit VertexHit = new RaycastHit();
         Vector3 vertexDir = transform.position - vertexPos;
         float vertexMaxDistance = halfExtentsOverlapTest.magnitude;
 
         Vector3 VertexWorldVel = rb.GetPointVelocity(transform.position);
         WorldDir = VertexWorldVel.normalized;
 
-        float offset = vertexMaxDistance - 0.1f - VetexHit.distance;
+        float offset = vertexMaxDistance - 0.1f - VertexHit.distance;
         float vel = Vector3.Dot(vertexDir, VertexWorldVel);
         float force = (offset * springStrength) - (vel * springDamper);
         Mathf.Clamp(force, ForceClampMin, ForceClampMax);
@@ -156,7 +174,7 @@ public class FakeSoftCube : MonoBehaviour
 
         if (LimitToOnceBounce)
         {
-            CancelInvoke("Deactivate");
+            //CancelInvoke("Deactivate");   // dont bother cancelling invoke
             Invoke("Deactivate", m_timeBeforeDeactivate);
 
             Invoke("EnsureDeactivate", m_timeBeforeEnsureDeactivate);
@@ -177,16 +195,19 @@ public class FakeSoftCube : MonoBehaviour
     }
 
 
-    private void
-        OnTriggerStay(
-            Collider other)             // during trigger stay with the outer collider, record the closestpoint on the other collider to self
+    private void OnTriggerStay(Collider other)             // during trigger stay with the outer collider, record the closestpoint on the other collider to self
     {
         if (deactivated) return;
 
-        notColliding = false;
-        closestPointFromCentre = other.ClosestPoint(transform.position);
-        Debug.DrawLine(transform.position, closestPointFromCentre, Color.green);
-        normalDir = (transform.position - closestPointFromCentre).normalized;
+      //  if (!(Time.time % 1f <= 0.02f)) return;    // optimization ??
+        BoxCollider otherBox = other.GetComponent<BoxCollider>();
+    if(otherBox == null) return;
+        
+            notColliding = false;
+            closestPointFromCentre = otherBox.ClosestPoint(transform.position);
+            //Debug.DrawLine(transform.position, closestPointFromCentre, Color.green);
+            normalDir = (transform.position - closestPointFromCentre).normalized;
+        
     }
 
     private void

@@ -147,33 +147,39 @@ public class EyeTracking : MonoBehaviour
             if(hitObject!=null) DoTraceFromTracedSceneCube(hitObject);
         
         }
-    }   
-    
-    
-    
-    
-    
-    
-    
+    }
 
-    void DoTraceFromTracedSceneCube(GameObject SceneCube)     /// TRACE BACK TO A SCENE CUBE
+
+
+
+
+
+
+
+    void DoTraceFromTracedSceneCube(GameObject SceneCube) /// TRACE BACK TO A SCENE CUBE
     {
 
         SceneCubeNetworking sCs = SceneCube.GetComponent<SceneCubeNetworking>();
         if (sCs == null) sCs = SceneCube.transform.parent.GetComponent<SceneCubeNetworking>();
-        if(sCs == null)
+        if (sCs == null)
         {
-       //     Debug.Log("tracing back from object on SceneCube layer " + obj.name);
+            //     Debug.Log("tracing back from object on SceneCube layer " + obj.name);
             return;
         }
 
-        Vector3 dirToPlayerFromSceneCube = (CenterEyeAnchor.transform.position - SceneCube.transform.position).normalized;       // dir to Player from SceneCube
+        Vector3 dirToPlayerFromSceneCube =
+            (CenterEyeAnchor.transform.position - SceneCube.transform.position)
+            .normalized; // dir to Player from SceneCube
 
-        Vector3 dirCardinalDirSnapped = GetClosestCardinalDirection(dirToPlayerFromSceneCube, SceneCube);    // snap dirToPlayerFromSceneCube to a CardinalDirection
+        Vector3 dirCardinalDirSnapped =
+            GetClosestCardinalDirection(dirToPlayerFromSceneCube,
+                SceneCube); // snap dirToPlayerFromSceneCube to a CardinalDirection
 
-       
-        lineDrawer.DrawLineInGameView(SceneCube.transform.position, SceneCube.transform.position + dirCardinalDirSnapped * DrawLineLength, Color.green, 0.01f);
-
+        if (ShowLine)
+        {
+            lineDrawer.DrawLineInGameView(SceneCube.transform.position,
+                SceneCube.transform.position + dirCardinalDirSnapped * DrawLineLength, Color.green, 0.01f);
+        }
 
         Ray ray;
         float sphereRadius = 0.05f; 

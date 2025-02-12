@@ -39,13 +39,13 @@ public class AnchorUpdater : MonoBehaviour
 
             if (!(ovranch.TryGetComponent(out OVRLocatable locatable) && locatable.IsEnabled))
             {
-                Debug.Log("locatable is missing");
+           //     Debug.Log("locatable is missing");
             }
             else
             {
                 if (!locatable.IsEnabled)
                 {
-                    Debug.Log("locatable is not enabled");
+          //         Debug.Log("locatable is not enabled");
                 }
                 else
                 {

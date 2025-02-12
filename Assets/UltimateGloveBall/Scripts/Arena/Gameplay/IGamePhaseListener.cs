@@ -13,6 +13,7 @@ namespace UltimateGloveBall.Arena.Gameplay
     {
         void OnPhaseChanged(GameManager.GamePhase phase);     // deliver a var of type defined in another script
         void OnPhaseTimeUpdate(double timeLeft);
+        void OnPhaseTimeCounter(double timeCounter);
         void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB);
     }
 }

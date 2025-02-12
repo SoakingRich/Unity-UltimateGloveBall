@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class AddToComputeBuffer : MonoBehaviour
+public class AddToComputeBuffer : NetworkBehaviour
 {
     // Start is called before the first frame update
     void Start()
@@ -25,6 +26,18 @@ public class AddToComputeBuffer : MonoBehaviour
     }
 
     private void OnDestroy()
+    {
+        StructuredBufferNoCompute sbnc = FindObjectOfType<StructuredBufferNoCompute>();
+        if(sbnc) sbnc.RemoveTrackedObject(this.transform);
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        StructuredBufferNoCompute sbnc = FindObjectOfType<StructuredBufferNoCompute>();
+        if(sbnc) sbnc.AddTrackedObject(this.transform);
+    }
+    
+    public override void OnNetworkDespawn()
     {
         StructuredBufferNoCompute sbnc = FindObjectOfType<StructuredBufferNoCompute>();
         if(sbnc) sbnc.RemoveTrackedObject(this.transform);

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Oculus.Interaction;
 using Oculus.Interaction.Input;
 using Oculus.Interaction.MoveFast;
 using Unity.Netcode;
@@ -20,17 +21,39 @@ public class HandInventory : MonoBehaviour
     private Vector3 defaultSlotScale;
     public  float selectedScaleMultiplier = 1.2f;
     public  float lerpSpeed = 5f;
-
+    
+    
     public event Action<GameObject> OnItemSpawned;
+    
+    [Tooltip("T.")]
+    [SerializeField, Interface(typeof(IActiveState))]
+    private UnityEngine.Object _activeState;
 
-    private bool InventoryShouldBeActive
+    private IActiveState ActiveState;
+
+    protected virtual void Awake()
     {
-        get
+        ActiveState = _activeState as IActiveState;
+    }
+
+
+    
+    
+    
+    private bool InventoryShouldBeActive()
+    {
+
+        if (ActiveState.Active)
         {
+            return false;
+        }
+        
             float angleBetweenHeadAndPalm = Vector3.Angle(-palmTransform.up, headTrackedCamera.transform.forward);
             return Mathf.Abs(angleBetweenHeadAndPalm) < showLauncherThreshold;
-        }
+        
     }
+    
+    
     
     
     
@@ -60,7 +83,7 @@ public class HandInventory : MonoBehaviour
         }
         
         
-        bool shouldBeActive = InventoryShouldBeActive;
+        bool shouldBeActive = InventoryShouldBeActive();
 
         foreach (var slot in inventorySlots)
         {
@@ -69,14 +92,14 @@ public class HandInventory : MonoBehaviour
 
         if (shouldBeActive)
         {
-            UpdateSelectedSlot();
+            UpdateForSelectedSlot();
         }
     }
 
     
     
     
-    private void UpdateSelectedSlot()
+    private void UpdateForSelectedSlot()
     {
         InventorySlot closestSlot = null;
         float closestAngle = float.MaxValue;
@@ -116,31 +139,69 @@ public class HandInventory : MonoBehaviour
         //     GameObject spawnedItem = Instantiate(slot.CurrentItem, slot.transform.position, Quaternion.identity);
         //     OnItemSpawned?.Invoke(spawnedItem);
         // }
-        
-        if(NetworkManager.Singleton == null) return;
-        
+
+        if (NetworkManager.Singleton == null) return;
+
         if (slot.CurrentItemPrefab == null)
         {
-            Debug.LogError("InventorySlot does not have a prefab assigned!");
+            Debug.Log("InventorySlot does not have a prefab assigned!");
             return;
         }
 
-        var NetPrefab = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs.FirstOrDefault(x => x.Prefab.name == slot.CurrentItemPrefab.name);
-        
+        var NetPrefab =
+            NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs.FirstOrDefault(x =>
+                x.Prefab.name == slot.CurrentItemPrefab.name);
+
         if (NetPrefab != null)
         {
             // Ensure CurrentItemPrefab is a GameObject that has a NetworkObject component attached to it
-          
+
             var id = NetworkManager.Singleton.LocalClientId;
-            SpawnManager.Instance.RequestSpawnItemServer(slot.CurrentItemPrefab.name, slot.transform.position, slot.transform.rotation, id);
+            SpawnManager.Instance.RequestSpawnItemServer(slot.CurrentItemPrefab.name, slot.transform.position,
+                slot.transform.rotation, id);
         }
         else
         {
             Debug.LogError("NetworkObject not found for prefab: " + slot.CurrentItemPrefab.name);
         }
         
-       
+        
+        slot.SetCurrentItemPrefab(null);
+    }
+    
+    
+    
 
+    public void TryAddToInventory(string prefabName)
+    {
+        var NetPrefab = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs.FirstOrDefault(x => x.Prefab.name == prefabName);
+        if (NetPrefab == null)
+        {
+            Debug.LogError("NetworkObject not found for prefab: " + prefabName);
+            return;
+        }
+
+        var slot = inventorySlots.FirstOrDefault(x => x.CurrentItemPrefab == null);
+        if (slot == null)
+        {
+            Debug.LogError("No available inventory slots");
+            return;
+        }
+
+        slot.SetCurrentItemPrefab(NetPrefab.Prefab);
+        
+        
+        // GameObject spawnedItem = Instantiate(NetPrefab.Prefab, Position, rotation);
+        // NetworkObject networkObject = spawnedItem.GetComponent<NetworkObject>();
+        //     
+        // if (networkObject != null)
+        // {
+        //     networkObject.SpawnWithOwnership(clientId,true);  // Make sure the object is spawned and networked
+        // }
+        // else
+        // {
+        //     Debug.LogError("Prefab does not contain a NetworkObject.");
+        // }
 
     }
 }

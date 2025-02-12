@@ -15,31 +15,49 @@ public class CubeBehavior : NetworkBehaviour
     [Header("Internal")] 
     public SceneCubeNetworking scs;
     
-    public virtual void ResetCube()
-    {
-
-    }
-
 
     private void OnEnable()
     {
         scs = GetComponent<SceneCubeNetworking>();
         scs.SCDied += ScsOnSCDied;
         scs.OnIntialized += OnIntialized;
+        scs.SCDiedByPlayerCube += ScsOnSCDiedByPlayerCube;
     }
+    
+    private void OnDisable()
+    {
+        scs = GetComponent<SceneCubeNetworking>();
+        scs.SCDied -= ScsOnSCDied;
+        scs.OnIntialized -= OnIntialized;
+        scs.SCDiedByPlayerCube -= ScsOnSCDiedByPlayerCube;
+    }
+    
+    
+    
+    
 
     public virtual void OnIntialized()
     {
        
     }
-
-    void Start()
-    {
-       
-    }
-
+    
     public virtual void ScsOnSCDied(SceneCubeNetworking obj)
     {
       
     }
+    
+    public virtual void ScsOnSCDiedByPlayerCube(SceneCubeNetworking obj,ulong clientID)
+    {
+      
+        
+        
+    }
+    
+    
+    public virtual void ResetCube()
+    {
+
+    }
+    
+   
 }

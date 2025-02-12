@@ -80,11 +80,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
+  GlobalObjectIdHash: 1286674062
+  InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!114 &6798674826376377465
@@ -345,7 +347,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1175344499161683195
 Transform:
   m_ObjectHideFlags: 0
@@ -546,6 +548,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: baef9790972eb4a0e9af11bc4dde6f5e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4742473837712756890, guid: baef9790972eb4a0e9af11bc4dde6f5e, type: 3}
       propertyPath: m_LODs.Array.data[0].screenRelativeHeight
       value: 0.66716844
@@ -650,6 +656,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 2fa90cfb22c6a45ccad3063b71091b2d, type: 3}
       propertyPath: m_Layer
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2fa90cfb22c6a45ccad3063b71091b2d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2fa90cfb22c6a45ccad3063b71091b2d, type: 3}
@@ -1301,6 +1311,10 @@ PrefabInstance:
     - target: {fileID: 6628715792220771168, guid: 59be85fad785a54458082e61b61ac286, type: 3}
       propertyPath: m_Layer
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628715792220771168, guid: 59be85fad785a54458082e61b61ac286, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6628715792220771171, guid: 59be85fad785a54458082e61b61ac286, type: 3}
       propertyPath: m_RootOrder

@@ -29,18 +29,23 @@ namespace UltimateGloveBall.Arena.Gameplay
     public class GameManager : NetworkBehaviour
     {
         
-        public static GameManager _instance { get; private set; }
+        
+        public static GameManager _instance;    
 
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject); // Prevent duplicate singletons
-                return;
+        public static GameManager Instance {          
+            get {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<GameManager>();
+                    if (_instance == null)
+                    {
+                        _instance =   new GameManager();
+                    }
+
+                    
+                }
+                return _instance;
             }
-
-            _instance = this;
-         //   DontDestroyOnLoad(gameObject); // Persist across scenes
         }
     
         
@@ -83,7 +88,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         private NetworkVariable<GamePhase> m_currentGamePhase = new(GamePhase.PreGame);
         private NetworkVariable<double> m_gameStartTime = new();
 
-        private NetworkVariable<double> m_gameEndTime = new();
+        public NetworkVariable<double> m_gameEndTime = new();
 
         private readonly Dictionary<ulong, NetworkedTeam.Team> m_playersTeamSelection = new();             // dictionary of teams
 
@@ -119,28 +124,15 @@ namespace UltimateGloveBall.Arena.Gameplay
 
         private void OnEnable()
         {
-            m_allAIPlayers  = FindObjectsOfType<AIPlayer>();
-            
             
             m_currentGamePhase.OnValueChanged += OnPhaseChanged;      // rep notify for replicated variables
             m_gameStartTime.OnValueChanged += OnStartTimeChanged;
-            
-         
-            var HCTransforms = FindObjectsOfType<HealthCubeTransform>();
-            foreach (var hct in HCTransforms)
-            {
-                hct.OnHealthCubeDied += OnHealthCubeDied;
-            }
-
-
 
             UGBApplication.Instance.NetworkLayer.OnHostLeftAndStartingMigration += OnHostMigrationStarted;
-
             
         }
 
-   
-
+        
 
         private void OnDisable()
         {
@@ -150,7 +142,40 @@ namespace UltimateGloveBall.Arena.Gameplay
             UGBApplication.Instance.NetworkLayer.OnHostLeftAndStartingMigration -= OnHostMigrationStarted;
        //    UGBApplication.Instance.NetworkLayer.StartHostCallback -= StartGameGameManager;
         }
+        
+        
+        
+        
 
+        public void Awake()
+        {
+            
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject); // Prevent duplicate singletons
+                return;
+            }
+
+            _instance = this;
+            //   DontDestroyOnLoad(gameObject); // Persist across scenes
+            
+            
+            
+            
+            m_allAIPlayers  = FindObjectsOfType<AIPlayer>();
+            
+            var HCTransforms = FindObjectsOfType<HealthCubeTransform>();
+            foreach (var hct in HCTransforms)
+            {
+                hct.OnHealthTransformHit += OnHealthTransformHit;
+            }
+        }
+
+        
+        
+        
+        
+        
 
         void Start()
         {
@@ -382,17 +407,18 @@ namespace UltimateGloveBall.Arena.Gameplay
         public void StartBlockamiGame()
         {
             
-            SpawnManager.Instance.Invoke("ResumeSpawning", SpawnManager.Instance.m_AllScs.Any() ? 5.0f : 0.1f);
+          
             foreach (var ai in m_allAIPlayers)
             {
-                ai.PauseShootingForSeconds(SpawnManager.Instance.m_AllScs.Any() ? 5.0f : 0.1f,false);
+             //   ai.PauseShootingForSeconds(SpawnManager.Instance.m_AllScs.Any() ? 5.0f : 0.1f,false);
             }
             
-            SpawnManager.Instance.PauseSpawning();
+          
             SpawnManager.Instance.ClearAllCubes();
-            SpawnManager.Instance.TriggerFrenzyTime();
+            SpawnManager.Instance.TriggerFrenzyTime(true);
 
             SpawnManager.Instance.ResetAllHealthCubes();
+            SpawnManager.Instance.StartSpawning();
 
 
 
@@ -557,6 +583,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             foreach (var listener in m_phaseListeners)
             {
                 listener.OnPhaseTimeUpdate(timeLeft);
+                listener.OnPhaseTimeCounter(GAME_DURATION_SEC-timeLeft);
             }
         }
 
@@ -661,24 +688,36 @@ namespace UltimateGloveBall.Arena.Gameplay
         
         
         
-        private void OnHealthCubeDied(HealthCubeTransform obj)
+        private void OnHealthTransformHit(HealthCubeTransform obj)
         {
-            var allhct = obj.OwningDrawingGrid.AllHealthCubeTransforms;
-            var filteredHct = allhct.Where(htc => htc.OwningHealthCube != null).ToList();
-            if (filteredHct.Count == 0)
+            var allInvolvedHCTs = obj.OwningDrawingGrid.AllHealthCubeTransforms;
+          //  var AllHealthPillars = 
+            var filteredHct = allInvolvedHCTs.Where(htc => htc._HealthPillar.HealthInt > 0).ToList();   // check all healthPllars
+            if (filteredHct.Count == 0) // check if all HealthPillars are depleted??
             {
+
+
                 Debug.Log("All Heath cubes destroyed for " + obj.OwningDrawingGrid.name);
                 SpawnManager.Instance.ClearAllCubes();
                 Invoke("GoToPostGame", 5.0f);
+
+                var allHCTs = FindObjectsOfType<HealthCubeTransform>();
+                foreach (var hct in allHCTs)
+                {
+                    hct._HealthPillar.ScaleToFactorClientRpc(0.0f, false);
+                }
+
+                return;
             }
-            else
-            {
-                SpawnManager.Instance.TriggerFrenzyTime();
-            }
+
+            
+            
+            SpawnManager.Instance.TriggerFrenzyTime(true);
+            
             
             foreach (var hct in filteredHct)
             {
-                Debug.Log($"HealthCubeTransform: {hct.name} is still active.");
+              //  Debug.Log($"HealthCubeTransform: {hct.name} is still active.");
             }
         }
         

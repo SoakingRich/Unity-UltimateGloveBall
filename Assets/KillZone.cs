@@ -20,6 +20,7 @@ public class KillZone : MonoBehaviour
    
     private void OnTriggerEnter(Collider other)
     {
+        
         if (!NetworkManager.Singleton.IsServer && NetworkManager.Singleton.IsConnectedClient ) return;
         
         if (other.gameObject.layer == playerCubeLayer || other.CompareTag("PlayerCube"))
@@ -31,10 +32,14 @@ public class KillZone : MonoBehaviour
                 pc.KillPlayerCubeServerRpc();
             }
 
-
-
-            // Destroy(other.gameObject);
         }
+
+        var netObj = other.gameObject.GetComponent<NetworkObject>();
+        if (netObj)
+        {
+            netObj.Despawn(); 
+        }
+       
     }
 
 

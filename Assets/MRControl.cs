@@ -35,6 +35,7 @@ public class MRControl : MonoBehaviour
 
         if (HideAllMRIfEditor)
         {
+         
 
             var mruk = FindObjectOfType<MRUK>();
             mruk.enabled = false;

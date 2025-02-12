@@ -23,13 +23,17 @@ public class SceneCubeNetworking : NetworkBehaviour
     public Action OnIntialized;
 
     [Header("Internal")]
+    public HealthCubeTransform m_healthCubeTransform;
     public BlockamiData BlockamiData;
     public event System.Action<SceneCubeNetworking> SCDied;
+    public event System.Action<SceneCubeNetworking> HCHit;
+    public event System.Action<SceneCubeNetworking,ulong> SCDiedByPlayerCube;
     bool m_CubeisDead = true;
     [SerializeField, AutoSet] private Rigidbody m_rigidbody;
     private Material m_CubeMaterial;
     private static readonly int s_color = Shader.PropertyToID("_Color");
     public DrawingGrid OwningDrawingGrid;
+    public GameObject Visual;
 
     [Header("SquashStretch")]
     public FakeSoftCube m_fakeSoftCube;
@@ -40,8 +44,9 @@ public class SceneCubeNetworking : NetworkBehaviour
 
     private void Awake()
     {
-        BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        BlockamiData = BlockamiData.Instance;
         
         m_CubeMaterial = GetComponentInChildren<MeshRenderer>().material;
         m_fakeSoftCube = GetComponentInChildren<FakeSoftCube>();
@@ -89,7 +94,7 @@ public class SceneCubeNetworking : NetworkBehaviour
             if (matchingHealthCubeTransform != null)
             {
                 OwningDrawingGrid = matchingHealthCubeTransform.OwningDrawingGrid;
-                matchingHealthCubeTransform.IntializeWithHealthCube(this);
+                matchingHealthCubeTransform.InitializeWithHealthCube(this);
             }
         }
         
@@ -97,6 +102,8 @@ public class SceneCubeNetworking : NetworkBehaviour
         
     }
 
+    
+    
     private void SetPhysicsForSceneCube(bool EnablePhysics = true)
     {
         if (EnablePhysics)
@@ -113,22 +120,48 @@ public class SceneCubeNetworking : NetworkBehaviour
       
     }
 
-    [ContextMenu("EditorKillSceneCube")]
-    public void EditorKillSceneCube()
+    
+    
+    
+    
+    [ContextMenu("LocalKillSceneCube")]
+    public void LocalKillSceneCube()                       // non NetworkBehaviors need to destroy scene cubes sometimes, this function is called by them
     {
         KillSceneCubeServerRpc();
     }
 
+
+    
+
     [ServerRpc(RequireOwnership = false)]
-    public void KillSceneCubeServerRpc()
+    public void KillSceneCubeServerRpc(ulong InstigatingPlayer = default)
     {
+        if (IsHealthCube)
+        {
+     //     Debug.LogError("health cube being destroyed (by HealthPillar??)" );
+    
+        }
+        
         if (m_CubeisDead) return;
         
         m_CubeisDead = true;
         SCDied?.Invoke(this); // spawnmanager does something with this
         SetPhysicsForSceneCube(false);
+
+        if (InstigatingPlayer != default)
+        {
+            SCDiedByPlayerCube?.Invoke(this, InstigatingPlayer);
+        }
     }
 
+    
+    
+    
+    public void HealthCubeHit()
+    {
+        HCHit?.Invoke(this);
+    }
+    
   
 }
 

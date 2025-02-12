@@ -82,6 +82,11 @@ namespace UltimateGloveBall.Arena.Environment
             m_phaseCamera.Render();
         }
 
+        public void OnPhaseTimeCounter(double timeCounter)
+        {
+            //nothing
+        }
+        
         public void OnPhaseTimeUpdate(double timeLeft)    // render the time update once per second
         {
             var timeFloored = (long)Math.Floor(timeLeft);

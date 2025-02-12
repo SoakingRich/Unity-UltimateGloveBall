@@ -3,10 +3,13 @@
 using System.Collections;
 using UnityEngine;
 #if !UNITY_EDITOR && !UNITY_STANDALONE_WIN
+// using System.Threading.Tasks;
+// using Oculus.Platform;
+// using Meta.Utilities;
+#endif
 using System.Threading.Tasks;
 using Oculus.Platform;
 using Meta.Utilities;
-#endif
 
 namespace Meta.Multiplayer.Core
 {
@@ -24,6 +27,9 @@ namespace Meta.Multiplayer.Core
 
         public IEnumerator Set(string dest, string lobbyID, string matchID, bool joinable)
         {
+            ///// I DONT KNOW IF THIS IS FUNCTIONAL I SHOULD PROBABLY COPY CODE FROM
+            ///     https://github.com/oculus-samples/Unity-SharedSpaces/blob/main/Assets/SharedSpaces/Scripts/SharedSpacesGroupPresenceState.cs
+            
 #if !UNITY_EDITOR && !UNITY_STANDALONE_WIN
             return Impl().ToRoutine();
             
@@ -38,29 +44,33 @@ namespace Meta.Multiplayer.Core
                     groupPresenceOptions.SetMatchSessionId(matchID);
                 groupPresenceOptions.SetIsJoinable(joinable);
 
-                // temporary workaround until bug fix
-                // GroupPresence.Set() can sometimes fail. Wait until it is done, and if it
-                // failed, try again.
-                while (true)
-                {
-                    Debug.Log("Setting Group Presence...");
+                GroupPresence.Set(groupPresenceOptions);
+                OnSetComplete();
 
-                    var request = lobbyID is null ?
-                        GroupPresence.Clear() :
-                        GroupPresence.Set(groupPresenceOptions);
-                    var message = await request.Gen();
-
-                    if (message.IsError)
-                    {
-                        LogError("Failed to setup Group Presence", message.GetError());
-                        continue;
-                    }
-
-                    OnSetComplete();
-                    break;
-                }
+                // // temporary workaround until bug fix
+                // // GroupPresence.Set() can sometimes fail. Wait until it is done, and if it
+                // // failed, try again.
+                // while (true)
+                // {
+                //     Debug.Log("Setting Group Presence...");
+                //
+                //     var request = lobbyID is null ?
+                //         GroupPresence.Clear() :
+                //         GroupPresence.Set(groupPresenceOptions);
+                //     var message = await request.Gen();
+                //
+                //     if (message.IsError)
+                //     {
+                //         LogError("Failed to setup Group Presence", message.GetError());
+                //         continue;
+                //     }
+                //
+                //     OnSetComplete();
+                //     break;
+                // }
             }
 #else
+          
             OnSetComplete();
             yield break;
 #endif

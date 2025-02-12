@@ -16,7 +16,7 @@ namespace UltimateGloveBall.Arena.Player
     /// </summary>
     public class Shield : MonoBehaviour
     {
-        private const float HIT_TEXTURE_TIME = 1f;
+        private const float HIT_TEXTURE_TIME = 1f;     // how long hit effect happens
 
         private static readonly int s_shieldColorParam = Shader.PropertyToID("_Color");
         private static readonly int s_hitTimeParam = Shader.PropertyToID("_HitTime");
@@ -32,25 +32,60 @@ namespace UltimateGloveBall.Arena.Player
         private bool m_inHitState;
 
         private MaterialPropertyBlock m_materialBlock;
+        
+        
+        
+      
 
-        private void OnDisable()
+        private void OnCollisionEnter(Collision collision)    // on collision enter (rigidbody hit) with a potential ball
         {
-            if (m_inHitState)
+            // var ball = collision.gameObject.GetComponent<BallNetworking>();
+            // if (ball != null && !ball.HasOwner)
+            // {
+            //     OnBallHit();
+            // }
+            
+            // var othercube = collision.gameObject.GetComponent<PlayerCubeScript>();
+            // if (othercube)
+            // {
+            //     OnBallHit();
+            // }
+        }
+        
+        
+        private void OnBallHit()               // on Ball Hit,  doesnt destroy the ball??  ball has natural physics response with shield
+        {
+            m_hitTextureTimer = HIT_TEXTURE_TIME;
+            if (!m_inHitState)
             {
-                StopCoroutine(SwapBackToUnhitWhenReady());
-                m_inHitState = false;
-                RemoveKeyWord("_HITENABLED");
+                m_inHitState = true;
+                SetKeyWord("_HITENABLED");
+                _ = StartCoroutine(SwapBackToUnhitWhenReady());
             }
         }
 
-        private void OnCollisionEnter(Collision collision)
+        
+        
+        
+        
+        private IEnumerator SwapBackToUnhitWhenReady()        // disable HitEnabled keyword on shader, once the effect is complete
         {
-            var ball = collision.gameObject.GetComponent<BallNetworking>();
-            if (ball != null && !ball.HasOwner)
+            while (m_hitTextureTimer >= 0)
             {
-                OnBallHit();
+                m_hitTextureTimer -= Time.deltaTime;
+                SetValue(s_hitTimeParam, Mathf.Lerp(0, 1, 1f - m_hitTextureTimer / HIT_TEXTURE_TIME));
+                yield return null;
             }
+
+            m_inHitState = false;
+            RemoveKeyWord("_HITENABLED");
         }
+
+        
+        
+        
+        
+        
 
         private void OnTriggerEnter(Collider other)
         {
@@ -59,14 +94,28 @@ namespace UltimateGloveBall.Arena.Player
                 return;
             }
 
-            var fireball = other.gameObject.GetComponent<ElectricBall>();
-            if (fireball != null && !fireball.Ball.HasOwner && fireball.Ball.IsAlive)
+            // var fireball = other.gameObject.GetComponent<ElectricBall>();
+            // if (fireball != null && !fireball.Ball.HasOwner && fireball.Ball.IsAlive)
+            // {
+            //     var controller = m_armatureNet.OwnerClientId == NetworkManager.Singleton.LocalClientId
+            //         ? LocalPlayerEntities.Instance.LocalPlayerController
+            //         : LocalPlayerEntities.Instance.GetPlayerObjects(m_armatureNet.OwnerClientId).PlayerController;
+            //     controller.OnShieldHit(m_armatureNet.Side);
+            // }
+            
+            var othercube = other.gameObject.GetComponent<PlayerCubeScript>();
+            if (othercube)
             {
+                OnBallHit();
+                othercube.ReverseDirection();
+
+                if (!m_armatureNet) return;
                 var controller = m_armatureNet.OwnerClientId == NetworkManager.Singleton.LocalClientId
                     ? LocalPlayerEntities.Instance.LocalPlayerController
                     : LocalPlayerEntities.Instance.GetPlayerObjects(m_armatureNet.OwnerClientId).PlayerController;
                 controller.OnShieldHit(m_armatureNet.Side);
             }
+            
         }
 
         public void UpdateChargeLevel(float chargeLevel)
@@ -82,30 +131,7 @@ namespace UltimateGloveBall.Arena.Player
             }
         }
 
-        private void OnBallHit()
-        {
-            m_hitTextureTimer = HIT_TEXTURE_TIME;
-            if (!m_inHitState)
-            {
-                m_inHitState = true;
-                SetKeyWord("_HITENABLED");
-                _ = StartCoroutine(SwapBackToUnhitWhenReady());
-            }
-        }
-
-        private IEnumerator SwapBackToUnhitWhenReady()
-        {
-            while (m_hitTextureTimer >= 0)
-            {
-                m_hitTextureTimer -= Time.deltaTime;
-                SetValue(s_hitTimeParam, Mathf.Lerp(0, 1, 1f - m_hitTextureTimer / HIT_TEXTURE_TIME));
-                yield return null;
-            }
-
-            m_inHitState = false;
-            RemoveKeyWord("_HITENABLED");
-        }
-
+        
         private void SetValue(int valueId, float value)
         {
             m_materialBlock ??= new MaterialPropertyBlock();
@@ -131,6 +157,17 @@ namespace UltimateGloveBall.Arena.Player
             foreach (var shieldRenderer in m_shieldRenderers)
             {
                 shieldRenderer.material.DisableKeyword(keyword);
+            }
+        }
+        
+        
+        private void OnDisable()
+        {
+            if (m_inHitState)
+            {
+                StopCoroutine(SwapBackToUnhitWhenReady());
+                m_inHitState = false;
+                RemoveKeyWord("_HITENABLED");
             }
         }
     }

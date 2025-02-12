@@ -59,7 +59,7 @@ public class squashStretch : MonoBehaviour
         
         transform.localScale = Vector3.Slerp(transform.localScale,desiredScale, Time.deltaTime * speed);   // the object to have its Scale transformed
      //   transform.localScale = new Vector3(1-squashAmount, 1 + squashAmount, 1- squashAmount);   // the object to have its Scale transformed
-     transform.rotation = Quaternion.Euler(0.0f,transform.rotation.y,0.0f);
+      transform.rotation = Quaternion.Euler(0.0f,transform.rotation.y,0.0f);        // for some reason i need to constantly update rotation otherwise cubes go at weird angles????
 
      if (deactivated)
      {

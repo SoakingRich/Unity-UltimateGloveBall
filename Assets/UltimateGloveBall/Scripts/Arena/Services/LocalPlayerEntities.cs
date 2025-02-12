@@ -28,6 +28,8 @@ namespace UltimateGloveBall.Arena.Services
         public Glove LeftGloveHand;
         public Glove RightGloveHand;
         public PlayerAvatarEntity Avatar;
+        public TriggerPinchEvents TPELeft;
+        public TriggerPinchEvents TPERight;
 
         private readonly PlayerGameObjects m_localPlayerGameObjects = new();            // not a monobehavior
 

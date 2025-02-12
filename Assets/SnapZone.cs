@@ -20,7 +20,7 @@ public class SnapZone : MonoBehaviour
   
     private void Awake()
     {
-        OwningGrid = UtilityLibrary.FindObjectInParents<DrawingGrid>(this.transform);
+        OwningGrid = UtilityLibrary.FindObjectInDirectParents<DrawingGrid>(this.transform);
            // transform.parent.GetComponent<DrawingGrid>();
            
            HighlightCube.enabled = false;   
@@ -32,7 +32,7 @@ public class SnapZone : MonoBehaviour
     {
         if (!HasCurrentlySpawnedCube)
         {
-            Debug.Log("snapzone triggerStay colliding with " + other.name);
+         //   Debug.Log("snapzone triggerStay colliding with " + other.name);
 
             if (other.gameObject.CompareTag("Player"))
             {
@@ -50,11 +50,18 @@ public class SnapZone : MonoBehaviour
                       
                         if (TPE.m_IsCurrentlyPressed)
                         {
-                       
-                            if (!OnCooldown)     // why are there cooldowns?
+                            if (!TPE.DoAnyInteractorsHaveInteractables())
                             {
-                                OnCooldown = true;
-                                TrySpawnCube(TPE.IsRight);
+
+                                if (!OnCooldown) // why are there cooldowns?
+                                {
+                                    OnCooldown = true;
+                                    TrySpawnCube(TPE.IsRight);
+                                }
+                            }
+                            else
+                            {
+                                Debug.Log("Dont spawn because pinch has interactable");
                             }
                         }
                         else

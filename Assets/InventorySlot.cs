@@ -1,10 +1,11 @@
 using Oculus.Interaction.MoveFast;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class InventorySlot : MonoBehaviour
 {
-    public GameObject CurrentItem;
+    public GameObject CurrentItemGhost;
     public GameObject CurrentItemPrefab;
     private JointTracker jointTracker;
     private HandInventory handInventory;
@@ -16,6 +17,12 @@ public class InventorySlot : MonoBehaviour
         handInventory = GetComponentInParent<HandInventory>();
         slotCollider = GetComponent<SphereCollider>();
         jointTracker = GetComponent<JointTracker>();
+
+
+        if (CurrentItemPrefab != null)         // set initial inventory
+        {
+            SetCurrentItemPrefab(CurrentItemPrefab);
+        }
     }
 
     
@@ -23,22 +30,23 @@ public class InventorySlot : MonoBehaviour
     
     private void OnTriggerEnter(Collider other)
     {
-        //
-        // TriggerPinchEvents pinchEvents = other.GetComponent<TriggerPinchEvents>();
-        // if (pinchEvents != null && handInventory != null && handInventory.selectedSlot == this)
-        // {
-        //     if (pinchEvents != handInventory.OwningTriggerPinchEvents)
-        //     {
-        //         handInventory.SpawnInventoryItem(this);
-        //     }
-        // }
+        
+        TriggerPinchEvents pinchEvents = other.GetComponent<TriggerPinchEvents>();
+        if (pinchEvents != null && handInventory != null && handInventory.selectedSlot == this)
+        {
+            if (pinchEvents != handInventory.OwningTriggerPinchEvents)
+            {
+                
+                handInventory.SpawnInventoryItem(this);
+            }
+        }
     }
     
     
     
     
 
-    public void SetCurrentItemPrefab(GameObject newPrefab)
+    public void SetCurrentItemPrefab(GameObject newPrefab)        // set the prefab class to be spawned, when item spawning happens
     {
         CurrentItemPrefab = newPrefab;
         SetCurrentItemGhost(newPrefab);
@@ -50,26 +58,30 @@ public class InventorySlot : MonoBehaviour
     
     
     
-    public void SetCurrentItemGhost(GameObject newItem)
+    public void SetCurrentItemGhost(GameObject newItem)         // instantiate an Item Ghost in the slot,  to be shrunk and spinning
     {
-        if (CurrentItem != null)
+        if (CurrentItemGhost != null)
         {
-            Destroy(CurrentItem);
+            Destroy(CurrentItemGhost);
         }
+        
+        if(newItem == null)   // has been set null destroy everything
+            return;
 
-        CurrentItem = Instantiate(newItem, transform);
-        CurrentItem.transform.localPosition = Vector3.zero;
-        CurrentItem.transform.localRotation = Quaternion.identity;
+        CurrentItemGhost = Instantiate(newItem, transform);
+        CurrentItemGhost.transform.localPosition = Vector3.zero;
+        CurrentItemGhost.transform.localRotation = Quaternion.identity;
+        CurrentItemGhost.transform.SetParent(this.transform);
 
         // Get Mesh Filter
-        currentItemMeshFilter = CurrentItem.GetComponentInChildren<MeshFilter>();
+        currentItemMeshFilter = CurrentItemGhost.GetComponentInChildren<MeshFilter>();
         if (currentItemMeshFilter != null)
         {
             ScaleMeshToFit();
         }
 
         // Disable collisions
-        Collider[] colliders = CurrentItem.GetComponentsInChildren<Collider>();
+        Collider[] colliders = CurrentItemGhost.GetComponentsInChildren<Collider>();
         foreach (var collider in colliders)
         {
             collider.enabled = false;
@@ -95,6 +107,6 @@ public class InventorySlot : MonoBehaviour
         float slotRadius = slotCollider.radius * transform.lossyScale.x; // Adjust for InventorySlot scale
         float scaleFactor = (slotRadius * 2) / maxMeshDimension; // Fit within sphere diameter
 
-        CurrentItem.transform.localScale = Vector3.one * scaleFactor;
+        CurrentItemGhost.transform.localScale = Vector3.one * scaleFactor;
     }
 }

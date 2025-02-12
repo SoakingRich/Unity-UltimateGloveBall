@@ -8,6 +8,7 @@ using Oculus.Interaction.Input;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using Oculus.Avatar2;
+using Oculus.Interaction;
 using UltimateGloveBall.Arena.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -32,6 +33,8 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
     public InputAction RightTriggerAction;
     public InputAction LeftTriggerAction;
+
+    public IInteractor[] allInteractors;
     
     public HandVelocity[] HandVelocities;
     public EyeTracking eyeTracking;
@@ -94,8 +97,9 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
         }
         
         
-        BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        BlockamiData = BlockamiData.Instance;
 
         RightTriggerAction.Enable();
         LeftTriggerAction.Enable();
@@ -108,6 +112,21 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
         IsTriggerPinchingEvent += OnIsTriggerPinchingEvent; // internal binding
         TriggerPinchReleasedEvent += OnTriggerPinchReleasedEvent; // internal binding
+
+        allInteractors = m_hand.GetComponentsInChildren<IInteractor>();
+    }
+
+    public bool DoAnyInteractorsHaveInteractables()
+    {
+        foreach (var interact in allInteractors)
+        {
+            if (interact.HasInteractable)
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public void BindToPunchDetection(PunchDetectionPlane pd)

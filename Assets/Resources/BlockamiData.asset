@@ -14,12 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockamiData
   PlayerCubePrefab: {fileID: 1025375926450041331, guid: 428e07d058111da4a91960978a39017a, type: 3}
   DefaultSpawnRate: 1
-  FrenzySpawnRate: 5
+  FrenzySpawnRate: 4
   MaxCubes: 100
   FrenzyTimeDuration: 3.5
+  CycleColorsOnDraw: 1
   PlayerCubeMoveSpeed: 3
   PlayerCubeShrinkRate: 0.001
   ShootCubesOnPinchTriggerRelease: 1
+  LetIncorrectPlayerCubesBounceBack: 0
   AllCubeTypes:
     _serializedList:
     - Key: 0

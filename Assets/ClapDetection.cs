@@ -31,13 +31,15 @@ public class ClapDetection : MonoBehaviour
     private bool onCooldown;
     Pose hand1pose;
     Pose hand2pose;
-
+    private OVRManager ovrManager;
     
     void Start()
     {
-        BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        var ovrManager = FindObjectOfType<OVRManager>();
+        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
+        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+        BlockamiData = BlockamiData.Instance;
+        
+        ovrManager = FindObjectOfType<OVRManager>();
         AllSyntheticHands = ovrManager.GetComponentsInChildren<SyntheticHand>()?.ToList();
 
     }
@@ -79,11 +81,15 @@ public class ClapDetection : MonoBehaviour
         }
     }
 
+    
+    
+    
     private void ClapDetected()
     {
         OnClapDetected?.Invoke();
         OnClapEventDetected?.Invoke();
 
+        return;
         PlayerControllerNetwork pcn = FindObjectOfType<PlayerControllerNetwork>();     
         BlockamiHandTint bht = FindObjectOfType<BlockamiHandTint>();
         if (bht && !pcn)                                                // allow me to clap in the main menu for testing

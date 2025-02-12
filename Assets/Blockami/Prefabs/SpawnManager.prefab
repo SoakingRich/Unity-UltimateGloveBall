@@ -66,8 +66,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3937718838
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 254817013
+  InScenePlacedSourceGlobalObjectIdHash: 254817013
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -89,9 +89,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_pooledPrefabsList:
   - Prefab: {fileID: 3244966623390615973, guid: 26d056c63a178d14299df789bceddacf, type: 3}
-    PrewarmCount: 100
+    PrewarmCount: 200
   - Prefab: {fileID: 2869817041484581370, guid: 428e07d058111da4a91960978a39017a, type: 3}
-    PrewarmCount: 100
+    PrewarmCount: 80
+  - Prefab: {fileID: 2779015689000335370, guid: 2bf53dbce4471394dbd4af1ec4df1895, type: 3}
+    PrewarmCount: 24
+  - Prefab: {fileID: 6205776069717073731, guid: 57e7b5ff342974d409ea65cc4acefd81, type: 3}
+    PrewarmCount: 7
+  - Prefab: {fileID: 3965307466485346969, guid: bf0788a453e9f3243af36ec43e637c70, type: 3}
+    PrewarmCount: 7
+  - Prefab: {fileID: 5345929539408093069, guid: 03bfc9f46b8f7724ea3c792973a5fd4d, type: 3}
+    PrewarmCount: 7
+  - Prefab: {fileID: 3965307466485346969, guid: 677d457991c7525408570e43e5cff496, type: 3}
+    PrewarmCount: 7
 --- !u!114 &7211946510106488843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -106,15 +116,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BeginSpawnOnStart: 1
   BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
-  defaultSpawnRate: 1
-  frenzySpawnRate: 0.2
-  maxSceneCubes: 50
+  maxSceneCubes: 200
   m_cubePool: {fileID: 5385932383764071945}
   isPaused: 0
   isSpawning: 0
+  isFrenzyTime: 1
   currentSceneCubeCount: 0
   currentSpawnRate: 0
   allSpawnZones: []
   sceneCubePrefab: {fileID: 2477488121596093758, guid: 26d056c63a178d14299df789bceddacf, type: 3}
   PlayerShotPrefab: {fileID: 5034307167845157865, guid: b2495e65d8fca9c42b129aacf75cc768, type: 3}
   HealthCubePrefab: {fileID: 3024358095063372945, guid: 2bf53dbce4471394dbd4af1ec4df1895, type: 3}
+  RainbowCubePrefab: {fileID: 4997077170105987862, guid: 03bfc9f46b8f7724ea3c792973a5fd4d, type: 3}
+  DownCubePrefab: {fileID: 6446614617884292056, guid: 57e7b5ff342974d409ea65cc4acefd81, type: 3}
+  HealthCubePickupPrefab: {fileID: 4066252950691798530, guid: bf0788a453e9f3243af36ec43e637c70, type: 3}
+  MissilePickupPrefab: {fileID: 0}

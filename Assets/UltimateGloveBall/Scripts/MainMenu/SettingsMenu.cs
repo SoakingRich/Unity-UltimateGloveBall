@@ -30,6 +30,10 @@ namespace UltimateGloveBall.MainMenu
         [SerializeField] private TMP_Text m_versionText;
 
         private bool m_handleRegionChange = false;
+        
+        
+        
+        
         private void Awake()
         {
             var audioController = AudioController.Instance;

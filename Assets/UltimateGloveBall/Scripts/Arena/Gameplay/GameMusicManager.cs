@@ -42,7 +42,7 @@ namespace UltimateGloveBall.Arena.Gameplay
                     // do nothing
                     break;
                 case GameManager.GamePhase.InGame:
-                    PlayInGameMusic();
+                  //  PlayInGameMusic();
                     break;
                 case GameManager.GamePhase.PostGame:
                     PlayPostGameMusic();
@@ -56,6 +56,11 @@ namespace UltimateGloveBall.Arena.Gameplay
         public void OnPhaseTimeUpdate(double timeLeft)
         {
             // nothing
+        }
+
+        public void OnPhaseTimeCounter(double timeCounter)
+        {
+          //nothing
         }
 
         public void OnTeamColorUpdated(TeamColor teamColorA, TeamColor teamColorB)

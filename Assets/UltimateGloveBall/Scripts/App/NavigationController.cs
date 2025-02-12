@@ -75,7 +75,7 @@ namespace UltimateGloveBall.App
        
         public void NavigateToMatch(bool isHosting)                                                             // OnQuickMatchClicked() or   OnHostMatchClicked()  ??
         {
-            _ = StartCoroutine(SwitchRoomOnPhotonReady(m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion()),                      // ie. Arena-Aus-20469, could be hosting, not spectating
+            _ = StartCoroutine(SwitchRoomOnPhotonReady(m_playerPresenceHandler.GetArenaDestinationAPI(m_networkLayer.GetRegion()),                      // ie. Arena-Aus-20469, could be hosting, is definitely not spectating
                 m_playerPresenceHandler.GroupPresenceState.LobbySessionID, isHosting));                                                             // switch room after screen fade/ group presence generate / photon exec
         }
         
