@@ -83,9 +83,10 @@ namespace UltimateGloveBall.Arena.Player
        
        
        
-       public void CyclePlayerColor()       // shouldnt this be a server RPC
+       public void CyclePlayerColor(bool ByClap = false)       // shouldnt this be a server RPC
        {
-           if (!BlockamiData.Instance.CycleColorsOnDraw) return;
+           
+           if (!ByClap && !BlockamiData.Instance.CycleColorsOnDraw) return;
            
           int newColorID;
           do
@@ -131,7 +132,7 @@ namespace UltimateGloveBall.Arena.Player
 
         private void ClapDetectOnOnClapDetected()
         {
-          CyclePlayerColor();
+          CyclePlayerColor(true);
         }
 
 

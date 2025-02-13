@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockami.Scripts;
 using Meta.Utilities;
+using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Gameplay;
 using UltimateGloveBall.Arena.Player;
 using UltimateGloveBall.Arena.Services;
@@ -56,7 +57,9 @@ public class SpawnManager : NetworkBehaviour, IGamePhaseListener   // used to be
     //[SerializeField] private Object sceneCubePrefab;
     public Action OnTimeThresholdPassed;
     private bool TimeThresholdCalled = false;
-
+    public bool Overflowing;
+    public GameObject OverflowingCube;
+    
    // [Header("Actions")] public Action OnSCSDied;
     [Header("Actions")] 
     public Action<ulong> OnSCSDied;
@@ -152,6 +155,8 @@ public class SpawnManager : NetworkBehaviour, IGamePhaseListener   // used to be
     {
         m_gameManager.RegisterPhaseListener(this);
         if(BeginSpawnOnStart) StartSpawning();
+        
+        InvokeRepeating("SlowUpdate1Second", 1.0f, 1.0f);
     }
 
     
@@ -184,7 +189,21 @@ public void StartSpawning()
         isSpawning = false;
     }
 
+    
+    private GameObject LastOverflowCube;
+    
+    public void SlowUpdate1Second()
+    {
+        if (OverflowingCube != null)
+        {
+            if (OverflowingCube == LastOverflowCube)
+            {
+                AudioController.Instance.PlaySound("fail");
+            }
+        }
 
+        LastOverflowCube = OverflowingCube;
+    }
 
 
 private IEnumerator SpawnSceneCubes()
@@ -264,6 +283,8 @@ private IEnumerator SpawnSceneCubes()
                          bool IsDownCube = false;
                          bool HasMissilePickup = false;
 
+                         float dist;
+                         
                          if (!IsHealthCube)
                          {
                              float rand = Random.Range(0.0f, 1.0f);
@@ -279,7 +300,7 @@ private IEnumerator SpawnSceneCubes()
                              }
                              else if (rand > 0.88f) 
                              {
-                                 if (CheckForDownCubeSpawn(spawnPosition))
+                                 if (CheckForDownCubeSpawn(spawnPosition, out dist))
                                  {
                                      IsDownCube = true;
                                      colorID = 11;
@@ -289,6 +310,13 @@ private IEnumerator SpawnSceneCubes()
                              {
                                  HasMissilePickup = true;
                              }
+
+                             // CheckForDownCubeSpawn(spawnPosition, out dist);
+                             // if (dist < 1.0)
+                             // {
+                             //     Debug.Log("stack is too high, dist is " + dist);
+                             //     AudioController.Instance.PlaySound("fail");
+                             // }
                          }
 
 
@@ -347,13 +375,13 @@ private IEnumerator SpawnSceneCubes()
                         
                     }
 
-                    private static bool CheckForDownCubeSpawn(Vector3 spawnPosition)
+                    private static bool CheckForDownCubeSpawn(Vector3 spawnPosition, out float dist)
                     {
                         Ray ray;
                         Vector3 rayOrigin = spawnPosition;
                         Vector3 rayDirection = Vector3.down;
                         float rayDistance = 100.0f;
-                
+                        dist = 9999.0f;
                 
                         ray = new Ray(rayOrigin, rayDirection * rayDistance);
                         int SceneCubeLayerMask = 1 << LayerMask.NameToLayer("Hitable");
@@ -364,6 +392,8 @@ private IEnumerator SpawnSceneCubes()
                         {
                             GameObject hitObject = hitInfo.collider.gameObject;
                             var scs = hitObject.GetComponent<SceneCubeNetworking>();
+                            dist = hitInfo.distance;
+                            
 
                            return scs != null;      // ray hit scene cube, or something else
                         }

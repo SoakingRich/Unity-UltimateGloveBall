@@ -6,6 +6,7 @@ using System.Numerics;
 using Blockami.Scripts;
 using Meta.Utilities;
 using Oculus.Avatar2;
+using UltimateGloveBall.App;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
@@ -193,6 +194,9 @@ public class PlayerCubeScript : NetworkBehaviour
             }
             else        // FAIL SHOT
             {
+                
+                AudioController.Instance.PlaySound("fail");
+                
                 if (LetIncorrectPlayerCubesBounceBack)
                 {
                     ReverseDirection();

@@ -74,6 +74,20 @@ public class SceneCubeNetworking : NetworkBehaviour
         Initialize();
     }
 
+    public void Update()
+    {
+        if (transform.position.y > 1.4)
+        {
+            SpawnManager.Instance.OverflowingCube = this.gameObject;
+        }
+        else
+        {
+            if (SpawnManager.Instance.OverflowingCube == this.gameObject)
+            {
+                SpawnManager.Instance.OverflowingCube = null;
+            }
+        }
+    }
   
     public void Initialize()
     {

@@ -31,6 +31,9 @@ namespace UltimateGloveBall.App
         public float CrowdVolume => GameSettings.Instance.CrowdVolume;
         public int CrowdVolumePct => Mathf.RoundToInt(CrowdVolume * 100);
 
+        public AudioSource m_audioSource;
+        public AudioClip failsound;
+        
         private void Start()
         {
             SetMusicVolume(GameSettings.Instance.MusicVolume);            // set music volume to what is in the GameSettings singleton, 
@@ -54,6 +57,34 @@ namespace UltimateGloveBall.App
         {
             GameSettings.Instance.CrowdVolume = val;
             _ = m_audioMixer.SetFloat(CROWD_VOL, Mathf.Log10(val) * 20);
+        }
+
+
+        public void PlaySound(string name = null, AudioClip clip = null)
+        {
+            m_audioSource.Stop();
+
+            AudioClip audioToPlay = null;
+
+            if (clip == null)
+            {
+                switch (name)
+                {
+                    case "": break;
+                    case null: break;
+                    
+                    case "fail" : audioToPlay = failsound; break;
+                }
+            }
+            else
+            {
+                audioToPlay = clip;
+            }
+
+            if (!audioToPlay) return;
+            
+            m_audioSource.PlayOneShot(audioToPlay);
+
         }
     }
 }
