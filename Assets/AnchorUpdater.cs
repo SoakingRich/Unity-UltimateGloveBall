@@ -30,6 +30,7 @@ public class AnchorUpdater : MonoBehaviour
 
     private void UpdateAnchors()
     {
+        if (!_mruk) return;
         var MRUKRoom = _mruk.GetCurrentRoom();
         if (!MRUKRoom) return;
 

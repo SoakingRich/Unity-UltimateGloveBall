@@ -8078,10 +8078,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3276254460925446266, guid: ef909b300d87e0444802d07563df5461, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3437765716506724129, guid: ef909b300d87e0444802d07563df5461, type: 3}
       propertyPath: ikActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8139440552559906804, guid: ef909b300d87e0444802d07563df5461, type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9004585736972004442, guid: ef909b300d87e0444802d07563df5461, type: 3}

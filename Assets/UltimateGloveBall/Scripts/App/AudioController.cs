@@ -33,6 +33,7 @@ namespace UltimateGloveBall.App
 
         public AudioSource m_audioSource;
         public AudioClip failsound;
+        public AudioClip overflowsound;
         
         private void Start()
         {
@@ -74,6 +75,7 @@ namespace UltimateGloveBall.App
                     case null: break;
                     
                     case "fail" : audioToPlay = failsound; break;
+                    case "overflow" : audioToPlay = overflowsound; break;
                 }
             }
             else

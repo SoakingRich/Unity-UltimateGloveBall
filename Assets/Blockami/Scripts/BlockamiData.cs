@@ -52,6 +52,7 @@ namespace Blockami.Scripts
         public float PlayerCubeShrinkRate = 0.0001f;
         public bool ShootCubesOnPinchTriggerRelease = true;
         public bool LetIncorrectPlayerCubesBounceBack = false;
+        public bool HideSnapDots = false;
         
         [Header("CubeTypes")]
         [SerializedDictionary("ID", "Data")]

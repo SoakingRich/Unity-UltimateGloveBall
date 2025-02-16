@@ -194,7 +194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2181075330
+  GlobalObjectIdHash: 3996707531
   InScenePlacedSourceGlobalObjectIdHash: 3996707531
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -215,6 +215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97a96b63f7a70e644851f13c638b8cf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ErrorMaterial: {fileID: 2100000, guid: 03335665c67ac364c8bb47c2965c67a6, type: 2}
   NetColorID:
     m_InternalValue: 0
   NetIsHealthCube:
@@ -222,11 +223,14 @@ MonoBehaviour:
   m_SCData:
     myColor: {r: 0, g: 0, b: 0, a: 0}
     SceneCubePrefab: {fileID: 0}
+  m_NetIsErrorCube:
+    m_InternalValue: 0
   m_healthCubeTransform: {fileID: 0}
   BlockamiData: {fileID: 0}
   m_rigidbody: {fileID: 6889326301878998742}
   OwningDrawingGrid: {fileID: 0}
   Visual: {fileID: 2559613152820054632}
+  rend: {fileID: 0}
   m_fakeSoftCube: {fileID: 0}
   m_squashStretch: {fileID: 0}
 --- !u!114 &1648493115

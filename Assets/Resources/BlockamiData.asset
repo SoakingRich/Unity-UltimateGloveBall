@@ -18,7 +18,7 @@ MonoBehaviour:
   MaxCubes: 100
   FrenzyTimeDuration: 3.5
   CycleColorsOnDraw: 1
-  PlayerCubeMoveSpeed: 3
+  PlayerCubeMoveSpeed: 1.8
   PlayerCubeShrinkRate: 0.001
   ShootCubesOnPinchTriggerRelease: 1
   LetIncorrectPlayerCubesBounceBack: 0

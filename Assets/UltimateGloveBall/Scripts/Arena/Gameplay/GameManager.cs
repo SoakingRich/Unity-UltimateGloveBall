@@ -52,7 +52,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         
         
         private const double GAME_START_COUNTDOWN_TIME_SEC = 4;
-        private const double GAME_DURATION_SEC = 180;
+        private const double GAME_DURATION_SEC = 99999;
         public enum GamePhase
         {
             PreGame,
@@ -649,7 +649,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
 
-        private void RespawnAllPlayers()   // only server does this
+        public void RespawnAllPlayers()   // only server does this
         {
             if (!LocalPlayerEntities.Instance) return;
             

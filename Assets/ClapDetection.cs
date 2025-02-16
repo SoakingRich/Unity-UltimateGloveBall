@@ -90,12 +90,13 @@ public class ClapDetection : MonoBehaviour
         OnClapEventDetected?.Invoke();
 
         return;
+        
         PlayerControllerNetwork pcn = FindObjectOfType<PlayerControllerNetwork>();     
         BlockamiHandTint bht = FindObjectOfType<BlockamiHandTint>();
         if (bht && !pcn)                                                // allow me to clap in the main menu for testing
         {
             bht.CurrentColor = BlockamiData.GetColorFromColorID(BlockamiData.GetRandomColorID());
-            DbgDraw.WireSphere(hand1pose.position, hand1pose.rotation, new Vector3(0.3f,0.3f,0.3f), Color.yellow, 1.0f);
+          //  DbgDraw.WireSphere(hand1pose.position, hand1pose.rotation, new Vector3(0.3f,0.3f,0.3f), Color.yellow, 1.0f);
         }
     }
 }

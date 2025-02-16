@@ -42,7 +42,11 @@ public class Missile : NetworkBehaviour
     {
         var allGrids = FindObjectsOfType<DrawingGrid>();
         OwningDrawingGrid = (DrawingGrid)UtilityLibrary.GetNearestObject(allGrids, transform.position);
+        if (OwningDrawingGrid)
+        {
         dirToMove = OwningDrawingGrid.MoveDirection;
+            
+        }
     }
    
 

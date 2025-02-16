@@ -156,7 +156,7 @@ public class SpawnManager : NetworkBehaviour, IGamePhaseListener   // used to be
         m_gameManager.RegisterPhaseListener(this);
         if(BeginSpawnOnStart) StartSpawning();
         
-        InvokeRepeating("SlowUpdate1Second", 1.0f, 1.0f);
+        InvokeRepeating("SlowUpdate1Second", 1.0f, 2.5f);
     }
 
     
@@ -190,19 +190,28 @@ public void StartSpawning()
     }
 
     
-    private GameObject LastOverflowCube;
     
     public void SlowUpdate1Second()
     {
-        if (OverflowingCube != null)
+        int count = 0;
+        
+        foreach (var scs in m_AllScs)
         {
-            if (OverflowingCube == LastOverflowCube)
+            if (scs.transform.position.y > 1.2f)
             {
-                AudioController.Instance.PlaySound("fail");
+                count++;
+
+                if (count > 2)
+                {
+                    Debug.Log("Try Overflow sound");
+                    var audioController = AudioController.Instance;
+                    audioController.PlaySound("overflow");
+                    break;
+                }
             }
         }
-
-        LastOverflowCube = OverflowingCube;
+        
+      
     }
 
 
@@ -254,7 +263,7 @@ private IEnumerator SpawnSceneCubes()
 
                         if (!IsHealthCube && currentSceneCubeCount >= maxSceneCubes)
                         {
-                            Debug.Log("HITTING MAX SCENE CUBES");
+                            Debug.LogWarning("HITTING MAX SCENE CUBES");
                             return;
                             
                         }

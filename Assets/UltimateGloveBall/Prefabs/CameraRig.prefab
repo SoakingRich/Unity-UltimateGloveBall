@@ -26837,9 +26837,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 306058767}
     - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
+      propertyPath: _FistActiveState
+      value: 
+      objectReference: {fileID: 4550859628262030937}
+    - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
       propertyPath: headTrackedCamera
       value: 
       objectReference: {fileID: 4978910432355967251}
+    - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
+      propertyPath: _BlockingActiveState
+      value: 
+      objectReference: {fileID: 5947713275472193442}
     - target: {fileID: 9149644160337665313, guid: 29f920d1c86cf9549b5b0bdab4896b8b, type: 3}
       propertyPath: OwningTriggerPinchEvents
       value: 

@@ -111,7 +111,7 @@ namespace UltimateGloveBall.Arena.Player
         
         public void TeleportTo(Vector3 destination, Quaternion rotation)           // teleport player,  accounting for networking
         {
-            if(!HasSnappedAvatarToPosition)
+            if(!HasSnappedAvatarToPosition || !LocalPlayerEntities.Instance.Avatar)
             {
                 Debug.Log("no avatar on teleport");
                 savedPosition = destination;

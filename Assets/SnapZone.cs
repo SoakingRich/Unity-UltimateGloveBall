@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Blockami.Scripts;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class SnapZone : MonoBehaviour
   public bool OnCooldown = false;
  [SerializeField] public MeshRenderer HighlightCube;
   public Vector3 Coords;
+  public GameObject SnapzoneDot;
   
   
   
@@ -30,9 +32,16 @@ public class SnapZone : MonoBehaviour
     
     private void OnTriggerStay(Collider other)
     {
+        DoTriggerStay(other);
+    }
+
+    public void DoTriggerStay(Collider other)
+    {
+        if (BlockamiData.Instance.HideSnapDots) return;
+
         if (!HasCurrentlySpawnedCube)
         {
-         //   Debug.Log("snapzone triggerStay colliding with " + other.name);
+            //   Debug.Log("snapzone triggerStay colliding with " + other.name);
 
             if (other.gameObject.CompareTag("Player"))
             {
@@ -50,7 +59,7 @@ public class SnapZone : MonoBehaviour
                       
                         if (TPE.m_IsCurrentlyPressed)
                         {
-                            if (!TPE.DoAnyInteractorsHaveInteractables())
+                            if (!TPE.DoAnyInteractorsHaveInteractables())       // dont try and spawn cubes if were holding a missile
                             {
 
                                 if (!OnCooldown) // why are there cooldowns?

@@ -13,7 +13,7 @@ public class DebugDrawTest : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.DrawRay(transform.position, -transform.forward * 10.0f,Color.black,2.0f);
+        //Debug.DrawRay(transform.position, -transform.forward * 10.0f,Color.black,2.0f);
 
     }
 }

@@ -7,6 +7,7 @@ using Oculus.Interaction.Input;
 using Oculus.Interaction.MoveFast;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class HandInventory : MonoBehaviour
 {
@@ -27,13 +28,18 @@ public class HandInventory : MonoBehaviour
     
     [Tooltip("T.")]
     [SerializeField, Interface(typeof(IActiveState))]
-    private UnityEngine.Object _activeState;
-
-    private IActiveState ActiveState;
+    private UnityEngine.Object _BlockingActiveState;
+    private IActiveState BlockingActiveState;
+    
+    [Tooltip("T.")]
+    [SerializeField, Interface(typeof(IActiveState))]
+    private UnityEngine.Object _FistActiveState;
+    private IActiveState FistActiveState;
 
     protected virtual void Awake()
     {
-        ActiveState = _activeState as IActiveState;
+        BlockingActiveState = _BlockingActiveState as IActiveState;
+        FistActiveState = _FistActiveState as IActiveState;
     }
 
 
@@ -43,7 +49,7 @@ public class HandInventory : MonoBehaviour
     private bool InventoryShouldBeActive()
     {
 
-        if (ActiveState.Active)
+        if (BlockingActiveState.Active || FistActiveState.Active)
         {
             return false;
         }

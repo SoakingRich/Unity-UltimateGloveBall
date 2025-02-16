@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using UltimateGloveBall.Arena.Gameplay;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
@@ -41,8 +43,22 @@ public class EnsurePlayer : MonoBehaviour
                 // Set the camera to be the main camera
                 playerCamera.tag = "MainCamera";
                 Debug.Log("MR LOG - force spawning a player");
+                
+                
+                
+                GameManager gm = FindObjectOfType<GameManager>();
+                var playerGrids = FindObjectsOfType<DrawingGrid>().Where(s => s.DrawingGridIndex == 0).ToArray();
+                var playerGrid = playerGrids[0];
+                
+                Vector3 pos = playerGrid.transform.position + playerGrid.transform.rotation * Vector3.forward * -1.0f;
+                pos.y = 0;
+                
+                ClientRpcParams clientRpcParams = new ClientRpcParams();
+                gm.OnRespawnClientRpc(pos, playerGrid.transform.rotation, gm.CurrentPhase, clientRpcParams);
             }
         }
+        
+        
 
       
     }

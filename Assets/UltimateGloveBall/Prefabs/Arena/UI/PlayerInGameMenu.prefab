@@ -9225,8 +9225,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 2471101576705709510}
   m_HandleRect: {fileID: 8900710621753183215}
   m_Direction: 0
-  m_MinValue: 0.0001
-  m_MaxValue: 1
+  m_MinValue: 0.5
+  m_MaxValue: 8
   m_WholeNumbers: 0
   m_Value: 0.5
   m_OnValueChanged:
@@ -9831,7 +9831,7 @@ GameObject:
   - component: {fileID: 2006152480782118351}
   - component: {fileID: 1136798902835680567}
   m_Layer: 5
-  m_Name: SettingsPanel_01
+  m_Name: BlockamiDebugMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9876,8 +9876,8 @@ MonoBehaviour:
   m_NormalSpawnRateValueText: {fileID: 4418083328111288636}
   m_FrenzySpawnRateSlider: {fileID: 8486999735207615896}
   m_FrenzySpawnRateValueText: {fileID: 3289996842766130334}
-  m_crowdVolumeSlider: {fileID: 0}
-  m_crowdVolumeValueText: {fileID: 0}
+  m_DistanceSlider: {fileID: 4934790915676679708}
+  m_DistanceSliderValueText: {fileID: 6170942559480360239}
   BlockBounceBackToggle: {fileID: 6168828048691873103}
   m_CyclePlayerColorOnDraw: {fileID: 7932219258254670884}
   m_locomotionVignetteToggle: {fileID: 0}

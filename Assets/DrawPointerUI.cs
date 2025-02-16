@@ -86,6 +86,19 @@ public class DrawPointerUI : MonoBehaviour
         
         rend.enabled = true;
         
+        var eyetrack = FindObjectOfType<EyeTracking>();
+        if (eyetrack)
+        {
+            if (eyetrack.CurrentEyetrackedSnapZone)
+            {
+                LerpTargetPositoon = eyetrack.CurrentEyetrackedSnapZone.transform.position;
+                LerpPosition();
+                return;
+            }
+        }
+        
+        
+        
         if(allTPE == null) { 
             allTPE = FindObjectsOfType<TriggerPinchEvents>();
             return;
@@ -96,7 +109,7 @@ public class DrawPointerUI : MonoBehaviour
             
             if (allTPE.Length < 1) { return; }
 
-            foreach (var tpe in allTPE)
+            foreach (var tpe in allTPE)            // find the TriggerPinchEvents closest to the current position of DrawPointerUI
             {
                 float distance = Vector3.Distance(transform.position, tpe.transform.position);
                 if (distance < closestDistance)
@@ -109,7 +122,7 @@ public class DrawPointerUI : MonoBehaviour
             if (nearestObject == null) return;
 
             var allSnaps = OwningDrawingGrid.AllSnapZones;
-            var nearestSnapzone = UtilityLibrary.GetNearestObjectFromList(allSnaps, nearestObject.transform.position);
+            var nearestSnapzone = UtilityLibrary.GetNearestObjectFromList(allSnaps, nearestObject.transform.position);        // Lerp to nearest Snapzone to the hand
             LerpTargetPositoon = nearestSnapzone.gameObject.transform.position;
             
                 // Plane drawingPlane = new Plane(OwningDrawingGrid.transform.rotation * Vector3.forward,
@@ -121,6 +134,8 @@ public class DrawPointerUI : MonoBehaviour
              //   transform.position = projectedPosition;
             //    LerpTargetPositoon = projectedPosition;
 
+            
+            
                 LerpPosition();
 
 
@@ -129,6 +144,8 @@ public class DrawPointerUI : MonoBehaviour
 
     void LerpPosition()
     {
+       
+        
         transform.position = Vector3.Lerp(transform.position, LerpTargetPositoon, Time.deltaTime * LerpSpeed);
     }
 

@@ -76,7 +76,8 @@ MonoBehaviour:
   OnlyUseFirstLayer: 1
   AIPlayerNum:
     m_InternalValue: 0
-  AIPlayerIsActive: 1
+  DebugShowLines: 0
+  m_AIPlayerIsActive: 0
   CurrentColorID: 0
   ClearedToShoot: 1
   DrawSingleRunning: 0
@@ -300,6 +301,10 @@ PrefabInstance:
     - target: {fileID: 2624238633945081756, guid: bcdd1e6cac9086a41a6556b665a8ee98, type: 3}
       propertyPath: m_Name
       value: AIAvatar1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2624238633945081756, guid: bcdd1e6cac9086a41a6556b665a8ee98, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6517609132589051526, guid: bcdd1e6cac9086a41a6556b665a8ee98, type: 3}
       propertyPath: m_RootOrder

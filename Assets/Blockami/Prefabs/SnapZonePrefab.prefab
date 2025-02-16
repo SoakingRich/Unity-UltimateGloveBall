@@ -151,6 +151,7 @@ MonoBehaviour:
   OnCooldown: 0
   HighlightCube: {fileID: 5732648911773925625}
   Coords: {x: 0, y: 0, z: 0}
+  SnapzoneDot: {fileID: 4865189592194594793}
 --- !u!65 &2767527176286935708
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -272,6 +273,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c36e554bcfb107f48b66ea4c8db59613, type: 3}
+--- !u!1 &4865189592194594793 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7078090007190847430, guid: c36e554bcfb107f48b66ea4c8db59613, type: 3}
+  m_PrefabInstance: {fileID: 2431606747085244463}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7067615007733114998 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4876267081929285721, guid: c36e554bcfb107f48b66ea4c8db59613, type: 3}

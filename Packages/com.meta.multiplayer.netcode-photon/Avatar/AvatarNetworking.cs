@@ -98,7 +98,7 @@ namespace Meta.Multiplayer.Avatar
         
         
 
-        private void Update()                                          // track the Avatar exactly to the CameraRig transform
+        private void Update()                   // snap turn, turning                       // track the Avatar exactly to the CameraRig transform
         {
             if (m_entity && m_entity.IsLocal)
             {
@@ -107,7 +107,7 @@ namespace Meta.Multiplayer.Avatar
                     rigTransform.position,
                     rigTransform.rotation);
 
-                UpdateDataStream();                                   // update streaming data
+              //  UpdateDataStream();                                   // update streaming data
             }
         }
         
@@ -184,6 +184,7 @@ namespace Meta.Multiplayer.Avatar
         private void ReceiveAvatarData(byte[] data)
         {
 #if !UNITY_EDITOR
+#endif
             if (!m_entity)
             {
                 return;
@@ -197,7 +198,7 @@ namespace Meta.Multiplayer.Avatar
             m_currentStreamDelay = Mathf.LerpUnclamped(m_currentStreamDelay, delay, PLAYBACK_SMOOTH_FACTOR);
             m_entity.SetPlaybackTimeDelay(m_currentStreamDelay);
             m_streamDelayWatch.Restart();
-#endif
+
         }
     }
 }

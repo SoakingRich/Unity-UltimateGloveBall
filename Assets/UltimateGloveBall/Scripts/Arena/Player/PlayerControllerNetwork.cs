@@ -87,14 +87,20 @@ namespace UltimateGloveBall.Arena.Player
        {
            
            if (!ByClap && !BlockamiData.Instance.CycleColorsOnDraw) return;
-           
-          int newColorID;
-          do
-          {
-              newColorID = Random.Range(0, BlockamiData.MaxNormalColorID);
-          } while (newColorID == NetColorID.Value);
 
-          NetColorID.Value = newColorID;
+           NetColorID.Value = NetColorID.Value + 1;
+           if (NetColorID.Value >= BlockamiData.MaxNormalColorID)
+           {
+               NetColorID.Value = 0;
+           }
+           
+          // int newColorID;
+          // do
+          // {
+          //     newColorID = Random.Range(0, BlockamiData.MaxNormalColorID);
+          // } while (newColorID == NetColorID.Value);
+          //
+          // NetColorID.Value = newColorID;
           
           OnCyclePlayerColor?.Invoke(this);
        }

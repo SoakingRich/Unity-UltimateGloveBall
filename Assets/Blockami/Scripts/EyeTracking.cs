@@ -27,7 +27,8 @@ public class EyeTracking : MonoBehaviour
     public OVREyeGaze OVREyeRight;
     public OVREyeGaze OVREyeLeft;
     public Transform CenterEyeAnchor;
-    [FormerlySerializedAs("rotatedObject")] public GameObject CentreEyeObject;
+   public GameObject CentreEyeObject;
+    public Vector3 gazeSize = new Vector3(0.15f, 0.15f, 0.15f);
     
     [Header("State")]
     private bool ShouldUseAdvancedEyeTracking = false;
@@ -130,23 +131,85 @@ public class EyeTracking : MonoBehaviour
         
         int SceneCubeLayerMask = 1 << LayerMask.NameToLayer("Hitable");
         
-        RaycastHit hitInfo;
-        
-        if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, SceneCubeLayerMask))
-        {
-            GameObject hitObject = hitInfo.collider.gameObject;
-            var scs = hitObject.GetComponent<SceneCubeNetworking>();
-            if (!scs)
+        // RaycastHit hitInfo;
+        //
+        // if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, SceneCubeLayerMask))
+        // {
+        //     GameObject hitObject = hitInfo.collider.gameObject;
+        //     var scs = hitObject.GetComponent<SceneCubeNetworking>();
+        //     if (!scs)
+        //     {
+        //         Debug.Log("Hit something on the SceneCube layer!" + hitObject.name);
+        //     }
+        //
+        //
+        //     if (MeshRenderer != null) MeshRenderer.transform.position = hitObject.transform.position;
+        //
+        //     if (hitObject != null)
+        //     {
+        //         DoTraceFromTracedSceneCube(hitObject);
+        //         return;
+        //     }
+        // }
+
+        // BoxCast parameters
+        Vector3 halfExtents = gazeSize;
+            Vector3 center = CentreEyeObject.transform.position;
+            
+            
+            RaycastHit[] boxHits = Physics.BoxCastAll(
+                CentreEyeObject.transform.position, 
+                halfExtents, 
+                rayDirection, 
+                Quaternion.identity, 
+                rayDistance, 
+                SceneCubeLayerMask
+            );
+
+            GameObject bestCube = null;
+            float bestAlignment = -1.0f; // Track best alignment score
+
+            foreach (var boxHit in boxHits)
             {
-            Debug.Log("Hit something on the SceneCube layer!" + hitObject.name);
+                GameObject candidate = boxHit.collider.gameObject;
+                Vector3 cameraToCube = (candidate.transform.position - CentreEyeObject.transform.position).normalized;
+                float alignment = Vector3.Dot(cameraToCube, rayDirection); // Measure alignment
+
+                if (alignment > bestAlignment) // Find the best aligned cube
+                {
+                    bestAlignment = alignment;
+                    bestCube = candidate;
+                }
+            }
+
+            if (bestCube != null)
+            {
+                Debug.Log("Best-aligned SceneCube found: " + bestCube.name);
+                DoTraceFromTracedSceneCube(bestCube);
+            }
+            
+            //////VISUALIZATION:::::::::
+            
+            // Define the four corner points of the initial box
+            Vector3[] initialCorners = GetBoxCorners(center, halfExtents);
+            Vector3[] finalCorners = GetBoxCorners(center + rayDirection * rayDistance, halfExtents);
+
+            // Draw the initial and final box positions
+            DrawBox(initialCorners, Color.green);  // Start position
+            DrawBox(finalCorners, Color.red);  // End position
+
+            // Draw lines between start and end positions
+            for (int i = 0; i < 4; i++)
+            {
+                Debug.DrawLine(initialCorners[i], finalCorners[i], Color.yellow);
+            }
+
+            // Draw hits
+            foreach (var hit in boxHits)
+            {
+                Debug.DrawRay(hit.point, hit.normal * 0.2f, Color.blue);
             }
         
-        
-            if( MeshRenderer!= null) MeshRenderer.transform.position = hitObject.transform.position;
-            
-            if(hitObject!=null) DoTraceFromTracedSceneCube(hitObject);
-        
-        }
     }
 
 
@@ -203,8 +266,8 @@ public class EyeTracking : MonoBehaviour
             {
                 CurrentEyetrackedSnapZone = szs;
                 
-                Vector3 size = Vector3.one * 0.05f;
-                DbgDraw.WireSphere(CurrentEyetrackedSnapZone.transform.position, CurrentEyetrackedSnapZone.transform.rotation,size, Color.red);
+                // Vector3 size = Vector3.one * 0.05f;
+                // DbgDraw.WireSphere(CurrentEyetrackedSnapZone.transform.position, CurrentEyetrackedSnapZone.transform.rotation,size, Color.red);
 
                 // if (!szs.ChildCubeSpawned && !Player.DrawingIsBlocked)
                 // {
@@ -274,5 +337,27 @@ public class EyeTracking : MonoBehaviour
     //     //Gizmos.DrawSphere(transform.position, 1f);
     // }
 
+    
+    Vector3[] GetBoxCorners(Vector3 center, Vector3 halfExtents)
+    {
+        return new Vector3[]
+        {
+            center + new Vector3(halfExtents.x, halfExtents.y, halfExtents.z),
+            center + new Vector3(-halfExtents.x, halfExtents.y, halfExtents.z),
+            center + new Vector3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+            center + new Vector3(halfExtents.x, -halfExtents.y, halfExtents.z)
+        };
+    }
+
+// Utility to draw a box using Debug.DrawLine
+    void DrawBox(Vector3[] corners, Color color)
+    {
+        Debug.DrawLine(corners[0], corners[1], color);
+        Debug.DrawLine(corners[1], corners[2], color);
+        Debug.DrawLine(corners[2], corners[3], color);
+        Debug.DrawLine(corners[3], corners[0], color);
+    }
+    
+    
 }
 
