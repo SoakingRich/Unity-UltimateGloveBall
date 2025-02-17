@@ -75,7 +75,7 @@ public class PlayerCubeScript : NetworkBehaviour
     
     public void Initialize( )         // on rep change of     PCData.OnValueChanged
     {
-      
+        isFail = false;
         Rend.enabled = true;
         transform.localScale = OriginalScale;
         m_CubeisDead = false;

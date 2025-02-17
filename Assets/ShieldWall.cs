@@ -39,7 +39,8 @@ public class ShieldWall : MonoBehaviour, IGamePhaseListener
         if (enable)
         {
             visual.transform.DOKill();
-            visual.transform.localScale = Vector3.zero;
+            visual.transform.localScale = new Vector3(1, 0.0f, 1);
+
             visual.SetActive(true);
             visual.transform.DOScaleY(1.0f, 1.0f);
         }

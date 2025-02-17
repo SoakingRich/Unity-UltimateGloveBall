@@ -651,6 +651,8 @@ namespace UltimateGloveBall.Arena.Gameplay
 
         public void RespawnAllPlayers()   // only server does this
         {
+            return;   // dont bother for now
+            
             if (!LocalPlayerEntities.Instance) return;
             
             foreach (var clientId in LocalPlayerEntities.Instance.PlayerIds)

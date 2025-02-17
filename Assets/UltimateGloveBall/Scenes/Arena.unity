@@ -9193,6 +9193,10 @@ PrefabInstance:
       propertyPath: MoveDirection.z
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2072351225909232129, guid: 14a4a72d2709ee547aa6945675683e3a, type: 3}
+      propertyPath: AIPlayerIsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2072351225909232132, guid: 14a4a72d2709ee547aa6945675683e3a, type: 3}
       propertyPath: m_Name
       value: AIDrawingGridPrefab1

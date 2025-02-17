@@ -9,6 +9,7 @@ using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class DrawPointerUI : MonoBehaviour
 {
@@ -18,8 +19,9 @@ public class DrawPointerUI : MonoBehaviour
     public MaterialPropertyBlockEditor _materialPropertyBlockEditor;
     private Renderer rend;
     public float LerpSpeed = 10.0f;
+    public bool FPSControlled = false;
     
-    private Vector3 LerpTargetPositoon;
+    public Vector3 LerpTargetPosition;
     // private static readonly int s_interiorColor = Shader.PropertyToID("InteriorColor");
     // private static readonly int s_fresnelColor = Shader.PropertyToID("FresnelColor");
     
@@ -85,13 +87,21 @@ public class DrawPointerUI : MonoBehaviour
         }
         
         rend.enabled = true;
+
+
+        if (FPSControlled)
+        {
+            LerpPosition();
+            return;       // use fpscontrolled value
+        }
+        
         
         var eyetrack = FindObjectOfType<EyeTracking>();
         if (eyetrack)
         {
             if (eyetrack.CurrentEyetrackedSnapZone)
             {
-                LerpTargetPositoon = eyetrack.CurrentEyetrackedSnapZone.transform.position;
+                LerpTargetPosition = eyetrack.CurrentEyetrackedSnapZone.transform.position;
                 LerpPosition();
                 return;
             }
@@ -123,7 +133,7 @@ public class DrawPointerUI : MonoBehaviour
 
             var allSnaps = OwningDrawingGrid.AllSnapZones;
             var nearestSnapzone = UtilityLibrary.GetNearestObjectFromList(allSnaps, nearestObject.transform.position);        // Lerp to nearest Snapzone to the hand
-            LerpTargetPositoon = nearestSnapzone.gameObject.transform.position;
+            LerpTargetPosition = nearestSnapzone.gameObject.transform.position;
             
                 // Plane drawingPlane = new Plane(OwningDrawingGrid.transform.rotation * Vector3.forward,
                 //     OwningDrawingGrid.transform.position);
@@ -146,7 +156,7 @@ public class DrawPointerUI : MonoBehaviour
     {
        
         
-        transform.position = Vector3.Lerp(transform.position, LerpTargetPositoon, Time.deltaTime * LerpSpeed);
+        transform.position = Vector3.Lerp(transform.position, LerpTargetPosition, Time.deltaTime * LerpSpeed);
     }
 
 
@@ -159,7 +169,7 @@ public class DrawPointerUI : MonoBehaviour
     public void Move(SnapZone s)
     {
     //    transform.position = s.transform.position;
-    LerpTargetPositoon = s.transform.position;
+    LerpTargetPosition = s.transform.position;
     }
     
     

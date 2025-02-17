@@ -85,7 +85,11 @@ public class BlockamiMouse : MonoBehaviour
                     {
                         allTPE[0].transform.position = hit.transform.position;
                         Collider c = allTPE[0].GetComponent<Collider>();
-                        snapzone.DoTriggerStay(c); 
+                        snapzone.DoTriggerStay(c);
+
+
+                        snapzone.OwningGrid.PointerUI.FPSControlled = true;
+                        snapzone.OwningGrid.PointerUI.LerpTargetPosition = snapzone.transform.position;
                     }
 
                 }
