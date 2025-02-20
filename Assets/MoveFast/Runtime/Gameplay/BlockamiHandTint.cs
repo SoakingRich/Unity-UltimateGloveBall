@@ -40,8 +40,7 @@ namespace Oculus.Interaction.MoveFast
 
         private void Awake()
         {
-            BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-            BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
+         
 
             var ovrManager = FindObjectOfType<OVRManager>();
             if (!ovrManager)
@@ -97,7 +96,7 @@ namespace Oculus.Interaction.MoveFast
 
                 if (con)
                 {
-                    Col = BlockamiData.GetColorFromColorID(con.ColorID);
+                    Col = BlockamiData.Instance.GetColorFromColorID(con.ColorID);
 
                 }
                 else if (CurrentColor != _StartingColor)

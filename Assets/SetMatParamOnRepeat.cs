@@ -122,7 +122,8 @@ public class SetMatParamOnRepeat : MonoBehaviour
         
         
         // Get the current time to set the material parameter
-        float currentTime = Time.timeSinceLevelLoad;
+       // float currentTime = Time.timeSinceLevelLoad;
+       float currentTime = Time.realtimeSinceStartup;
         
         
 #if UNITY_EDITOR

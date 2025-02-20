@@ -15,7 +15,6 @@ public class ShieldWall : MonoBehaviour, IGamePhaseListener
     void Start()
     {
         SpawnManager.Instance.OnTimeThresholdPassed += OnTimeThresholdPassed;
-        
     }
 
     private void OnTimeThresholdPassed()
@@ -39,15 +38,18 @@ public class ShieldWall : MonoBehaviour, IGamePhaseListener
         if (enable)
         {
             visual.transform.DOKill();
-            visual.transform.localScale = new Vector3(1, 0.0f, 1);
+           visual.transform.localScale = new Vector3(1.0f, 0.0f, 1.0f);
+           // visual.transform.localScale = Vector3.zero;
 
             visual.SetActive(true);
             visual.transform.DOScaleY(1.0f, 1.0f);
+          //  visual.transform.DOScale(1.0f, 1.0f);
         }
         else
         {
             visual.transform.DOKill();
             visual.transform.DOScaleY(0.0f, 1.0f).OnComplete(() =>
+        //    visual.transform.DOScale(0.0f, 1.0f).OnComplete(() =>
             {
                 visual.SetActive(false);
             });

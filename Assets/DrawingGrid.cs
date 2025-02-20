@@ -86,11 +86,11 @@ public class DrawingGrid : NetworkBehaviour
 
 
 
-    public void UpdateAllShineUI() // Shine UI
+    public void UpdateAllShineUI() // Shine UI  AllShine
     {
 
         if (_gamePhase != GameManager.GamePhase.InGame) return;
-        if (!IsOwner || AIPlayerIsActive || DrawingGridIndex>1) return;  // HARD CODING DISABLING
+        if (!IsOwner || AIPlayerIsActive || DrawingGridIndex>0) return;  // HARD CODING DISABLING
 
 
         foreach (var hct in AllHealthCubeTransforms)     // trace from healthcube transforms outward

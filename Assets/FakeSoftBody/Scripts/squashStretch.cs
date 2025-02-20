@@ -14,7 +14,7 @@ using UnityEngine.Serialization;
 
 public class squashStretch : MonoBehaviour
 {
-    [SerializeField] public BlockamiData BlockamiData;
+     private BlockamiData BlockamiData;
 
     public FakeSoftCube parent;
     [FormerlySerializedAs("squashAmount")] public float squashAmountTarget;
@@ -33,13 +33,14 @@ public class squashStretch : MonoBehaviour
     
     void Start()
     {
+       
         parent = transform.parent.GetComponent<FakeSoftCube>();
         InnerBox = GetComponent<BoxCollider>();
     }
     
     void TrackBlockamiData()
     {
-        speed = BlockamiData.speed;
+        speed = BlockamiData.Instance.speed;
    
     }
     

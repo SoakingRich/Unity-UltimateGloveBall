@@ -5,6 +5,7 @@ using Blockami.Scripts;
 using UltimateGloveBall.Arena.Services;
 using Unity.Netcode;
 using UnityEngine;
+using static UtilityLibrary;
 
 public class SnapZone : MonoBehaviour
 {
@@ -37,6 +38,8 @@ public class SnapZone : MonoBehaviour
 
     public void DoTriggerStay(Collider other)
     {
+        DebugLogClient(" snapzone do trigger stay");
+        
         if (BlockamiData.Instance.HideSnapDots) return;
 
         if (!HasCurrentlySpawnedCube)
@@ -45,23 +48,32 @@ public class SnapZone : MonoBehaviour
 
             if (other.gameObject.CompareTag("Player"))
             {
-               
-                if (OwningGrid.GetComponent<NetworkObject>().IsOwner)
+
+                if (!OwningGrid.GetComponent<NetworkObject>().IsOwner)
                 {
+                    DebugLogClient(" snapzoen trigger zone on Snapzone not owned locally");
+                    return;
+                }
+                
                   
                     var TPE = other.GetComponent<TriggerPinchEvents>();
                     if (TPE != null)
                     {
-
+                        DebugLogClient(" Snapzone 1");
+                        
                         HighlightCube.enabled = true;          // show highlight cube
                         OwningGrid.PointerUI?.Move(this);
                         
+                        DebugLogClient(" Snapzone 2");
                       
                         if (TPE.m_IsCurrentlyPressed)
                         {
+                            DebugLogClient(" Snapzone 3");
+                            
                             if (!TPE.DoAnyInteractorsHaveInteractables())       // dont try and spawn cubes if were holding a missile
                             {
 
+                                DebugLogClient(" Snapzone 4");
                                 if (!OnCooldown) // why are there cooldowns?
                                 {
                                     OnCooldown = true;
@@ -81,7 +93,7 @@ public class SnapZone : MonoBehaviour
                             
                         }
                     }
-                }
+                
             }
         }
     }
@@ -111,8 +123,14 @@ public class SnapZone : MonoBehaviour
     
     public void TrySpawnCube(bool isRight)
    {
-       HasCurrentlySpawnedCube = true;
-        SpawnManager.Instance.SpawnPlayerCubeServer(transform.position,OwningGrid.NetworkObject.OwnerClientId, isRight);
-     
-    }
+       DebugLogClient(" TrySpawnCube");
+       
+       if (!HasCurrentlySpawnedCube)
+       {
+           HasCurrentlySpawnedCube = true;
+           SpawnManager.Instance.SpawnPlayerCubeServer(transform.position, OwningGrid.NetworkObject.OwnerClientId,
+               isRight);
+           DebugLogClient(" TrySpawnCube 2 ");
+       }
+   }
 }

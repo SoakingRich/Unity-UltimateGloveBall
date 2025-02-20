@@ -33,9 +33,7 @@ public class DrawPointerUI : MonoBehaviour
 
     private void Awake()
     {
-        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        BlockamiData = BlockamiData.Instance;
+       
     }
 
     void Start()
@@ -119,9 +117,14 @@ public class DrawPointerUI : MonoBehaviour
             
             if (allTPE.Length < 1) { return; }
 
-            foreach (var tpe in allTPE)            // find the TriggerPinchEvents closest to the current position of DrawPointerUI
+            foreach (var tpe in allTPE)            // find the TriggerPinchEvents closest to the grids surface
             {
-                float distance = Vector3.Distance(transform.position, tpe.transform.position);
+                // project point of each hand onto Grid Normal
+                Vector3 projectedPoint = tpe.transform.position - Vector3.Dot(tpe.transform.position - OwningDrawingGrid.transform.position, OwningDrawingGrid.transform.forward) * OwningDrawingGrid.transform.forward;
+                float distance = Vector3.Distance(projectedPoint, tpe.transform.position);
+                
+
+                
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
@@ -182,7 +185,7 @@ public class DrawPointerUI : MonoBehaviour
         if (obj == null) return;
       
     
-        var col = BlockamiData.GetColorFromColorID(obj.ColorID);
+        var col = BlockamiData.Instance.GetColorFromColorID(obj.ColorID);
         
         _materialPropertyBlockEditor.MaterialPropertyBlock.SetColor(s_interiorColor, col);
        var col2 = HueShift(col,0.2f);

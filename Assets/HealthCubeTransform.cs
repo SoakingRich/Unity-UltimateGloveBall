@@ -13,7 +13,6 @@ public class HealthCubeTransform : MonoBehaviour, IGamePhaseListener
     [Header("Settings")]
     public int HealthCubeIndex = 0;
     [SerializeField] GameObject ShineUIObject;
-    [SerializeField] public BlockamiData BlockamiData;   
     
     //[Header("State")]
     public bool HasHealthCube => OwningHealthCube != null;
@@ -35,9 +34,7 @@ public class HealthCubeTransform : MonoBehaviour, IGamePhaseListener
 
     void Awake()
     {
-        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        BlockamiData = BlockamiData.Instance;
+        
         
         OwningDrawingGrid = UtilityLibrary.FindObjectInDirectParents<DrawingGrid>(transform);
         if (!OwningDrawingGrid)
@@ -92,6 +89,7 @@ public class HealthCubeTransform : MonoBehaviour, IGamePhaseListener
             meshRend.enabled = false;
         }
 
+      //  OwningHealthCube.transform.SetParent(this.transform);  not allowed
 
 
 
@@ -102,7 +100,7 @@ public class HealthCubeTransform : MonoBehaviour, IGamePhaseListener
         OnHealthTransformHit?.Invoke(this);
     }
 
-    public void  SetShineUIActive(bool Enable, SceneCubeNetworking TargetCube = default, Vector3 newPosition = default)
+    public void  SetShineUIActive(bool Enable, SceneCubeNetworking TargetCube = default, Vector3 newPosition = default)   
     {
         
         
@@ -115,7 +113,7 @@ public class HealthCubeTransform : MonoBehaviour, IGamePhaseListener
             var allShineUIRenderers = ShineUIObject.GetComponentsInChildren<Renderer>();
             foreach (var rend in allShineUIRenderers)
             {
-                Color col = BlockamiData.GetColorFromColorID(TargetCube.ColorID);
+                Color col = BlockamiData.Instance.GetColorFromColorID(TargetCube.ColorID);
                 rend.material.SetColor("_Color",col);
             }
         }

@@ -49,6 +49,8 @@ MonoBehaviour:
   OwningDrawingGrid: {fileID: 0}
   _materialPropertyBlockEditor: {fileID: 0}
   LerpSpeed: 10
+  FPSControlled: 0
+  LerpTargetPosition: {x: 0, y: 0, z: 0}
 --- !u!114 &5405522878540452063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,8 +124,8 @@ LineRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.055726655
-        value: 0.007036209
+        time: 0
+        value: 0.03654571
         inSlope: 0
         outSlope: 0
         tangentMode: 0

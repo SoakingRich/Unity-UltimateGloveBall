@@ -9,6 +9,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
+using static UtilityLibrary;
 
 public class SceneCubeNetworking : NetworkBehaviour
 {
@@ -16,7 +17,7 @@ public class SceneCubeNetworking : NetworkBehaviour
     public Material ErrorMaterial;
     
     [Header("State")]
-    public NetworkVariable<int> NetColorID;
+    public NetworkVariable<int> NetColorID = new NetworkVariable<int>(-1);
     public int ColorID => NetColorID.Value;
     public NetworkVariable<bool> NetIsHealthCube;
     public bool IsHealthCube => NetIsHealthCube.Value;
@@ -29,10 +30,10 @@ public class SceneCubeNetworking : NetworkBehaviour
         set => m_NetIsErrorCube.Value = value;
     }
     public NetworkVariable<bool> m_NetIsErrorCube;
+    public bool AvoidDestroyByPlayerCube = false;
 
     [Header("Internal")]
     public HealthCubeTransform m_healthCubeTransform;
-    public BlockamiData BlockamiData;
     public event System.Action<SceneCubeNetworking> SCDied;
     public event System.Action<SceneCubeNetworking> HCHit;
     public event System.Action<SceneCubeNetworking,ulong> SCDiedByPlayerCube;
@@ -49,39 +50,6 @@ public class SceneCubeNetworking : NetworkBehaviour
     public FakeSoftCube m_fakeSoftCube;
     public squashStretch m_squashStretch;
 
-[ContextMenu("InvokeSetErrorCube")]
-    public void InvokedSetErrorCube()
-    {
-        TrySetErrorCube(!IsErrorCube);
-    }
-    
-    public void TrySetErrorCube(bool Enable)
-    {
-        if (IsHealthCube || GetComponent<CubeBehavior>() )
-        if (IsHealthCube )
-        {
-            return;    // health cubes or pickups cant be Error // actually they have to be included, otherwise spamming still works
-        }
-        
-        
-        IsErrorCube = Enable;
-
-        if (IsErrorCube)
-        {
-            rend.material = ErrorMaterial;
-            rend.material.SetColor(s_color, m_SCData.myColor);
-            
-            CancelInvoke("InvokedSetErrorCube");
-            Invoke("InvokedSetErrorCube",5.0f);    // rest ErrorCube after 5 seconds
-        }
-        else
-        {
-            rend.material = m_CubeMaterial;
-            m_CubeMaterial.SetColor(s_color, m_SCData.myColor); 
-        }
-        
-        
-    }
 
     private void OnEnable()
     {
@@ -100,9 +68,7 @@ public class SceneCubeNetworking : NetworkBehaviour
 
     private void Awake()
     {
-        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        BlockamiData = BlockamiData.Instance;
+        DebugLogClient("SceneCube Awake");
 
         rend = GetComponentInChildren<MeshRenderer>();
         m_CubeMaterial = GetComponentInChildren<MeshRenderer>().material;
@@ -149,18 +115,30 @@ public class SceneCubeNetworking : NetworkBehaviour
         // }
     }
   
+
+    
     public void Initialize()
     {
-        m_SCData = BlockamiData.GetSceneCubeDataFromID(ColorID);
+        DebugLogClient("SceneCube Initialize");
+        
+        m_SCData = BlockamiData.Instance.GetSceneCubeDataFromID(ColorID);
+        DebugLogClient("SceneCube Initialize 2");
         
         m_CubeisDead = false;
+        DebugLogClient("SceneCube Initialize 3");
+        rend.material = m_CubeMaterial;
         m_CubeMaterial.SetColor(s_color, m_SCData.myColor);    // currently reads color from cubedata,  should just use some color list somewhere
+        DebugLogClient("SceneCube Initialize 4");
+        
         m_fakeSoftCube.deactivated = false;
-
+        DebugLogClient("SceneCube Initialize 5");
          SetPhysicsForSceneCube(!IsHealthCube);
-
+         
+         DebugLogClient("SceneCube Initialize 6");
         if (IsHealthCube)
         {
+            DebugLogClient("SceneCube Initialize for HealthCube ");
+            
             var matchingHealthCubeTransform = FindObjectsOfType<HealthCubeTransform>()
                 .FirstOrDefault(hct => Vector3.Distance(hct.transform.position, this.transform.position) < 0.1f); // Set tolerance threshold here
 
@@ -230,12 +208,49 @@ public class SceneCubeNetworking : NetworkBehaviour
 
     
     
-    
+    [ContextMenu("DebugHealthCubeHit")]
     public void HealthCubeHit()
     {
         HCHit?.Invoke(this);
+        SpawnManager.Instance.OnHealthCubeHit?.Invoke(this);
     }
     
+    
+    
+    
+    [ContextMenu("InvokeSetErrorCube")]
+    public void InvokedSetErrorCube()
+    {
+        TrySetErrorCube(!IsErrorCube);
+    }
+    
+    public void TrySetErrorCube(bool Enable)
+    {
+        //  if (IsHealthCube || GetComponent<CubeBehavior>() )
+        if (IsHealthCube )
+        {
+            return;    // health cubes or pickups cant be Error // actually pickups have to be included, otherwise spamming still works
+        }
+        
+        
+        IsErrorCube = Enable;
+
+        if (IsErrorCube)
+        {
+            rend.material = ErrorMaterial;
+            rend.material.SetColor(s_color, m_SCData.myColor);
+            
+            CancelInvoke("InvokedSetErrorCube");
+            Invoke("InvokedSetErrorCube",5.0f);    // rest ErrorCube after 5 seconds
+        }
+        else
+        {
+            rend.material = m_CubeMaterial;
+            m_CubeMaterial.SetColor(s_color, m_SCData.myColor); 
+        }
+        
+        
+    }
   
 }
 

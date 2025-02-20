@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Oddworm.Framework;
 using ReadyPlayerMe;
+using UltimateGloveBall.Arena.Services;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -29,6 +30,8 @@ public class EyeTracking : MonoBehaviour
     public Transform CenterEyeAnchor;
    public GameObject CentreEyeObject;
     public Vector3 gazeSize = new Vector3(0.15f, 0.15f, 0.15f);
+    private TriggerPinchEvents[] allTpe;
+    public float lerpAmount = 0.5f;
     
     [Header("State")]
     private bool ShouldUseAdvancedEyeTracking = false;
@@ -60,6 +63,8 @@ public class EyeTracking : MonoBehaviour
                 }
         #endif
 
+        allTpe = FindObjectsOfType<TriggerPinchEvents>();
+        
        lineDrawer = new LineDrawer(0.01f);
 
 
@@ -155,10 +160,20 @@ public class EyeTracking : MonoBehaviour
         // BoxCast parameters
         Vector3 halfExtents = gazeSize;
             Vector3 center = CentreEyeObject.transform.position;
-            
-            
-            RaycastHit[] boxHits = Physics.BoxCastAll(
-                CentreEyeObject.transform.position, 
+           
+            Vector3 projectedPoint0 = allTpe[0].transform.position - Vector3.Dot(allTpe[0].transform.position - CentreEyeObject.transform.position, CentreEyeObject.transform.forward) * CentreEyeObject.transform.forward;
+            Vector3 projectedPoint1 = allTpe[1].transform.position - Vector3.Dot(allTpe[1].transform.position - CentreEyeObject.transform.position, CentreEyeObject.transform.forward) * CentreEyeObject.transform.forward;
+          
+           var relevantTPE = Vector3.Distance(allTpe[0].transform.position, projectedPoint0) <  Vector3.Distance(allTpe[1].transform.position, projectedPoint1) ? allTpe[0] : allTpe[1];
+           if (relevantTPE.TrackingHand.IsDataHighConfidence)
+           {
+               Vector3 heightCorrectedTPEPosition = new Vector3(relevantTPE.transform.position.x,
+                   CentreEyeObject.transform.position.y, relevantTPE.transform.position.z);
+               center = Vector3.Lerp(center, heightCorrectedTPEPosition, lerpAmount);
+           }
+
+           RaycastHit[] boxHits = Physics.BoxCastAll(
+                center, 
                 halfExtents, 
                 rayDirection, 
                 Quaternion.identity, 
@@ -172,9 +187,23 @@ public class EyeTracking : MonoBehaviour
             foreach (var boxHit in boxHits)
             {
                 GameObject candidate = boxHit.collider.gameObject;
-                Vector3 cameraToCube = (candidate.transform.position - CentreEyeObject.transform.position).normalized;
-                float alignment = Vector3.Dot(cameraToCube, rayDirection); // Measure alignment
-
+                Vector3 cameraToOrigin = (candidate.transform.position - center).normalized;
+                float alignment = Vector3.Dot(cameraToOrigin, rayDirection); // Measure alignment
+                
+              
+                var scs = candidate.GetComponent<SceneCubeNetworking>();
+                if (scs)
+                {
+                    float colorMatchFactor =  UtilityLibrary.SceneCubeMatchesID( LocalPlayerEntities.Instance.LocalPlayerController.ColorID,scs,out bool WasError) ?
+                             2.0f
+                            : 1.0f;
+                
+                    alignment *= colorMatchFactor;
+                    
+                }
+                
+                
+                
                 if (alignment > bestAlignment) // Find the best aligned cube
                 {
                     bestAlignment = alignment;

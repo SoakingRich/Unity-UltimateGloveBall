@@ -13,15 +13,17 @@ MonoBehaviour:
   m_Name: BlockamiData
   m_EditorClassIdentifier: Assembly-CSharp::BlockamiData
   PlayerCubePrefab: {fileID: 1025375926450041331, guid: 428e07d058111da4a91960978a39017a, type: 3}
-  DefaultSpawnRate: 1
+  DefaultSpawnRate: 0.4
   FrenzySpawnRate: 4
   MaxCubes: 100
-  FrenzyTimeDuration: 3.5
+  FrenzyTimeDuration: 5
   CycleColorsOnDraw: 1
+  BoxingEnabled: 0
   PlayerCubeMoveSpeed: 1.8
   PlayerCubeShrinkRate: 0.001
   ShootCubesOnPinchTriggerRelease: 1
   LetIncorrectPlayerCubesBounceBack: 0
+  HideSnapDots: 0
   AllCubeTypes:
     _serializedList:
     - Key: 0
@@ -57,6 +59,8 @@ MonoBehaviour:
         myColor: {r: 0, g: 0, b: 0, a: 0}
         SceneCubePrefab: {fileID: 6446614617884292056, guid: 57e7b5ff342974d409ea65cc4acefd81, type: 3}
   MaxNormalColorID: 3
+  punchThreshold: 0.5
+  punchCooldown: 1
   MoveTowardsMax: 0.01
   halfExtents: {x: 0.2, y: 0.2, z: 0.2}
   springDamper: 1000

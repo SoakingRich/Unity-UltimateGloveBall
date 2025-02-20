@@ -92,7 +92,7 @@ namespace UltimateGloveBall.Arena.Player
         {
             float elapsedTime = 0f;
             
-            while (!HasSnappedAvatarToPosition)
+            while (!HasSnappedAvatarToPosition  || !LocalPlayerEntities.Instance.Avatar)
             {
                 if (elapsedTime >= 5.0f)
                 {

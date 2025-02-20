@@ -107,7 +107,7 @@ namespace Meta.Multiplayer.Avatar
                     rigTransform.position,
                     rigTransform.rotation);
 
-              //  UpdateDataStream();                                   // update streaming data
+                UpdateDataStream();                                   // update streaming data
             }
         }
         

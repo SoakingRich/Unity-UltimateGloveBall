@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Meta.Multiplayer.Core;
 using Oculus.Platform;
 using UltimateGloveBall.App;
@@ -48,7 +49,7 @@ namespace UltimateGloveBall.Arena.Gameplay
             }
         }
     
-        
+     
         
         
         private const double GAME_START_COUNTDOWN_TIME_SEC = 4;
@@ -101,7 +102,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         private int m_previousSecondsLeft = int.MaxValue;
         
 
-        public GamePhase CurrentPhase => m_currentGamePhase.Value;                       //   instead of fetching m_currentGamePhase.Value constantly, we can just use this CurrentPhase accessor
+        [SerializeField]  public GamePhase CurrentPhase => m_currentGamePhase.Value;                       //   instead of fetching m_currentGamePhase.Value constantly, we can just use this CurrentPhase accessor
         public TeamColor TeamAColor => m_teamAColor.Value;
         public TeamColor TeamBColor => m_teamBColor.Value;
 
@@ -167,7 +168,8 @@ namespace UltimateGloveBall.Arena.Gameplay
             var HCTransforms = FindObjectsOfType<HealthCubeTransform>();
             foreach (var hct in HCTransforms)
             {
-                hct.OnHealthTransformHit += OnHealthTransformHit;
+                hct.OnHealthTransformHit += async obj => await OnHealthCubeHit(obj);
+
             }
         }
 
@@ -400,13 +402,13 @@ namespace UltimateGloveBall.Arena.Gameplay
                 // game is already InPlay
             }
             
-            StartBlockamiGame();
+            StartCoroutine(StartBlockamiGame());
         }
 
 
-        public void StartBlockamiGame()
+        public IEnumerator StartBlockamiGame()   //BlockamiStart  StartBlockami
         {
-            
+            yield return new WaitUntil(() => SpawnManager.Instance.m_cubePool.IsSpawned);
           
             foreach (var ai in m_allAIPlayers)
             {
@@ -415,17 +417,10 @@ namespace UltimateGloveBall.Arena.Gameplay
             
           
             SpawnManager.Instance.ClearAllCubes();
+            SpawnManager.Instance.FrenzyOverideDuration = 10.0f;
             SpawnManager.Instance.TriggerFrenzyTime(true);
-
-            SpawnManager.Instance.ResetAllHealthCubes();
             SpawnManager.Instance.StartSpawning();
-
-
-
-
-
-
-
+            SpawnManager.Instance.ResetAllHealthCubes();
         }
         
         
@@ -485,7 +480,7 @@ namespace UltimateGloveBall.Arena.Gameplay
         
         private void GoToPostGame()
         {
-            m_ballSpawner.DeSpawnAllBalls();
+           // m_ballSpawner.DeSpawnAllBalls();
             m_currentGamePhase.Value = GamePhase.PostGame;
             m_restartGameButtonContainer.SetActive(true);
             ((ArenaPlayerSpawningManager)SpawningManagerBase.Instance).ResetPostGameSpawnPoints();
@@ -690,12 +685,16 @@ namespace UltimateGloveBall.Arena.Gameplay
         
         
         
-        private void OnHealthTransformHit(HealthCubeTransform obj)
+        private async Task OnHealthCubeHit(HealthCubeTransform obj)
         {
-            var allInvolvedHCTs = obj.OwningDrawingGrid.AllHealthCubeTransforms;
-          //  var AllHealthPillars = 
-            var filteredHct = allInvolvedHCTs.Where(htc => htc._HealthPillar.HealthInt > 0).ToList();   // check all healthPllars
-            if (filteredHct.Count == 0) // check if all HealthPillars are depleted??
+            await Task.Yield(); // Delay execution by 1 frame
+            
+//            Debug.Log("Blockami Log - Game Manager, checking HealthCubeHit" );
+            
+            var allInvolvedHCTs = obj.OwningDrawingGrid.AllHealthCubeTransforms;       // get all Health cubes for the relevant DrawingGrid
+   
+            var filteredHct = allInvolvedHCTs.Where(htc => htc._HealthPillar.HealthInt > 0).ToList();   // filter for health cubes that still have health
+            if (filteredHct.Count == 0) // are all HealthPillars depleted??
             {
 
 

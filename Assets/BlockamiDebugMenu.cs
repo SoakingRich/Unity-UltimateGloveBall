@@ -24,10 +24,15 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
         [SerializeField] private Slider m_DistanceSlider;
         [SerializeField] private TMP_Text m_DistanceSliderValueText;
 
+        [SerializeField] private Slider m_CubeSpeedSlider;
+        [SerializeField] private TMP_Text m_CubeSpeedSliderValueText;
+        
          [SerializeField] private Toggle BlockBounceBackToggle;
           [SerializeField] private Toggle m_CyclePlayerColorOnDraw;
           
        [SerializeField] private Toggle m_SimpleMaterialsToggle;
+       
+       [SerializeField] private Toggle m_GazeTracking;
 
         [Header("Spawn Cat")]
         [SerializeField] private Button m_spawnCatButton;
@@ -35,11 +40,12 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
         [Header("Spectator")]
         [SerializeField] private Button m_switchSideButton;
 
-        public BlockamiData m_blockamiData;
 
         private void Start()
         {
             m_NormalSpawnRateSlider.onValueChanged.AddListener(OnNormalSpawnRateSliderChanged);
+            
+            m_CubeSpeedSlider.onValueChanged.AddListener(OnCubeSpeedSliderChanged);
             
             m_FrenzySpawnRateSlider.onValueChanged.AddListener(OnFrenzySpawnRateSliderChanged);
             
@@ -48,9 +54,10 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
             m_CyclePlayerColorOnDraw.onValueChanged.AddListener(CyclePlayerColorOnDrawChanged);
             
             m_DistanceSlider.onValueChanged.AddListener(OnDistanceSliderChanged);
+            m_GazeTracking.onValueChanged.AddListener(OnGazeTrackingChanged);
            
             
-             m_SimpleMaterialsToggle.onValueChanged.AddListener(OnSimpleMaterialsChanged);
+//             m_SimpleMaterialsToggle.onValueChanged.AddListener(OnSimpleMaterialsChanged);
         }
 
         private void OnEnable()
@@ -58,23 +65,31 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
             var settings = GameSettings.Instance;
             var audioController = AudioController.Instance;
             
-            m_blockamiData = BlockamiData.Instance;
-            m_NormalSpawnRateSlider.value = m_blockamiData.DefaultSpawnRate;
-            m_NormalSpawnRateValueText.text = m_blockamiData.DefaultSpawnRate.ToString("N2") ;
-            m_FrenzySpawnRateSlider.value = m_blockamiData.FrenzySpawnRate;
-            m_FrenzySpawnRateValueText.text = m_blockamiData.FrenzySpawnRate.ToString("N2") ;
+           
+            m_NormalSpawnRateSlider.value = BlockamiData.Instance.DefaultSpawnRate;
+            m_NormalSpawnRateValueText.text = BlockamiData.Instance.DefaultSpawnRate.ToString("N2") ;
             
-            // m_DistanceSlider.value = m_blockamiData.FrenzySpawnRate;
-            // m_DistanceSliderValueText.text = m_blockamiData.FrenzySpawnRate.ToString("N2") ;
+            m_FrenzySpawnRateSlider.value = BlockamiData.Instance.FrenzySpawnRate;
+            m_FrenzySpawnRateValueText.text = BlockamiData.Instance.FrenzySpawnRate.ToString("N2") ;
             
-            var drawingGrids = FindObjectsOfType<DrawingGrid>();
+            m_CubeSpeedSlider.value = BlockamiData.Instance.PlayerCubeMoveSpeed;
+            m_CubeSpeedSliderValueText.text = BlockamiData.Instance.PlayerCubeMoveSpeed.ToString("N2") ;
+            
+            
+            var drawingGrids = FindObjectsOfType<DrawingGrid>();      // write to distanceslider, the initial value of DrawingGridDistance
             var dg = drawingGrids[0];
-            var positionOnAxis = Vector3.Scale(dg.gameObject.transform.position, dg.MoveDirection);
-            m_DistanceSlider.value = positionOnAxis.MaxComponent();
+            var positionOnAxis = Vector3.Scale(dg.gameObject.transform.localPosition, dg.MoveDirection);
+            var maxfloat = positionOnAxis.magnitude;            
+            m_DistanceSlider.value = maxfloat;
             m_DistanceSliderValueText.text = m_DistanceSlider.value.ToString("N2");
             
-            BlockBounceBackToggle.isOn = m_blockamiData.LetIncorrectPlayerCubesBounceBack;
-            m_CyclePlayerColorOnDraw.isOn = m_blockamiData.CycleColorsOnDraw;
+            BlockBounceBackToggle.isOn = BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack;
+            m_CyclePlayerColorOnDraw.isOn = BlockamiData.Instance.CycleColorsOnDraw;
+            
+             
+            m_GazeTracking.isOn = BlockamiData.Instance.BoxingEnabled;
+            
+            
             
             // m_switchSideButton.gameObject.SetActive(LocalPlayerState.Instance.IsSpectator);
             // m_spawnCatButton.gameObject.SetActive(!LocalPlayerState.Instance.IsSpectator &&
@@ -84,12 +99,12 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
           
            
             
-             m_SimpleMaterialsToggle.isOn = settings.UseLocomotionVignette;
+         //    m_SimpleMaterialsToggle.isOn = settings.UseLocomotionVignette;
 
-            #if UNITY_EDITOR
-            gameObject.SetActive(false); 
-            // dont allow changing values of the scriptable object in editor
-#endif
+//             #if UNITY_EDITOR
+//             gameObject.SetActive(false); 
+//             // dont allow changing values of the scriptable object in editor
+// #endif
 
         }
         
@@ -97,27 +112,62 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
         
         private void OnNormalSpawnRateSliderChanged(float val)
         {
-            m_blockamiData.DefaultSpawnRate = val;
-            m_NormalSpawnRateValueText.text = m_blockamiData.DefaultSpawnRate.ToString("N2") ;
+            BlockamiData.Instance.DefaultSpawnRate = val;
+            m_NormalSpawnRateValueText.text = BlockamiData.Instance.DefaultSpawnRate.ToString("N2") ;
             
         }
 
+        private void OnCubeSpeedSliderChanged(float val)
+        {
+            BlockamiData.Instance.PlayerCubeMoveSpeed = val;
+            m_CubeSpeedSliderValueText.text = BlockamiData.Instance.PlayerCubeMoveSpeed.ToString("N2") ;
+            
+        }
+        
+        private void OnDistanceSliderChanged(float val)
+        {
+            var drawingGrids = FindObjectsOfType<DrawingGrid>();
+            foreach (var dg in drawingGrids)
+            {
+                Vector3 finalLoc = dg.MoveDirection * val * -1.0f;
+                finalLoc.y = dg.gameObject.transform.position.y;
+                dg.gameObject.transform.position = finalLoc;
+            }
+            
+            m_DistanceSliderValueText.text = m_DistanceSlider.value.ToString("N2");
+
+            CancelInvoke();
+            Invoke("InvokedRespawnAllPlayers",2.0f);
+          
+          
+        }
+
+        private void OnGazeTrackingChanged(bool val)
+        {
+            BlockamiData.Instance.BoxingEnabled = val;
+            var eyetrack = FindObjectOfType<EyeTracking>(true);
+            if (eyetrack)
+            {
+                eyetrack.transform.gameObject.SetActive(val);
+            }
+        }
+        
         private void OnFrenzySpawnRateSliderChanged(float val)
         {
-            m_blockamiData.FrenzySpawnRate = val;
-            m_FrenzySpawnRateValueText.text = m_blockamiData.FrenzySpawnRate.ToString("N2") ;
+            BlockamiData.Instance.FrenzySpawnRate = val;
+            m_FrenzySpawnRateValueText.text = BlockamiData.Instance.FrenzySpawnRate.ToString("N2") ;
         }
         
         
         private void OnBlockBounceBackChanged(bool val)
         {
-            m_blockamiData.LetIncorrectPlayerCubesBounceBack = val;
+            BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack = val;
         }
         
         
         private void CyclePlayerColorOnDrawChanged(bool val)
         {
-            m_blockamiData.CycleColorsOnDraw = val;
+            BlockamiData.Instance.CycleColorsOnDraw = val;
      
         }
         
@@ -141,25 +191,15 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
             m_spawnCatButton.gameObject.SetActive(false);
         }
 
-      
 
-        private void OnDistanceSliderChanged(float val)
+        [ContextMenu("DebugOnDistanceSliderChanged")]
+        public void DebugOnDistanceSliderChanged()
         {
-            var drawingGrids = FindObjectsOfType<DrawingGrid>();
-            foreach (var dg in drawingGrids)
-            {
-                Vector3 finalLoc = dg.MoveDirection * val;
-                finalLoc.y = dg.gameObject.transform.position.y;
-                dg.gameObject.transform.position = finalLoc;
-            }
-            
-            m_DistanceSliderValueText.text = m_DistanceSlider.value.ToString("N2");
-
-            CancelInvoke();
-            Invoke("InvokedRespawnAllPlayers",2.0f);
-          
-          
+            OnDistanceSliderChanged(m_DistanceSlider.value);
         }
+
+
+       
 
         void InvokedRespawnAllPlayers()
         {

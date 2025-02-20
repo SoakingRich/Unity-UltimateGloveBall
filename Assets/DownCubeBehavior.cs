@@ -9,8 +9,9 @@ public class DownCubeBehavior : CubeBehavior
     
     
     
-    void Start()
+   public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
         var RandomDrawingGrid = FindObjectOfType<DrawingGrid>();
         lowestSnapzone = RandomDrawingGrid.AllSnapZones[0].transform;
         scs = GetComponent<SceneCubeNetworking>();
@@ -39,6 +40,7 @@ public class DownCubeBehavior : CubeBehavior
     public void DoDestroyCubeLayer()
     {
         var allScs = SpawnManager.Instance.m_AllScs;
+        SpawnManager.Instance.OnDownCubeLayerDestroy?.Invoke();
         var cubesToDestroy = new List<SceneCubeNetworking>();
         
         

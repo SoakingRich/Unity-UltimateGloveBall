@@ -5,6 +5,7 @@ using System.Xml;
 using Oddworm.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR;
 
 [DefaultExecutionOrder(2000)]
 public class BlockamiMouse : MonoBehaviour
@@ -12,7 +13,7 @@ public class BlockamiMouse : MonoBehaviour
     public Camera mainCamera;
     public Vector3 worldMousePosition;
     public Vector3 mouseRayDirection;
-    
+    public bool Ignore = false;
     
     [SerializeField] private InputActionProperty MouseAction;
     [SerializeField] private InputActionProperty MouseClickAction;
@@ -32,6 +33,14 @@ public class BlockamiMouse : MonoBehaviour
     
     void Awake()
     {
+
+        if (!(XRSettings.loadedDeviceName?.Trim() is ("MockHMD Display" or "" or null)))
+        {
+            enabled = false;
+            Ignore = true;
+        }
+        
+
         if (mainCamera == null)
         {
             mainCamera = Camera.main;
@@ -39,6 +48,7 @@ public class BlockamiMouse : MonoBehaviour
         
         MouseAction.action.Enable();
         MouseClickAction.action.Enable();
+    
     }
     
     
@@ -46,6 +56,7 @@ public class BlockamiMouse : MonoBehaviour
 
     void Update()
     {
+        if (Ignore) return;
         if (mainCamera == null) return;
         
    

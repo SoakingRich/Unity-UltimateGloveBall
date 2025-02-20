@@ -22,14 +22,17 @@ public class PlayerCubeScript : NetworkBehaviour
     public NetworkVariable<PlayerCubeData> _NetPCData;
     public int ColorID => _NetPCData.Value.ColorID;
     public bool isFail = false;
+    public bool isSuccess = false;
+    public Material RainbowMaterial;
 
     // [Header("Settings")]
-    [SerializeField] private bool LetIncorrectPlayerCubesBounceBack => BlockamiData.LetIncorrectPlayerCubesBounceBack;
+    [SerializeField] private bool LetIncorrectPlayerCubesBounceBack => BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack;
     
     [Header("State")]
     bool m_CubeisDead = false;
     public PlayerShotObject OwningPlayerShot;
     public DrawingGrid OwningGrid;
+    public bool IsReverseDirection;
 
     
     private Vector3 DirToMove
@@ -39,7 +42,6 @@ public class PlayerCubeScript : NetworkBehaviour
     }
     [Header("Internal")]
     public NetworkVariable<Vector3> net_DirToMov;
-    [SerializeField] public BlockamiData BlockamiData;   
     public event System.Action<PlayerCubeScript> PCDied;
     private Material m_CubeMaterial;
     private static readonly int s_color = Shader.PropertyToID("_Color");
@@ -49,10 +51,11 @@ public class PlayerCubeScript : NetworkBehaviour
     private Vector3 OriginalScale;
     public Rigidbody rb;
     public float LastReverseTime = -999.0f;
-    
-    
-    
-    
+    public bool IsRainbow = false;
+
+
+
+    public bool DebugBounce = false;
     
     
     
@@ -79,7 +82,7 @@ public class PlayerCubeScript : NetworkBehaviour
         Rend.enabled = true;
         transform.localScale = OriginalScale;
         m_CubeisDead = false;
-        var col = BlockamiData.GetColorFromColorID(ColorID);
+        var col = BlockamiData.Instance.GetColorFromColorID(ColorID);
         m_CubeMaterial.SetColor(s_color, col);
         
        // LocalPlayerEntities.Instance.GetPlayerObjects(PCData.Value.OwningPlayerId).PlayerController.grid
@@ -157,6 +160,13 @@ public class PlayerCubeScript : NetworkBehaviour
     //void FixedUpdate()
     void Update()
     {
+        if (IsReverseDirection) DebugBounce = true;
+
+      
+            Debug.Log("player cube dirToMove is " + DirToMove);
+        
+        
+        
         if (!OwningGrid) return;
         
         if (ShouldMove.Value)
@@ -164,8 +174,8 @@ public class PlayerCubeScript : NetworkBehaviour
             if (NetworkObject.IsSpawned)
             {
                 
-                transform.position += DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
-                transform.localScale *= (1 - BlockamiData.PlayerCubeShrinkRate);
+                transform.position += DirToMove * BlockamiData.Instance.PlayerCubeMoveSpeed * Time.deltaTime;
+                transform.localScale *= (1 - BlockamiData.Instance.PlayerCubeShrinkRate);
 
               //   rb.MovePosition(rb.position + DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime);
               // //rb.position += DirToMove * BlockamiData.PlayerCubeMoveSpeed * Time.deltaTime;
@@ -174,6 +184,72 @@ public class PlayerCubeScript : NetworkBehaviour
         }
     }
 
+    public bool CanPlayershotDestroyNumberCube(PlayerCubeScript pc, SceneCubeNetworking scs)
+    {
+        //return true;
+
+        var NumberCubeBehavior = scs.GetComponent<NumberCubeBehavior>();
+        if (!NumberCubeBehavior) return true;
+
+        // number cubes must resolve after all other cubes in player shot, or do immediete tracing
+        
+        var shot = pc.OwningPlayerShot;
+
+        int NumOfSuccess = 1;    // because this itself was a success ?
+        
+       foreach (var playercube in shot.allPlayerCubeScripts)
+       {
+           if (playercube == this) continue;    // skip a test for this cube itself??
+           if (playercube.isSuccess)
+           {
+               NumOfSuccess++;
+               continue;
+               
+               // playercube might have had a success collision before this one, so line trace would fail, but it should count as success
+           }
+           
+           if (playercube.isFail)
+           {
+               Debug.Log("NumberCube failed test because Sibling cube was IsFail");
+               return false;
+           }
+           Ray ray;
+           Vector3 rayDirection = pc.DirToMove;
+           float rayDistance = 100.0f; 
+           ray = new Ray(playercube.transform.position, rayDirection * rayDistance);
+           RaycastHit hitInfo;
+           int SceneCubeLayerMask = 1 << LayerMask.NameToLayer("Hitable");
+           
+           if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity, SceneCubeLayerMask))
+           {
+               GameObject hitObject = hitInfo.collider.gameObject;
+               var foundscs = hitObject.GetComponent<SceneCubeNetworking>();
+               if (!foundscs)
+               {
+                   Debug.Log("CanPlayershotDestroyNumberCube - Hit something on the SceneCube layer!" + hitObject.name);
+                   continue;
+               }
+               
+            if (!PlayerCubeMatchesSceneCubeColorID(playercube,foundscs,out var wasError))
+            {
+                Debug.Log("Blockami Log - a sibling cube was not correctly color matching for number cube");
+                return false;
+            }
+
+            NumOfSuccess++;
+
+           }
+       }
+
+       if (NumOfSuccess >= NumberCubeBehavior.NumberRequirement)
+       {
+           return true;
+       }
+       else
+       {
+           return false;
+       }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -185,12 +261,11 @@ public class PlayerCubeScript : NetworkBehaviour
         var scs = other.GetComponent<SceneCubeNetworking>();
         if (scs)
         {
-
-
-
-            if (!isFail && PlayerCubeMatchesSceneCubeColorID(this, scs)) // SUCCESS SHOT
+        
+            if (PlayerCubeMatchesSceneCubeColorID(this, scs, out var OutWasError) && !isFail && CanPlayershotDestroyNumberCube(this,scs)) // SUCCESS SHOT
             {
                 Rend.enabled = false;
+                isSuccess = true;
                 DestroySceneCubeAfterDelay(scs);
                 KillPlayerCubeServerRpc();
             }
@@ -199,17 +274,16 @@ public class PlayerCubeScript : NetworkBehaviour
                 var audioController = AudioController.Instance;
                 audioController.PlaySound("fail");
 
-                if (LetIncorrectPlayerCubesBounceBack)
+                bool ShouldBounce = LetIncorrectPlayerCubesBounceBack;
+                if (OutWasError && !IsRainbow) ShouldBounce = true;
+                
+                if (ShouldBounce)
                 {
-                    ReverseDirection();
+                    TryReverseDirection();
                 }
-
-                if (true) // use ErrorCubes
-                {
-                    scs.TrySetErrorCube(true);
-                }
-
-
+                
+                scs.TrySetErrorCube(true);
+              
                 foreach (var i in OwningPlayerShot.AllPcs.Value.ToList())
                 {
                     var netPc = NetworkManager.SpawnManager?.SpawnedObjects.GetValueOrDefault(i);
@@ -218,7 +292,7 @@ public class PlayerCubeScript : NetworkBehaviour
                     {
 
 
-                        if (LetIncorrectPlayerCubesBounceBack && pc == this)
+                        if (ShouldBounce && pc == this)
                         {
                             // avoid killing the player cube that instigated a fail, let it bounce back
                         }
@@ -253,7 +327,13 @@ public class PlayerCubeScript : NetworkBehaviour
 
     public void DestroyPlayerCubeAfterDelay(PlayerCubeScript pcs)
         {
-
+            if (IsReverseDirection)
+            {
+                Debug.Log("Avoiding DestroyPlayerCubeAfterDelay because cube is reverse direction ");
+                return;
+            }
+            
+            
             if (IsServer || IsHost)
             {
                 pcs.Rend.enabled = false;      // make it immedietely invisible
@@ -269,31 +349,63 @@ public class PlayerCubeScript : NetworkBehaviour
           //  ulong id = IsAI.Value ? default : OwnerClientId;
             PcsToDestroy.KillPlayerCubeServerRpc();
         
-        } 
-        
+        }
 
+        public void SetRainbow(bool enable)
+        {
+            IsRainbow = true;
+            Rend.material = RainbowMaterial;
+            PlayerCubeData newdata =
+                new PlayerCubeData(10, _NetPCData.Value.OwningPlayerId, _NetPCData.Value.AIPlayerNum);
+            _NetPCData.Value = newdata;
+        }
     
 
-    public void ReverseDirection()
+    public void TryReverseDirection()
     {
-        if (Time.time - LastReverseTime > 2.0f)
+        if (Time.time - LastReverseTime > 0.5f)
         {
-            DirToMove *= -1;
+           
+            
+            Debug.Log("player cube setting DirToMove to opposite");
+           // DirToMove.Scale(-Vector3.one);
+           DirToMove = DirToMove * -1.0f;
             LastReverseTime = Time.time;
+            
+            if (IsReverseDirection)
+            {
+                if (_NetPCData.Value.OwningPlayerId == NetworkManager.Singleton.LocalClientId)
+                {
+                    SetRainbow(true);     // makes no fucking sense why this has to be here instead of before DirToMove flip, wtf!!??
+                }
+            }
+            
+            IsReverseDirection = !IsReverseDirection;
+        }
+        else
+        {
+            Debug.Log("player cube not bouncing because too soon between toggles");
         }
     }
 
 
-    bool PlayerCubeMatchesSceneCubeColorID(PlayerCubeScript pc, SceneCubeNetworking scs)
+    bool PlayerCubeMatchesSceneCubeColorID(PlayerCubeScript pc, SceneCubeNetworking scs, out bool WasError)   // SceneCubeMatchesID
     {
-        if (scs.IsErrorCube) return false;
+        WasError = false;
+
+        if (scs.IsErrorCube)   // error cant be destroyed, even by rainbow
+        {
+            WasError = true;
+            if (pc.IsRainbow) return true;   // ALLOW player rainbow cubes to destroy error cubes
+            return false;
+        }
         
         if (scs.ColorID == pc._NetPCData.Value.ColorID)
         {
             return true;
         }
         
-        if (scs.ColorID == 10)
+        if (scs.ColorID == 10 || scs.ColorID == 12)   // rainbow or heavy
         {
             return true;
         }
@@ -306,7 +418,7 @@ public class PlayerCubeScript : NetworkBehaviour
 
         if (IsServer || IsHost)
         {
-            if (scs.IsHealthCube)       // dont destroy health cubes, just do the consequence
+            if (scs.IsHealthCube || scs.AvoidDestroyByPlayerCube)       // dont destroy health cubes, just do the consequence
             {
                 scs.HealthCubeHit();
                 return;

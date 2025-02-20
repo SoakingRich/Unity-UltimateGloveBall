@@ -5,6 +5,7 @@ using UltimateGloveBall.Arena.Gameplay;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
+using static UtilityLibrary;
 
 public class BlockamiParticleFloor : MonoBehaviour
 {
@@ -17,19 +18,46 @@ public class BlockamiParticleFloor : MonoBehaviour
 
     private void OnEnable()
     {
-        sm = FindObjectOfType<SpawnManager>();
-        sm.OnSCSDied += OnScsDied;
+      
+        SpawnManager.Instance.OnSCSDied += OnScsDied;
+        SpawnManager.Instance.OnDownCubeLayerDestroy += OnDownCubeLayerDestroy;
     }
 
-    
-    
+    private void OnDownCubeLayerDestroy()
+    {
+       SetMaterialParamToCurrentTime();
+    }
+
+
     private void OnDisable()
     {
-        // sm = FindObjectOfType<SpawnManager>();
-        // sm.OnSCSDied -= OnScsDied;
+        if (IsWithEditor()) return;
+        SpawnManager.Instance.OnSCSDied -= OnScsDied;
+        SpawnManager.Instance.OnDownCubeLayerDestroy -= OnDownCubeLayerDestroy;
     }
 
+    private void Update()
+    {
+        if (targetRenderer)
+        {
+            targetRenderer.material.SetFloat("_GlobalTime", GlobalTimeManager.Instance.GetGlobalTime());
+        }
+    }
+   
 
+
+    private void OnScsDied(ulong id)
+    {
+        if (targetRenderer == null) return;
+        
+       NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue((ulong)(int)id, out var Cube);
+       if (!Cube) return;
+       
+   //   SetMaterialParamToCurrentTime();
+       
+    }
+
+    
     private void SetMaterial()
     {
         
@@ -48,27 +76,18 @@ public class BlockamiParticleFloor : MonoBehaviour
         }
        
     }
-
-
-    private void OnScsDied(ulong id)
-    {
-        if (targetRenderer == null) return;
-        
-       NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue((ulong)(int)id, out var Cube);
-       if (!Cube) return;
-       
-   //   SetMaterialParamToCurrentTime();
-       
-    }
-
     
-
+    
+[ContextMenu("SetMaterialParamToCurrentTime")]       // M_GridFloorParticle
     private void SetMaterialParamToCurrentTime()
     {
-        if (targetRenderer == null) return;
+        if (targetRenderer == null)
+        {
+            SetMaterial();
+        }
         if (propertyBlock == null) return;
         
-        float currentTime = Time.timeSinceLevelLoad;
+    float currentTime = GlobalTimeManager.Instance.GetGlobalTime();
         
         targetRenderer.GetPropertyBlock(propertyBlock);   // out var ??
         propertyBlock.SetFloat(MatParam, currentTime);

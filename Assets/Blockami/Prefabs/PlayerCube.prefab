@@ -145,11 +145,14 @@ MonoBehaviour:
       ColorID: 0
       OwningPlayerId: 0
       AIPlayerNum: 0
+  isFail: 0
+  isSuccess: 0
+  RainbowMaterial: {fileID: 2100000, guid: dc89b4a732d05e9479dbf1582e4d392a, type: 2}
   OwningPlayerShot: {fileID: 0}
   OwningGrid: {fileID: 0}
+  IsReverseDirection: 0
   net_DirToMov:
     m_InternalValue: {x: 0, y: 0, z: 0}
-  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
   rb: {fileID: 0}
   LastReverseTime: -999
 --- !u!114 &-1989812674119276550

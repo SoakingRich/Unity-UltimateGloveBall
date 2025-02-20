@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Blockami.Scripts;
 using Unity.Netcode;
 using UnityEngine;
@@ -15,12 +16,13 @@ public class PlayerShotObject : NetworkBehaviour
     public NetworkVariable<float> TotalScore = new NetworkVariable<float>();
     public NetworkVariable<bool> IsRight = new NetworkVariable<bool>();
    // public NetworkVariable<bool> IsRight = new NetworkVariable<bool>(writePerm: NetworkVariableWritePermission.Owner);
+  public List<PlayerCubeScript> allPlayerCubeScripts = new List<PlayerCubeScript>(); 
 
    public bool HasFired;
     
     
     
-    // public PlayerShotObject(BlockamiData.ColorType ct, List<ulong> allpcs, bool isSuccess, bool isFailure, float totalScore, bool isRight)
+    // public PlayerShotObject(BlockamiData.Instance.ColorType ct, List<ulong> allpcs, bool isSuccess, bool isFailure, float totalScore, bool isRight)
     // {
     //     MyColorType = ct;
     //     AllPcs.Value = allpcs;
@@ -40,7 +42,7 @@ public class PlayerShotObject : NetworkBehaviour
             var AllObjs = NetworkManager.Singleton.SpawnManager.GetClientOwnedObjects(NetworkManager.Singleton.LocalClientId);
             foreach (var nObj in AllObjs)
             {
-                if (nObj.NetworkObjectId == allPc)
+                if (nObj.NetworkObjectId == allPc)  // check if i playercube is present in AllClientOwnedObjects
                 {
                     siblingCubes.Add(nObj);
                 }
@@ -55,7 +57,7 @@ public class PlayerShotObject : NetworkBehaviour
             {
                // pcs.LaunchCubeServerRPC();     
                 pcs.ShouldMove.Value = true;
-                  
+                allPlayerCubeScripts.Add(pcs);
             }
         }
 

@@ -142,11 +142,11 @@ namespace UltimateGloveBall.Arena.Services
             
             DrawingGrid playerGrid = null;
             DrawingGrid[] allDrawingGrids = FindObjectsOfType<DrawingGrid>();
-            playerGrid = allDrawingGrids.FirstOrDefault(grid => grid.DrawingGridIndex == teamIdx);
+            playerGrid = allDrawingGrids.FirstOrDefault(grid => grid.DrawingGridIndex == teamIdx);     // find the grid by index
             
             if (playerGrid == null)
             {
-                Debug.LogWarning("No closest DrawingGrid found.");
+                Debug.LogError("No DrawingGrid with correct team index found.");
                 return;
             }
 

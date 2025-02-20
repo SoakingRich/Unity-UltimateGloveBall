@@ -21,7 +21,7 @@ using Random = UnityEngine.Random;
 
 public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Hand/Controller
 {
-    [SerializeField] public BlockamiData BlockamiData;
+  
 
     [SerializeField] public Hand m_hand; // hand is useful for poses
     public OVRHand TrackingHand; // ovr hand is useful for pinching functions
@@ -96,10 +96,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
             hv.OnUppercut += OnUppercut;
         }
         
-        
-        // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
-        // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        BlockamiData = BlockamiData.Instance;
+       
 
         RightTriggerAction.Enable();
         LeftTriggerAction.Enable();
@@ -136,7 +133,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
     private void OnPunchDetected()
     {
-        if (BlockamiData.ShootCubesOnPinchTriggerRelease) return;
+        if (BlockamiData.Instance.ShootCubesOnPinchTriggerRelease) return;
 
         FireCurrentShot();
     }
@@ -144,7 +141,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
     private void OnTriggerPinchReleasedEvent(bool arg1, OVRHand arg2, Controller arg3)
     {
-        if (!BlockamiData.ShootCubesOnPinchTriggerRelease) return;
+        if (!BlockamiData.Instance.ShootCubesOnPinchTriggerRelease) return;
         
         FireCurrentShot();
         
@@ -164,11 +161,12 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
             netObj);
         var shot = netObj ? netObj.GetComponent<PlayerShotObject>() : null;
 
-        if (shot != null && shot.AllPcs.Value.Count > 0)
+        if (shot != null && shot.AllPcs.Value.Count > 0 && !shot.HasFired)
         {
             if (shot.IsRight.Value == IsRight) // fire shot if the shot belongs to This TriggerPinchEvents handedness
             {
                 shot.FireShotServerRpc();
+                shot.HasFired = true;         // not a replicated var, locally controlled
 
                 LocalPlayerEntities.Instance.LocalPlayerController.CyclePlayerColor();
 
@@ -183,7 +181,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
 
     private void OnIsTriggerPinchingEvent(bool isRight, OVRHand Hand, Controller Controller)
     {
-
+      
     }
 
 

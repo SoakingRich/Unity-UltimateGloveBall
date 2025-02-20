@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode;
 using UnityEngine;
 
 public static class UtilityLibrary
@@ -15,6 +16,73 @@ public static class UtilityLibrary
 #endif
         return false;
     }
+
+    public static bool IsClient()
+    {
+        return NetworkManager.Singleton.IsClient;
+    }
+
+    public static void DebugServerForClientID(string msg, ulong id, bool IsError = false)
+    {
+        if (!NetworkManager.Singleton.IsHost) return;
+        if (NetworkManager.Singleton.LocalClientId == id) return;
+
+        var message = "Blockami Log - SERVER for ID - " + msg;
+        
+        if (IsError)
+        {
+            Debug.LogError(message);
+        }
+        else
+        {
+            Debug.Log(message);
+        }
+         
+    }
+    
+    
+    public static void DebugLogClient(string msg, bool IsError = false)
+    {
+        if (!(NetworkManager.Singleton.IsClient & !NetworkManager.Singleton.IsHost)) return;
+
+        var message = "Blockami Log - CLIENT - " + msg;
+        
+        if (IsError)
+        {
+            Debug.LogError(message);
+        }
+        else
+        {
+            Debug.Log(message);
+        }
+         
+    }
+    
+  public  static bool SceneCubeMatchesID(int ColorID, SceneCubeNetworking scs, out bool WasError)
+    {
+        WasError = false;
+        if (!scs) return false;
+
+        if (scs.IsErrorCube)
+        {
+            WasError = true;
+            return false;
+        }
+        
+        if (scs.ColorID == ColorID)
+        {
+            return true;
+        }
+        
+        if (scs.ColorID == 10 || scs.ColorID == 12)   // rainbow or heavy
+        {
+            return true;
+        }
+
+        return false;
+    }
+    
+    
     
     // Method to find a component in parents
     public static T FindObjectInDirectParents<T>(Transform startTransform) where T : Component

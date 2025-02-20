@@ -111,7 +111,7 @@ public struct PlayerCubeData : INetworkSerializable
 public class PlayerShot : INetworkSerializable, IEquatable<PlayerShot>
 {
 
-   // public BlockamiData.ColorType MyColorType;
+   
     public List<ulong> AllPcs; 
     public bool IsSuccess;
     public bool IsFailure;

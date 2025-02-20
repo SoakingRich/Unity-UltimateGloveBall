@@ -37,7 +37,7 @@ public class ClapDetection : MonoBehaviour
     {
         // BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
         // BlockamiData = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
-        BlockamiData = BlockamiData.Instance;
+        
         
         ovrManager = FindObjectOfType<OVRManager>();
         AllSyntheticHands = ovrManager.GetComponentsInChildren<SyntheticHand>()?.ToList();
@@ -95,7 +95,7 @@ public class ClapDetection : MonoBehaviour
         BlockamiHandTint bht = FindObjectOfType<BlockamiHandTint>();
         if (bht && !pcn)                                                // allow me to clap in the main menu for testing
         {
-            bht.CurrentColor = BlockamiData.GetColorFromColorID(BlockamiData.GetRandomColorID());
+            bht.CurrentColor = BlockamiData.Instance.GetColorFromColorID(BlockamiData.Instance.GetRandomColorID());
           //  DbgDraw.WireSphere(hand1pose.position, hand1pose.rotation, new Vector3(0.3f,0.3f,0.3f), Color.yellow, 1.0f);
         }
     }

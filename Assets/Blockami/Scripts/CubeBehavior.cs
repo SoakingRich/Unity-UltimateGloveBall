@@ -16,7 +16,7 @@ public class CubeBehavior : NetworkBehaviour
     public SceneCubeNetworking scs;
     
 
-    private void OnEnable()
+    protected  virtual void OnEnable()
     {
         scs = GetComponent<SceneCubeNetworking>();
         scs.SCDied += ScsOnSCDied;
@@ -24,7 +24,7 @@ public class CubeBehavior : NetworkBehaviour
         scs.SCDiedByPlayerCube += ScsOnSCDiedByPlayerCube;
     }
     
-    private void OnDisable()
+    protected  virtual void OnDisable()
     {
         scs = GetComponent<SceneCubeNetworking>();
         scs.SCDied -= ScsOnSCDied;

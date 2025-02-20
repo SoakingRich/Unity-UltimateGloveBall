@@ -97,7 +97,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de69f96d8c84a0340b8cf10a59ff2867, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
   parent: {fileID: 0}
   squashAmountTarget: 0
   speed: 10
@@ -111,7 +110,7 @@ BoxCollider:
   m_GameObject: {fileID: 2559613152820054632}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Size: {x: 0.5, y: 0.5, z: 0.5}
   m_Center: {x: 0, y: 0, z: 0}
@@ -129,7 +128,7 @@ GameObject:
   - component: {fileID: 2477488121596093758}
   - component: {fileID: 4028938867457858520}
   - component: {fileID: 1648493115}
-  - component: {fileID: 3885140608952599378}
+  - component: {fileID: 4491530449636891021}
   m_Layer: 12
   m_Name: SceneCube
   m_TagString: SceneCube
@@ -194,7 +193,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3996707531
+  GlobalObjectIdHash: 2181075330
   InScenePlacedSourceGlobalObjectIdHash: 3996707531
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -225,8 +224,8 @@ MonoBehaviour:
     SceneCubePrefab: {fileID: 0}
   m_NetIsErrorCube:
     m_InternalValue: 0
+  AvoidDestroyByPlayerCube: 0
   m_healthCubeTransform: {fileID: 0}
-  BlockamiData: {fileID: 0}
   m_rigidbody: {fileID: 6889326301878998742}
   OwningDrawingGrid: {fileID: 0}
   Visual: {fileID: 2559613152820054632}
@@ -245,7 +244,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a1057bb6cb3e8e4b907ac58894e7d35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BlockamiData: {fileID: 11400000, guid: 489b9f5d747678b4b8403d8f4238ba75, type: 2}
   Ignore: 1
   springStrength: 12500
   springDamper: 0.1
@@ -260,16 +258,16 @@ MonoBehaviour:
   squashStretchObjectVisual: {fileID: 39917396127141082}
   WorldDir: {x: 0, y: 0, z: 0}
   triggerBox: {fileID: 0}
---- !u!114 &3885140608952599378
-MonoBehaviour:
+--- !u!65 &4491530449636891021
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3244966623390615973}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
   m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 034ffe80e8112514a86b7e884ec8370b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  documentation: 
+  serializedVersion: 2
+  m_Size: {x: 0.99, y: 0.99, z: 0.99}
+  m_Center: {x: 0, y: 0, z: 0}

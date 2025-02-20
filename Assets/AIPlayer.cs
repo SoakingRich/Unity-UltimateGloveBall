@@ -39,7 +39,6 @@ public class AIPlayer : NetworkBehaviour
     public bool timerOn;
 
     [Header("Internal")] 
-    public BlockamiData BlockamiData;
     public DrawingGrid OwningDrawingGrid;
     public AIAvatarBlockami AIAvatar;
     public NetworkVariable<ulong> CurrentPlayerShot = new NetworkVariable<ulong>();
@@ -77,8 +76,6 @@ public class AIPlayer : NetworkBehaviour
 
     private void Awake()
     {
-        BlockamiData = Resources.Load<BlockamiData>("BlockamiData");
-        
         Application.runInBackground = true;   // ??? what
         
         ShootingIsPaused = true;
@@ -180,6 +177,7 @@ public class AIPlayer : NetworkBehaviour
 
     void  NewShot() // do NewShot continously
     {
+        if(!m_AIPlayerIsActive) return;
     StartCoroutine("DrawSingleRandom");
     }
 
@@ -269,7 +267,7 @@ public class AIPlayer : NetworkBehaviour
 
             ColorMatchFound = false;
             CurrentColorID = 
-                UnityEngine.Random.Range(0, BlockamiData.MaxNormalColorID);             // Change AI color for next find attempt,   only when no color match for this random snapzone, which is often
+                UnityEngine.Random.Range(0, BlockamiData.Instance.MaxNormalColorID);             // Change AI color for next find attempt,   only when no color match for this random snapzone, which is often
             
             // if (CurrentColorID == 6) CurrentColorID = 12;
             CancelInvoke("NewShot");
@@ -441,7 +439,7 @@ public class AIPlayer : NetworkBehaviour
 
                 if (DebugShowLines)
                 {
-                         Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.GetColorFromColorID(CurrentColorID),1.0f,false);
+                         Debug.DrawRay(testingSnapZone.transform.position, -testingSnapZone.transform.forward * 10.0f, BlockamiData.Instance.GetColorFromColorID(CurrentColorID),1.0f,false);
                 }
                 // Debug.Log("AI Ray Hit nothing");
 

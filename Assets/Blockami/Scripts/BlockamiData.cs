@@ -25,6 +25,16 @@ namespace Blockami.Scripts
                     BlockamiData[] allBlockamiData = Resources.LoadAll<BlockamiData>("");
                     _instance = System.Array.Find(allBlockamiData, data => data.name == "BlockamiData");
                     
+#if UNITY_EDITOR                                                                // must disable this if i want to change values in Editor and have them reflected back
+                    // Clone the instance in Editor mode to avoid modifying the original
+                    if (_instance != null)
+                    {
+                        _instance = Instantiate(_instance);
+                        _instance.name = "BlockamiData_Runtime"; // Rename for clarity
+                    }
+#endif
+                    
+                    
                     // Create a runtime instance if it's null (optional fallback)
                     if (_instance == null)
                     {
@@ -46,6 +56,7 @@ namespace Blockami.Scripts
         public int MaxCubes = 100;
         public float FrenzyTimeDuration = 7.0f;
         public bool CycleColorsOnDraw = true;
+        public bool BoxingEnabled = false;
         
         [Header("PlayerCube")]
         public float PlayerCubeMoveSpeed = 0.1f;
@@ -58,6 +69,10 @@ namespace Blockami.Scripts
         [SerializedDictionary("ID", "Data")]
         public SerializedDictionary< int, SceneCubeData> AllCubeTypes;
         [SerializeField] public int MaxNormalColorID = 6;
+
+        [Header("Boxing")] 
+        public float punchThreshold = 1.0f ;
+        public float punchCooldown = 1.0f;
         
         
         [Header("SquashStretch")] 

@@ -89,7 +89,7 @@ namespace UltimateGloveBall.Arena.Player
            if (!ByClap && !BlockamiData.Instance.CycleColorsOnDraw) return;
 
            NetColorID.Value = NetColorID.Value + 1;
-           if (NetColorID.Value >= BlockamiData.MaxNormalColorID)
+           if (NetColorID.Value >= BlockamiData.Instance.MaxNormalColorID)
            {
                NetColorID.Value = 0;
            }
@@ -97,7 +97,7 @@ namespace UltimateGloveBall.Arena.Player
           // int newColorID;
           // do
           // {
-          //     newColorID = Random.Range(0, BlockamiData.MaxNormalColorID);
+          //     newColorID = Random.Range(0, BlockamiData.Instance.MaxNormalColorID);
           // } while (newColorID == NetColorID.Value);
           //
           // NetColorID.Value = newColorID;
@@ -139,6 +139,7 @@ namespace UltimateGloveBall.Arena.Player
         private void ClapDetectOnOnClapDetected()
         {
           CyclePlayerColor(true);
+         // CyclePlayerColor();
         }
 
 

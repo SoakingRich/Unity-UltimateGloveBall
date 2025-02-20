@@ -11,7 +11,7 @@ public class FakeSoftCube : MonoBehaviour
 {
     
     [Header("Settings")]
-    [SerializeField] public BlockamiData BlockamiData;
+    private BlockamiData BlockamiData;
     public bool Ignore;
     public float springStrength;
     public float springDamper;
@@ -55,6 +55,7 @@ public class FakeSoftCube : MonoBehaviour
 
     void Start()
     {
+        BlockamiData = BlockamiData.Instance;
         triggerBox = GetComponent<BoxCollider>();
         
         if (Ignore)
@@ -74,12 +75,12 @@ public class FakeSoftCube : MonoBehaviour
     {
         if (!UnityEngine.Application.isEditor) return;
         
-        springStrength = BlockamiData.springStrength;
-        springDamper = BlockamiData.springDamper;
-        halfExtentsOverlapTest = BlockamiData.halfExtents;
-        MoveTowardsMax = BlockamiData.MoveTowardsMax;
-        m_timeBeforeEnsureDeactivate = BlockamiData.m_timeBeforeEnsureDeactivate;
-        m_timeBeforeDeactivate = BlockamiData.m_timeBeforeDeactivate;
+        springStrength = BlockamiData.Instance.springStrength;
+        springDamper = BlockamiData.Instance.springDamper;
+        halfExtentsOverlapTest = BlockamiData.Instance.halfExtents;
+        MoveTowardsMax = BlockamiData.Instance.MoveTowardsMax;
+        m_timeBeforeEnsureDeactivate = BlockamiData.Instance.m_timeBeforeEnsureDeactivate;
+        m_timeBeforeDeactivate = BlockamiData.Instance.m_timeBeforeDeactivate;
     }
 
     

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Blockami.Scripts;
 using Oculus.Interaction;
 using Oculus.Interaction.Throw;
 using UnityEngine;
@@ -13,9 +14,8 @@ public class HandVelocity : MonoBehaviour
     [Header("Settings")]
     // [SerializeField] private float fromMin;
     // [SerializeField] private float fromMax;
-    [SerializeField] public float punchThreshold = 1.0f;
-    [SerializeField] public float resetThreshold = 0.8f;
-    [SerializeField] public float punchCooldown = 1.0f;
+   private float resetThreshold = 0.8f;
+   // [SerializeField] public float punchCooldown = 1.0f;
     [SerializeField] public float camHandAlignmentDotCheck = 0.75f;
     [SerializeField] public bool DebugSpeed;
     [SerializeField] public bool IsRight;
@@ -49,7 +49,8 @@ public class HandVelocity : MonoBehaviour
         {
             enabled = false;
         }
-           
+
+        resetThreshold = BlockamiData.Instance.punchThreshold * 0.8f;
     }
     
     
@@ -64,6 +65,8 @@ public class HandVelocity : MonoBehaviour
     
     private void Update()
     {
+        if (!BlockamiData.Instance.BoxingEnabled) return;
+        
         _velocityCalculator.Process(this.transform.GetPose(), Time.time, true);
 
 
@@ -85,7 +88,7 @@ public class HandVelocity : MonoBehaviour
         }
 
        
-        if (!canPunch || speed < punchThreshold)
+        if (!canPunch || speed < BlockamiData.Instance.punchThreshold)
             return;
 
         
@@ -125,7 +128,7 @@ public class HandVelocity : MonoBehaviour
         Vector3 cameraToController = (this.transform.position - Camera.main.transform.position).normalized;
         cameraToController = Vector3.Scale(cameraToController, new Vector3(1.0f, 0.0f, 1.0f));
         float cameraDot = Vector3.Dot(cameraToController, Camera.main.transform.forward);
-        if (cameraDot < camHandAlignmentDotCheck) // You can adjust this threshold to suit your needs (0.5f = roughly in front)
+        if (cameraDot < camHandAlignmentDotCheck) 
         {
            // Debug.Log("Controller is not in front of the camera, not a punch.");
             return; // Early return, no punch detected
@@ -168,7 +171,7 @@ public class HandVelocity : MonoBehaviour
     
     private IEnumerator PunchCooldownRoutine()
     {
-        yield return new WaitForSeconds(punchCooldown);
+        yield return new WaitForSeconds(BlockamiData.Instance.punchCooldown);
         canPunch = true;  // Reset punch detection after cooldown
     }
  

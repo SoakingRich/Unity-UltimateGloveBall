@@ -17,7 +17,6 @@ public class Missile : NetworkBehaviour
     
     [Header("Settings")]
     [SerializeField] private float speed;
-    [SerializeField] public BlockamiData BlockamiData;
     [SerializeField] private Vector3 dirToMove;
     
     [Header("State")]

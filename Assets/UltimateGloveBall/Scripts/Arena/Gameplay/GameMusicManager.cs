@@ -42,7 +42,7 @@ namespace UltimateGloveBall.Arena.Gameplay
                     // do nothing
                     break;
                 case GameManager.GamePhase.InGame:
-                  //  PlayInGameMusic();
+                    PlayInGameMusic();
                     break;
                 case GameManager.GamePhase.PostGame:
                     PlayPostGameMusic();

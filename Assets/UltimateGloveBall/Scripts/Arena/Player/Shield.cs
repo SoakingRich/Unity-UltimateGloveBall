@@ -107,7 +107,7 @@ namespace UltimateGloveBall.Arena.Player
             if (othercube)
             {
                 OnBallHit();
-                othercube.ReverseDirection();
+                othercube.TryReverseDirection();
 
                 if (!m_armatureNet) return;
                 var controller = m_armatureNet.OwnerClientId == NetworkManager.Singleton.LocalClientId
