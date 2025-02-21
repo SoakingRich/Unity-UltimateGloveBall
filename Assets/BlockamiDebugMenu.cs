@@ -40,25 +40,12 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
         [Header("Spectator")]
         [SerializeField] private Button m_switchSideButton;
 
+        
+        public List<GameObject> OnStateGameObjects;
+        public List<GameObject> OffStateGameObjects;
 
-        private void Start()
-        {
-            m_NormalSpawnRateSlider.onValueChanged.AddListener(OnNormalSpawnRateSliderChanged);
-            
-            m_CubeSpeedSlider.onValueChanged.AddListener(OnCubeSpeedSliderChanged);
-            
-            m_FrenzySpawnRateSlider.onValueChanged.AddListener(OnFrenzySpawnRateSliderChanged);
-            
-            BlockBounceBackToggle.onValueChanged.AddListener(OnBlockBounceBackChanged);
-            
-            m_CyclePlayerColorOnDraw.onValueChanged.AddListener(CyclePlayerColorOnDrawChanged);
-            
-            m_DistanceSlider.onValueChanged.AddListener(OnDistanceSliderChanged);
-            m_GazeTracking.onValueChanged.AddListener(OnGazeTrackingChanged);
-           
-            
-//             m_SimpleMaterialsToggle.onValueChanged.AddListener(OnSimpleMaterialsChanged);
-        }
+
+       
 
         private void OnEnable()
         {
@@ -83,12 +70,16 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
             m_DistanceSlider.value = maxfloat;
             m_DistanceSliderValueText.text = m_DistanceSlider.value.ToString("N2");
             
-            BlockBounceBackToggle.isOn = BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack;
+           // BlockBounceBackToggle.isOn = BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack;
+            BlockBounceBackToggle.isOn = false;
+            
             m_CyclePlayerColorOnDraw.isOn = BlockamiData.Instance.CycleColorsOnDraw;
             
              
             m_GazeTracking.isOn = BlockamiData.Instance.BoxingEnabled;
             
+            m_SimpleMaterialsToggle.isOn = false;
+
             
             
             // m_switchSideButton.gameObject.SetActive(LocalPlayerState.Instance.IsSpectator);
@@ -99,8 +90,6 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
           
            
             
-         //    m_SimpleMaterialsToggle.isOn = settings.UseLocomotionVignette;
-
 //             #if UNITY_EDITOR
 //             gameObject.SetActive(false); 
 //             // dont allow changing values of the scriptable object in editor
@@ -108,7 +97,25 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
 
         }
         
-        
+        private void Start()
+        {
+            m_NormalSpawnRateSlider.onValueChanged.AddListener(OnNormalSpawnRateSliderChanged);
+            
+            m_CubeSpeedSlider.onValueChanged.AddListener(OnCubeSpeedSliderChanged);
+            
+            m_FrenzySpawnRateSlider.onValueChanged.AddListener(OnFrenzySpawnRateSliderChanged);
+            
+            BlockBounceBackToggle.onValueChanged.AddListener(OnBlockBounceBackChanged);
+            OnBlockBounceBackChanged(BlockBounceBackToggle.isOn);
+            
+            m_CyclePlayerColorOnDraw.onValueChanged.AddListener(CyclePlayerColorOnDrawChanged);
+            
+            m_DistanceSlider.onValueChanged.AddListener(OnDistanceSliderChanged);
+            m_GazeTracking.onValueChanged.AddListener(OnGazeTrackingChanged);
+           
+            
+            m_SimpleMaterialsToggle.onValueChanged.AddListener(OnSimpleMaterialsChanged);
+        }
         
         private void OnNormalSpawnRateSliderChanged(float val)
         {
@@ -161,7 +168,8 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
         
         private void OnBlockBounceBackChanged(bool val)
         {
-            BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack = val;
+           // BlockamiData.Instance.LetIncorrectPlayerCubesBounceBack = val;
+           OnSimpleMaterialsChanged(val);
         }
         
         
@@ -206,12 +214,30 @@ public class BlockamiDebugMenu : BasePlayerMenuView    // PlayerInGameMenu
             UltimateGloveBall.Arena.Gameplay.GameManager._instance.RespawnAllPlayers();
         }
 
-       
 
-
+        public int PressedCount;
+        
         private void OnSimpleMaterialsChanged(bool val)
         {
-           // do a function on all found instances of MaterialSwitcher.cs ??
+          
+            
+            // Set all OnStateGameObjects to active if val is true, otherwise set to inactive
+            foreach (var gameObject in OnStateGameObjects)
+            {
+                gameObject.SetActive(val);
+                
+                PressedCount++;
+                if (PressedCount % 2 == 1)
+                {
+                    gameObject.SetActive(!val);
+                }
+            }
+
+            // Set all OffStateGameObjects to inactive if val is true, otherwise set to active
+            foreach (var gameObject in OffStateGameObjects)
+            {
+                gameObject.SetActive(!val);
+            }
         }
     }
     

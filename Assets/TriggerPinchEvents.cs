@@ -166,6 +166,7 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
             if (shot.IsRight.Value == IsRight) // fire shot if the shot belongs to This TriggerPinchEvents handedness
             {
                 shot.FireShotServerRpc();
+                LocalPlayerEntities.Instance.LocalPlayerController.CurrentPlayerShot.Value = default;
                 shot.HasFired = true;         // not a replicated var, locally controlled
 
                 LocalPlayerEntities.Instance.LocalPlayerController.CyclePlayerColor();
@@ -176,6 +177,11 @@ public class TriggerPinchEvents : MonoBehaviour // trigger / pinch events Per Ha
                 }
             }
         }
+        else
+        {
+           // Debug.Log("fireshot has no shot ");
+        }
+        
     }
 
 
